@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
+import Test from "./Test.vue"
 
 const greetMsg = ref("");
 const name = ref("");
@@ -18,4 +19,5 @@ async function greet() {
   </div>
 
   <p>{{ greetMsg }}</p>
+  <Test></Test>
 </template>
