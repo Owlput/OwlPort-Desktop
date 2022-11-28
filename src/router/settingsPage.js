@@ -4,7 +4,7 @@ export default  {
     children:[
         {
             path:"certificates",
-            component:()=>import("../pages/settings/Certificates.vue")
+            component:()=>import("../pages/settings/CertsAndKeys.vue")
         },
         {
             path:"general",
