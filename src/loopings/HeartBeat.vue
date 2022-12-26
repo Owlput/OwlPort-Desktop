@@ -36,7 +36,7 @@ function hb() {
           detail: {
             type: "warning",
             position: "bottom-right",
-            message: `Cannot send heartbeat to nest: 
+            message: `Cannot send heartbeat to nest:
           ${e}`,
             typeHandler: "hb-fail",
             progress: true,
@@ -46,7 +46,7 @@ function hb() {
                 label: "Dismiss",
                 handler: () =>{
                   console.warn(
-                    "You're disabling pop-ups for failing heartbeat. You may not receive further notifications when things change."
+                    "You've disabled pop-ups for failing heartbeat. You may not receive further notifications when situation changes."
                   );
                   dispatchEvent(
                     new CustomEvent("disablePopup", {
