@@ -6,7 +6,7 @@ import Loopings from "./loopings/Loopings.vue";
 
 <template>
   <div class="main-grid h-[100vh]">
-  <SideNav :showDesp="navShowDesp"></SideNav>
+  <SideNav></SideNav>
   <div>
   <RouterView></RouterView></div>
 </div>

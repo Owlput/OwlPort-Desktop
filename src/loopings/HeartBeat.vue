@@ -1,11 +1,12 @@
 <script setup>
 import { invoke } from "@tauri-apps/api/tauri";
-import { onMounted, onUnmounted, ref } from "vue";
+import { onMounted, onUnmounted, ref, shallowRef } from "vue";
+import FailedHeartbeat from "../components/Popups/FailedHeartbeat.vue";
 
 const intervals = ref([]);
 onMounted(() => {
   hb();
-  let hbHandle = setInterval(hb, 30000);
+  let hbHandle = setInterval(hb, 1000);
   intervals.value.push(hbHandle);
 });
 onUnmounted(() => {
@@ -27,32 +28,28 @@ function hb() {
       );
     })
     .catch((e) => {
+      let stamp = Date.now()
       dispatchEvent(
         new CustomEvent("createPopup", {
           detail: {
-            type: "warning",
             handlerType: "hb-fail",
-            message: `Cannot send heartbeat to nest:${e}`,
             timeout:5000,
-            actions: [
-              {
-                label: "Dismiss",
-                handler: () =>{
+            stamp,
+            popup:
+            {
+            component:shallowRef(FailedHeartbeat),
+            props:{
+              reason:e,
+              dismiss:() =>{
                   console.warn(
                     "You've disabled pop-ups for failing heartbeat. You may not receive further notifications when situation changes."
                   );
                   dispatchEvent(
-                    new CustomEvent("disablePopup", {
-                      detail: { handlerType: "hb-fail" },
-                    })
-                  );
+                    new CustomEvent("disablePopup", {detail: { handlerType: "hb-fail" },}));
+                  dispatchEvent(new CustomEvent("deletePopup",{detail:{stamp}}))
                 },
-              },
-              {
-                label: "Retry",
-                handler: reconnect,
-              },
-            ],
+              retry:()=>{reconnect();dispatchEvent(new CustomEvent("deletePopup",{detail:{stamp}}))}
+            }}
           },
         })
       );
