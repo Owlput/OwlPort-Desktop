@@ -1,14 +1,10 @@
 import { createApp } from "vue";
 import "./style.css";
 import App from "./App.vue";
-import { Quasar,Notify } from "quasar";
-import "@quasar/extras/material-icons/material-icons.css";
-import "quasar/src/css/index.sass";
-import route from "./router/index";
+import router from "./router/index";
+import { i18n } from "./i18n";
 
 createApp(App)
-  .use(Quasar, {
-    plugins: {Notify},
-  })
-  .use(route())
+  .use(router)
+  .use(i18n)
   .mount("#app");

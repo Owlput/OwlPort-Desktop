@@ -4,8 +4,7 @@
     const keyTypeOptions = ["Asym-RSA","Asym-ED25519"]
 </script>
 <template>
-    <QForm>
-        <QSelect v-model="keyType" :options="keyTypeOptions"></QSelect>
-        <QInput></QInput>
-    </QForm>
+  <div class="m-auto w-[80%] h-[80%]">
+
+  </div>
 </template>

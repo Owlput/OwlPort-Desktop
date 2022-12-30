@@ -18,10 +18,6 @@ const reconnect = async () => await invoke("plugin:grpc_hb|reconnect");
 function hb() {
   invoke("plugin:grpc_hb|hb")
     .then((v) => {
-      msg.value = v;
-      dispatchEvent(
-        new CustomEvent("enablePopup", { detail: { typeHandler: "hb-fail" } })
-      );
       dispatchEvent(
         new CustomEvent("hb-success", {
           detail: {
@@ -35,11 +31,8 @@ function hb() {
         new CustomEvent("createPopup", {
           detail: {
             type: "warning",
-            position: "bottom-right",
-            message: `Cannot send heartbeat to nest:
-          ${e}`,
-            typeHandler: "hb-fail",
-            progress: true,
+            handlerType: "hb-fail",
+            message: `Cannot send heartbeat to nest:${e}`,
             timeout:5000,
             actions: [
               {
@@ -50,7 +43,7 @@ function hb() {
                   );
                   dispatchEvent(
                     new CustomEvent("disablePopup", {
-                      detail: { typeHandler: "hb-fail" },
+                      detail: { handlerType: "hb-fail" },
                     })
                   );
                 },
