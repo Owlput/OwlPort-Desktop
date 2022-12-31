@@ -1,6 +1,7 @@
 <script setup>
-import { onMounted, onUnmounted, ref, computed } from "vue";
+import { onMounted, onUnmounted, ref, computed, inject } from "vue";
 
+let {disabledPopupsTable,setTable,deleteTable} = inject('disabledPopupsTable')
 const popups = ref(new Map());
 let current = ref(0);
 const currentPopup = computed(() => {
@@ -24,24 +25,24 @@ const createPopup = (ev) => {
     },
   }
 */
-  if (!window.sessionStorage.getItem(ev.detail.handlerType)) {
+  if (disabledPopupsTable.value.get(ev.detail.handlerType)) return;
     if (ev.detail.timeout) {
       setTimeout(() => {
         deletePopup(ev);
       }, ev.detail.timeout);
     }
     popups.value.set(ev.detail.stamp, ev.detail.popup);
-  }
+  
 };
 const deletePopup = (ev) => {
-  if (current.value + 1 == popups.value.size) current.value -= 1;
+  if (current.value != 0 && current.value + 1 == popups.value.size) current.value -= 1; //
   popups.value.delete(ev.detail.stamp);
 };
 const disablePopup = (ev) => {
-  window.sessionStorage.setItem(ev.detail.handlerType, "disabled");
+  setTable(ev.detail.handlerType,1)
 };
 const enablePopup = (ev) => {
-  window.sessionStorage.removeItem(ev.detail.handlerType);
+  deleteTable(ev.detail.handlerType)
 };
 
 onMounted(() => {
