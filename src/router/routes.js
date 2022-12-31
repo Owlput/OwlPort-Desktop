@@ -7,13 +7,13 @@ const routes = [
   },
   {
     path: "/overview",
-    component:()=>import("../pages/overview/Overview.vue"),
+    component: () => import("../pages/overview/Overview.vue"),
   },
   {
     path: "/apps",
     component: () => import("../layouts/Applications.vue"),
   },
-  settingsPage
+  settingsPage,
 
   // Always leave this as last one,
   // but you can also remove it

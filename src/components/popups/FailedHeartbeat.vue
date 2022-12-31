@@ -1,17 +1,17 @@
 <script setup>
 const props = defineProps({
-  reason:{
-    type:String,
-    required:true,
+  reason: {
+    type: String,
+    required: true,
   },
-  dismiss:{
-    type:Function,
-    required:true,
+  dismiss: {
+    type: Function,
+    required: true,
   },
-  retry:{
-    type:Function,
-    required:true,
-  }
+  retry: {
+    type: Function,
+    required: true,
+  },
 });
 </script>
 

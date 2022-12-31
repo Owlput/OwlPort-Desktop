@@ -69,35 +69,33 @@ fn reconnect(state: tauri::State<'_, MyState>) -> Result<(), String> {
 }
 
 fn setup_client(path: Option<&std::path::Path>) -> Result<Client, tonic::transport::Error> {
-  if let Some(path)
-  = path{
-    let pem = async_runtime::block_on(tokio::fs::read(path)).unwrap();
-    let ca = Certificate::from_pem(pem);
-    let conf = ClientTlsConfig::new().ca_certificate(ca);
-    let channel = match async_runtime::block_on(
-        Channel::from_static("https://127.0.0.1:20001")
-            .tls_config(conf)
-            .unwrap()
-            .connect(),
-    ) {
-        Ok(channel) => Ok(channel),
-        Err(e) => Err(e),
-    };
-    match channel {
-        Ok(channel) => Ok(Client::new(channel)),
-        Err(e) => Err(e),
-    }}
-    else{
-      let channel = match async_runtime::block_on(
-        Channel::from_static("http://127.0.0.1:20001")
-            .connect(),
-    ) {
-        Ok(channel) => Ok(channel),
-        Err(e) => Err(e),
-    };
-    match channel {
-        Ok(channel) => Ok(Client::new(channel)),
-        Err(e) => Err(e),
-    }
+    if let Some(path) = path {
+        let pem = async_runtime::block_on(tokio::fs::read(path)).unwrap();
+        let ca = Certificate::from_pem(pem);
+        let conf = ClientTlsConfig::new().ca_certificate(ca);
+        let channel = match async_runtime::block_on(
+            Channel::from_static("https://127.0.0.1:20001")
+                .tls_config(conf)
+                .unwrap()
+                .connect(),
+        ) {
+            Ok(channel) => Ok(channel),
+            Err(e) => Err(e),
+        };
+        match channel {
+            Ok(channel) => Ok(Client::new(channel)),
+            Err(e) => Err(e),
+        }
+    } else {
+        let channel =
+            match async_runtime::block_on(Channel::from_static("http://127.0.0.1:20001").connect())
+            {
+                Ok(channel) => Ok(channel),
+                Err(e) => Err(e),
+            };
+        match channel {
+            Ok(channel) => Ok(Client::new(channel)),
+            Err(e) => Err(e),
+        }
     }
 }

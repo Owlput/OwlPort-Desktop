@@ -1,7 +1,6 @@
 <script setup>
-import HeartBeat from "./HeartBeat.vue"
-
+import HeartBeat from "./HeartBeat.vue";
 </script>
 <template>
-    <HeartBeat></HeartBeat>
+  <HeartBeat></HeartBeat>
 </template>

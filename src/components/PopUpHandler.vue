@@ -68,6 +68,7 @@ onUnmounted(() => {
     >
       <button
         class="popBtn"
+        v-show="current + 1 != 1"
         @click="
           () => {
             if (current > 0) current -= 1;
@@ -79,6 +80,7 @@ onUnmounted(() => {
       <p class="md:text-2xl my-auto mx-1">{{ current + 1 }}</p>
       <button
         class="popBtn"
+        v-show="current + 1 != popups.size"
         @click="
           () => {
             if (current + 1 < popups.size) current += 1;

@@ -7,10 +7,11 @@ import OverlayHandler from "./components/OverlayHandler.vue";
 
 <template>
   <div class="main-grid h-[100vh]">
-  <SideNav></SideNav>
-  <div>
-  <RouterView></RouterView></div>
-</div>
+    <SideNav></SideNav>
+    <div>
+      <RouterView></RouterView>
+    </div>
+  </div>
   <Loopings></Loopings>
   <PopUpHandler></PopUpHandler>
   <OverlayHandler></OverlayHandler>

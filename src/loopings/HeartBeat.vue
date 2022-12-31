@@ -28,28 +28,38 @@ function hb() {
       );
     })
     .catch((e) => {
-      let stamp = Date.now()
+      let stamp = Date.now();
       dispatchEvent(
         new CustomEvent("createPopup", {
           detail: {
             handlerType: "hb-fail",
-            timeout:5000,
+            timeout: 5000,
             stamp,
-            popup:
-            {
-            component:shallowRef(FailedHeartbeat),
-            props:{
-              reason:e,
-              dismiss:() =>{
+            popup: {
+              component: shallowRef(FailedHeartbeat),
+              props: {
+                reason: e,
+                dismiss: () => {
                   console.warn(
                     "You've disabled pop-ups for failing heartbeat. You may not receive further notifications when situation changes."
                   );
                   dispatchEvent(
-                    new CustomEvent("disablePopup", {detail: { handlerType: "hb-fail" },}));
-                  dispatchEvent(new CustomEvent("deletePopup",{detail:{stamp}}))
+                    new CustomEvent("disablePopup", {
+                      detail: { handlerType: "hb-fail" },
+                    })
+                  );
+                  dispatchEvent(
+                    new CustomEvent("deletePopup", { detail: { stamp } })
+                  );
                 },
-              retry:()=>{reconnect();dispatchEvent(new CustomEvent("deletePopup",{detail:{stamp}}))}
-            }}
+                retry: () => {
+                  reconnect();
+                  dispatchEvent(
+                    new CustomEvent("deletePopup", { detail: { stamp } })
+                  );
+                },
+              },
+            },
           },
         })
       );

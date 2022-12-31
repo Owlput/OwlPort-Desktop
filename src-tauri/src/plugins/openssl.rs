@@ -43,7 +43,7 @@ async fn generate_rsa_keypair(arg: String) -> Result<String, String> {
                     filepath
                 )),
                 Err(e) => Err(format!(
-                    "Failed to create file {}, caused by {} |{}", 
+                    "Failed to create file {}, caused by {} |{}",
                     // always spit out generated key when this fails and display to user when needed.
                     filepath,
                     e,

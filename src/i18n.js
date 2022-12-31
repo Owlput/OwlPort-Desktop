@@ -5,8 +5,8 @@ import zhCN from "./assets/i18n/zh-CN.json";
 export default createI18n({
   locale: "en-US",
   globalInjection: true,
-  messages:{
-    en:enUS,
-    zh:zhCN
+  messages: {
+    en: enUS,
+    zh: zhCN,
   },
 });

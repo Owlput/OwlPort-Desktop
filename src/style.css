@@ -3,16 +3,16 @@
 @tailwind utilities;
 
 @font-face {
-  font-family: 'Material Icons';
+  font-family: "Material Icons";
   font-style: normal;
   font-weight: 400;
-  src: url(assets/material_icons.woff2) format('woff2');
+  src: url(assets/material_icons.woff2) format("woff2");
 }
 .material-icons {
-  font-family: 'Material Icons';
+  font-family: "Material Icons";
   font-weight: normal;
   font-style: normal;
-  font-size: 24px;  
+  font-size: 24px;
   display: inline-block;
   line-height: 1;
   text-transform: none;
@@ -25,7 +25,6 @@
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
 }
-
 
 :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
@@ -62,21 +61,21 @@ button {
 button:hover {
   border-color: #396cd8;
 }
-.button-no-style-override{
+.button-no-style-override {
   border: none !important;
   border-radius: 0px !important;
   box-shadow: none !important;
 }
-.button-no-style-override:hover{
+.button-no-style-override:hover {
   cursor: default !important;
 }
 
-.main-grid{
+.main-grid {
   display: grid;
-  grid-template-columns: minmax(4rem,5rem) auto;
+  grid-template-columns: minmax(4rem, 5rem) auto;
 }
 
-.navBtn{
+.navBtn {
   margin: 0px;
   border: none;
   box-shadow: none;
@@ -86,6 +85,6 @@ button:hover {
   align-items: center;
   justify-content: space-evenly;
 }
-.navBtn:hover{
+.navBtn:hover {
   background-color: gainsboro;
 }

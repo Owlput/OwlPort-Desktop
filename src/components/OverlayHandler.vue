@@ -1,8 +1,10 @@
 <script setup>
-import { onMounted, onUnmounted, ref,shallowRef } from "vue";
+import { onMounted, onUnmounted, ref, shallowRef } from "vue";
 import TestOverlay from "./overlays/TestOverlay.vue";
 
-const overlays = ref([{overlay:{component:shallowRef(TestOverlay),props:{msg:"Hello"}}}]);
+const overlays = ref([
+  { overlay: { component: shallowRef(TestOverlay), props: { msg: "Hello" } } },
+]);
 const putOverlay = (ev) => {
   /* 
   A valid overlay should have the following structure:
@@ -29,12 +31,19 @@ onUnmounted(() => {
 });
 </script>
 <template>
-<div class="fixed left-0 top-0 w-screen h-screen" v-if="overlays.length != 0">
-  <ol class="relative w-full h-full">
-    <li v-for="(item, index) in overlays" class="relative w-full h-full" :style="`z-index:${(index+1)*10};`">
-      <component :is="overlays[index].overlay.component" v-bind="overlays[index].overlay.props"></component>
-    </li>
-  </ol>
+  <div class="fixed left-0 top-0 w-screen h-screen" v-if="overlays.length != 0">
+    <ol class="relative w-full h-full">
+      <li
+        v-for="(item, index) in overlays"
+        class="relative w-full h-full"
+        :style="`z-index:${(index + 1) * 10};`"
+      >
+        <component
+          :is="overlays[index].overlay.component"
+          v-bind="overlays[index].overlay.props"
+        ></component>
+      </li>
+    </ol>
   </div>
 </template>
 <style scoped>
