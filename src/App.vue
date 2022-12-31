@@ -2,6 +2,7 @@
 import SideNav from "./components/SideNav.vue";
 import PopUpHandler from "./components/PopUpHandler.vue";
 import Loopings from "./loopings/Loopings.vue";
+import OverlayHandler from "./components/OverlayHandler.vue";
 </script>
 
 <template>
@@ -12,4 +13,5 @@ import Loopings from "./loopings/Loopings.vue";
 </div>
   <Loopings></Loopings>
   <PopUpHandler></PopUpHandler>
+  <OverlayHandler></OverlayHandler>
 </template>

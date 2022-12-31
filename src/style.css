@@ -34,7 +34,6 @@
   font-weight: 400;
 
   color: #0f0f0f;
-  background-color: #f6f6f6;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -63,8 +62,6 @@ button {
 button:hover {
   border-color: #396cd8;
 }
-
-
 .button-no-style-override{
   border: none !important;
   border-radius: 0px !important;
@@ -77,4 +74,18 @@ button:hover {
 .main-grid{
   display: grid;
   grid-template-columns: minmax(4rem,5rem) auto;
+}
+
+.navBtn{
+  margin: 0px;
+  border: none;
+  box-shadow: none;
+  border-radius: 0px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+}
+.navBtn:hover{
+  background-color: gainsboro;
 }
