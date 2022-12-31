@@ -49,9 +49,6 @@ onMounted(() => {
   addEventListener("deletePopup", deletePopup);
   addEventListener("disablePopup", disablePopup);
   addEventListener("enablePopup", enablePopup);
-  setInterval(() => {
-    console.log(current.value);
-  }, 1000);
 });
 onUnmounted(() => {
   removeEventListener("createPopup", createPopup);

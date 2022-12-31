@@ -8,14 +8,10 @@ const routes = [
   {
     path: "/overview",
     component:()=>import("../pages/overview/Overview.vue"),
-    children:[
-      {
-        path:"",component:()=>import("../pages/overview/Tab1.vue")
-      },
-      {
-        path:"tab1",component:()=>import("../pages/overview/Tab1.vue")
-      }
-    ]
+  },
+  {
+    path: "/apps",
+    component: () => import("../layouts/Applications.vue"),
   },
   settingsPage
 

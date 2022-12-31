@@ -1,7 +1,7 @@
 <script setup>
 import { invoke } from "@tauri-apps/api/tauri";
 import { onMounted, onUnmounted, ref, shallowRef } from "vue";
-import FailedHeartbeat from "../components/Popups/FailedHeartbeat.vue";
+import FailedHeartbeat from "../components/popups/FailedHeartbeat.vue";
 
 const intervals = ref([]);
 onMounted(() => {
