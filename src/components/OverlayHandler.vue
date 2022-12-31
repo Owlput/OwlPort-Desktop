@@ -1,10 +1,7 @@
 <script setup>
-import { onMounted, onUnmounted, ref, shallowRef } from "vue";
-import TestOverlay from "./overlays/TestOverlay.vue";
+import { onMounted, onUnmounted, ref } from "vue";
 
-const overlays = ref([
-  { overlay: { component: shallowRef(TestOverlay), props: { msg: "Hello" } } },
-]);
+const overlays = ref([]);
 const putOverlay = (ev) => {
   /* 
   A valid overlay should have the following structure:
