@@ -1,20 +1,32 @@
-use tauri::{async_runtime, Manager};
+use std::str::FromStr;
+
+use tauri::{async_runtime, http::Uri, Manager};
 use tracing::{debug, warn};
 
-use super::*;
+use super::{
+    config::{self,nest_config::NestConfig, ConfigPath},
+    *,
+};
 use crate::net::grpc::nest_rpc::generated::*;
 use async_runtime::RwLock;
-// use std::path::Path;
 use tonic::transport::{Certificate, Channel, ClientTlsConfig};
 
 type Client = nest_rpc_client::NestRpcClient<Channel>;
 
 struct MyState {
     grpc_client: RwLock<Result<Client, tonic::transport::Error>>, // `DerefMut` not implemented for State<_,S>, so lock is required.
+    default_nest_address: String,
 }
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
-    let client = match setup_client(None /*&Path::new("../certs/owlnest_test_cert.pem")*/) {
+    let NestConfig { address, cert_path } = match config::read_from_file(ConfigPath::NestConfig(None)) {
+        Ok(v) => match v{
+            config::ConfigEnum::NestConfig(v)=>v,
+            //_ => NestConfig::default()
+        },
+        Err(_) => NestConfig::default(),
+    };
+    let client = match setup_client(address.parse().unwrap(), cert_path) {
         Ok(client) => RwLock::new(Ok(client)),
         Err(e) => RwLock::new(Err(e)),
     };
@@ -24,6 +36,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
         .setup(|app_handle| {
             app_handle.manage(MyState {
                 grpc_client: client,
+                default_nest_address: address,
             });
             Ok(())
         })
@@ -47,14 +60,18 @@ async fn hb(state: tauri::State<'_, MyState>) -> Result<String, String> {
         }
         Err(e) => {
             warn!("Failed to perform heartbeat with error {}", &e);
-            Err(e.message().to_string())
+            Err(format!("error.plugin.grpc.nest.heartbeat: {:?}", e))
         }
     }
 }
 #[tauri::command]
-fn reconnect(state: tauri::State<'_, MyState>) -> Result<(), String> {
+fn reconnect(state: tauri::State<'_, MyState>, nest_address: Option<String>) -> Result<(), String> {
     debug!("Trying to reconnect to nest");
-    match setup_client(/* &Path::new("../certs/owlnest_test_cert.pem" */ None) {
+    let uri = match Uri::from_str(&nest_address.unwrap_or(state.default_nest_address.clone())) {
+        Ok(v) => v,
+        Err(e) => return Err(format!("error.parsing: {:?}", e)),
+    };
+    match setup_client(uri, None) {
         Ok(client) => {
             debug!("Successfully reconnected");
             *state.grpc_client.blocking_write() = Ok(client);
@@ -63,18 +80,21 @@ fn reconnect(state: tauri::State<'_, MyState>) -> Result<(), String> {
         Err(e) => {
             let error_string = e.to_string();
             *state.grpc_client.blocking_write() = Err(e);
-            Err(error_string)
+            Err(format!("error.plugin.grpc.connection: {:?}", error_string))
         }
     }
 }
 
-fn setup_client(path: Option<&std::path::Path>) -> Result<Client, tonic::transport::Error> {
-    if let Some(path) = path {
+fn setup_client(
+    nest_address: Uri,
+    cert_path: Option<String>,
+) -> Result<Client, tonic::transport::Error> {
+    if let Some(path) = cert_path {
         let pem = async_runtime::block_on(tokio::fs::read(path)).unwrap();
         let ca = Certificate::from_pem(pem);
         let conf = ClientTlsConfig::new().ca_certificate(ca);
         let channel = match async_runtime::block_on(
-            Channel::from_static("https://127.0.0.1:20001")
+            Channel::builder(nest_address.clone())
                 .tls_config(conf)
                 .unwrap()
                 .connect(),
@@ -88,8 +108,7 @@ fn setup_client(path: Option<&std::path::Path>) -> Result<Client, tonic::transpo
         }
     } else {
         let channel =
-            match async_runtime::block_on(Channel::from_static("http://127.0.0.1:20001").connect())
-            {
+            match async_runtime::block_on(Channel::builder(nest_address.clone()).connect()) {
                 Ok(channel) => Ok(channel),
                 Err(e) => Err(e),
             };

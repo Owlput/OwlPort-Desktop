@@ -15,7 +15,9 @@ fn main() {
     tracing_subscriber::fmt::init();
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![greet])
-        .plugin(crate::plugins::grpc::init())
+        .plugin(plugins::grpc::init())
+        .plugin(plugins::config::init())
+        .plugin(plugins::openssl::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
