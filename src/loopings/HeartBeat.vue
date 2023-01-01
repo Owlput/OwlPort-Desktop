@@ -3,6 +3,8 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { onMounted, onUnmounted, ref, shallowRef } from "vue";
 import FailedHeartbeat from "../components/popups/FailedHeartbeat.vue";
 
+// TODO: move polling logic to rust codebase
+
 const intervals = ref([]);
 onMounted(() => {
   hb();
@@ -14,7 +16,7 @@ onUnmounted(() => {
     clearInterval(v);
   });
 });
-const reconnect = async () => await invoke("plugin:grpc_hb|reconnect");
+const reconnect = async () => await invoke("plugin:grpc_hb|reconnect",{nest_address:null});
 
 function hb() {
   invoke("plugin:grpc_hb|hb")
