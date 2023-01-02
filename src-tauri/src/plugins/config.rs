@@ -106,6 +106,7 @@ pub mod nest_config {
 
 #[cfg(test)]
 mod test {
+
     use super::*;
     #[test]
     #[ignore = "file operation needed"]
@@ -119,6 +120,15 @@ mod test {
                 },
             })
         );
+        let string = r#"{
+            "AppConfig": {
+              "nest": {
+                "address": "http://127.0.0.1:20001",
+                "cert_path": null
+              }
+            }
+          }"#;
+        serde_json::from_str::<ConfigEnum>(string).unwrap();
     }
     #[test]
     #[ignore = "human verification needed"]
