@@ -4,7 +4,7 @@ use tauri::{async_runtime, http::Uri, Manager};
 use tracing::{debug, warn};
 
 use super::{
-    config::{self,nest_config::NestConfig, ConfigPath},
+    config::{self, ConfigPath, app_config::{AppConfig, NestConenction}},
     *,
 };
 use crate::net::grpc::nest_rpc::generated::*;
@@ -19,13 +19,14 @@ struct MyState {
 }
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
-    let NestConfig { address, cert_path } = match config::read_from_file(ConfigPath::NestConfig(None)) {
+    let AppConfig { nest } = match config::read_from_file(ConfigPath::AppConfig(None)) {
         Ok(v) => match v{
-            config::ConfigEnum::NestConfig(v)=>v,
-            //_ => NestConfig::default()
+            config::ConfigEnum::AppConfig(v)=>v,
+            _ => AppConfig::default()
         },
-        Err(_) => NestConfig::default(),
+        Err(_) => AppConfig::default(),
     };
+    let NestConenction{address,cert_path} = nest;
     let client = match setup_client(address.parse().unwrap(), cert_path) {
         Ok(client) => RwLock::new(Ok(client)),
         Err(e) => RwLock::new(Err(e)),
