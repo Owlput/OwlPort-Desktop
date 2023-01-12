@@ -1,1 +1,14 @@
-{}
+{
+    "info":{},
+    "warning":{},
+    "error":{
+        "plugin":{
+            "config":{},
+            "grpc":{
+                "nest":{
+                    "heartbeat":""
+                }
+            }
+        }
+    }
+}
