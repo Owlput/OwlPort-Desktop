@@ -1,100 +1,86 @@
 <script setup>
-import { onMounted, onUnmounted, ref, computed, inject } from "vue";
+import { onMounted, onUnmounted, ref, computed } from "vue";
+import { listen, emit } from "@tauri-apps/api/event";
+import DefaultPopup from "../popups/DefaultPopup.vue";
 
-let {disabledPopupsTable,setTable,deleteTable} = inject('disabledPopupsTable')
-const popups = ref(new Map());
-let current = ref(0);
-const currentPopup = computed(() => {
-  let pos = 0;
-  if (popups.value.size == 0) return null;
-  for (let [key, val] of popups.value) {
-    if (pos == current.value) return val;
-    pos += 1;
-  }
+defineOptions({
+  components: { DefaultPopup },
 });
-const createPopup = (ev) => {
-  /* 
-  A valid popup should have the following structure:
-  {
-    handlerType:"type",
-    stamp:`something unique`,
-    timeout:`when to remove the popup in miliseconds`,
-    popup:{
-      component:`component for the popup`,
-      props:`props for the component`,
-    },
+
+let popups = ref([]);
+let current_popup_pointer = ref(0);
+function previous_popup() {
+  if (current_popup_pointer.value > 0) {
+    current_popup_pointer.value -= 1;
   }
-*/
-  if (disabledPopupsTable.value.get(ev.detail.handlerType)) return;
-    if (ev.detail.timeout) {
-      setTimeout(() => {
-        deletePopup(ev);
-      }, ev.detail.timeout);
+}
+function next_popup() {
+  if (current_popup_pointer.value + 1 < popups.value.length) {
+    current_popup_pointer.value += 1;
+  }
+}
+function add_popup(new_popup) {
+  popups.value.push(new_popup);
+  if (new_popup.timeout > 0) {
+    setTimeout(() => removePopup(new_popup.stamp), new_popup.timeout);
+  }
+  console.log(popups.value);
+}
+function removePopup(stamp) {
+  let pos = popups.value.findIndex((item) => item.stamp == stamp);
+  if (current_popup_pointer.value >= pos) {
+    current_popup_pointer.value -= 1;
+  }
+  popups.value.splice(pos, 1);
+}
+listen("newPopup", (popup) => {
+  /*
+    A valid popup should look like this:
+    {
+      timeout: number,   // In seconds. If the number is 0, it never times out.
+      stamp: String,     // Unique identifier for the popup.
+      component: String, // The path for custom popup.
+      props: String,     // Props for the component.
     }
-    popups.value.set(ev.detail.stamp, ev.detail.popup);
-  
-};
-const deletePopup = (ev) => {
-  if (current.value != 0 && current.value + 1 == popups.value.size) current.value -= 1; //
-  popups.value.delete(ev.detail.stamp);
-};
-const disablePopup = (ev) => {
-  setTable(ev.detail.handlerType,1)
-};
-const enablePopup = (ev) => {
-  deleteTable(ev.detail.handlerType)
-};
 
-onMounted(() => {
-  addEventListener("createPopup", createPopup);
-  addEventListener("deletePopup", deletePopup);
-  addEventListener("disablePopup", disablePopup);
-  addEventListener("enablePopup", enablePopup);
-});
-onUnmounted(() => {
-  removeEventListener("createPopup", createPopup);
-  removeEventListener("deletePopup", deletePopup);
-  removeEventListener("disablePopup", disablePopup);
-  removeEventListener("enablePopup", enablePopup);
+  */
+  add_popup(popup.payload);
 });
 </script>
 <template>
   <div
-    v-if="currentPopup?.props"
+    v-if="popups[current_popup_pointer]"
     class="w-fit h-fit fixed right-0 bottom-0 mr-4 mb-4 flex flex-col"
   >
     <div
-      v-if="popups.size > 1"
+      v-if="popups.length > 1"
       class="flex flex-row items-center self-end mb-2"
     >
       <button
         class="popBtn"
-        v-show="current + 1 != 1"
-        @click="
-          () => {
-            if (current > 0) current -= 1;
-          }
-        "
+        v-show="current_popup_pointer + 1 > 1"
+        @click="previous_popup"
       >
         <span class="material-icons m-auto pop-select">arrow_back</span>
       </button>
-      <p class="md:text-2xl my-auto mx-1">{{ current + 1 }}</p>
+      <p class="md:text-2xl my-auto mx-1">{{ current_popup_pointer + 1 }}</p>
       <button
         class="popBtn"
-        v-show="current + 1 != popups.size"
-        @click="
-          () => {
-            if (current + 1 < popups.size) current += 1;
-          }
-        "
+        v-show="current_popup_pointer + 1 < popups.length"
+        @click="next_popup"
       >
         <span class="material-icons m-auto pop-select">arrow_forward</span>
       </button>
     </div>
     <KeepAlive>
       <component
-        :is="currentPopup.component"
-        v-bind="currentPopup.props"
+        :is="popups[current_popup_pointer].component"
+        v-bind="{
+          ...JSON.parse(popups[current_popup_pointer].props),
+          close: () => {
+            removePopup(popups[current_popup_pointer].stamp);
+          },
+        }"
       ></component>
     </KeepAlive>
   </div>

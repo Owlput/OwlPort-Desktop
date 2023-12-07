@@ -1,18 +1,21 @@
 <script setup>
-import SideNav from "./components/SideNav.vue";
-import PopUpHandler from "./components/PopUpHandler.vue";
-import Loopings from "./loopings/Loopings.vue";
-import OverlayHandler from "./components/OverlayHandler.vue";
+import SideBar from "./components/SideBar.vue";
+import PopUpHandler from "./components/PopUpHandler.vue"
 </script>
 
 <template>
-  <div class="main-grid h-[100vh]">
-    <SideNav></SideNav>
-    <div>
+  <div id="layout-grid">
+    <section><SideBar></SideBar></section>
+    <main>
       <RouterView></RouterView>
-    </div>
+    </main>
   </div>
-  <Loopings></Loopings>
   <PopUpHandler></PopUpHandler>
-  <OverlayHandler></OverlayHandler>
 </template>
+
+<style scoped>
+#layout-grid {
+  display: grid;
+  grid-template-columns: minmax(4rem, 5rem) auto;
+}
+</style>
