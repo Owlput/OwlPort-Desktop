@@ -32,7 +32,7 @@ const active = computed(() => {
       :style="active == 0 ? 'background-color:gainsboro;' : ''"
     >
       <span class="material-icons m-auto">home</span>
-      <p>Home</p>
+      <p class="select-none">Home</p>
     </button>
     <button
       class="navBtn"
@@ -64,14 +64,16 @@ const active = computed(() => {
       :style="active == 4 ? 'background-color:gainsboro;' : ''"
     >
       <span class="material-icons m-auto">settings</span>
-      <p>Settings</p>
+      <p class="">Settings</p>
     </button>
+    <button @click="()=>console.log($route.fullPath)">Show Full Path</button>
   </div>
 </template>
 <style scoped>
 .navBtn {
   height: 4rem;
   padding: 0.5rem 0px;
+  user-select: none;
 }
 .navBtn p {
   margin: 0px;

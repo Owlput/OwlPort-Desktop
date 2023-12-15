@@ -1,7 +1,16 @@
 extern crate owlnest;
+use libp2p::{Multiaddr, PeerId};
 use owlnest::net::p2p::{identity::IdentityUnion, protocols::identify, swarm, SwarmConfig};
+use serde::{Serialize,Deserialize};
 use tauri::async_runtime;
+use tauri::{
+    generate_handler,
+    plugin::{Builder, TauriPlugin},
+    Manager, Runtime,
+};
 
+pub mod messaging;
+// pub mod statistics;
 pub mod swarm_plugin;
 
 pub fn setup_peer() -> swarm::Manager {

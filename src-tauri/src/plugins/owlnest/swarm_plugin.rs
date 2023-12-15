@@ -1,29 +1,23 @@
-use owlnest::net::p2p::{swarm, Multiaddr, PeerId};
-use serde::{Deserialize, Serialize};
-use tauri::{
-    generate_handler,
-    plugin::{Builder, TauriPlugin},
-    Manager, Runtime,
-};
+use super::*;
+use owlnest::net::p2p::swarm;
+use tracing::error;
 
 struct State {
     pub swarm_manager: swarm::manager::Manager,
 }
 
-use super::*;
 pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
     Builder::new("swarm")
         .setup(|app| {
             let app_handle = app.clone();
             let mut listener = manager.event_subscriber().subscribe();
             async_runtime::spawn(async move {
-                loop {
-                    if let Ok(ev) = listener.recv().await {
-                        if let Ok(ev) = TryInto::<SwarmEventEmit>::try_into(ev.as_ref()) {
-                            let _ = app_handle.emit_all("swarm-event", ev);
-                        }
+                while let Ok(ev) = listener.recv().await {
+                    if let Ok(ev) = TryInto::<SwarmEventEmit>::try_into(ev.as_ref()) {
+                        let _ = app_handle.emit_all("swarm-event", ev);
                     }
                 }
+                error!("Swarm sender Dropped! Internal state corrupted!");
             });
             app.manage(State {
                 swarm_manager: manager,
@@ -41,6 +35,7 @@ async fn dial(state: tauri::State<'_, State>, dial_options: DialOptions) -> Resu
         .swarm_manager
         .swarm()
         .dial(&addr)
+        .await
         .map_err(|e| format!("{}", e))
 }
 

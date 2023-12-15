@@ -6,19 +6,13 @@ mod event;
 extern crate owlnest;
 extern crate tokio;
 
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
 fn main() {
     setup_logging();
     let peer_manager = plugins::owlnest::setup_peer();
     tauri::Builder::default()
         .plugin(plugins::owlnest::swarm_plugin::init(peer_manager.clone()))
+        .plugin(plugins::owlnest::messaging::init(peer_manager.clone()))
         .plugin(plugins::popup_test::init())
-        .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -52,5 +46,4 @@ fn setup_logging() {
         .with_filter(filter);
     let reg = tracing_subscriber::registry().with(layer);
     tracing::subscriber::set_global_default(reg).expect("you can only set global default once");
-    LogTracer::init().unwrap()
 }
