@@ -10,25 +10,28 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-row justify-evenly items-center">
+  <div class="flex flex-row justify-evenly items-center p-1">
     <button
+      class="p-2"
       @click="
         () => {
           $router.push('/connections/dial');
         }
       "
     >
-      Dial</button
-    >
+      Dial
+    </button>
     <button
+      class="p-2"
       @click="
         () => {
           $router.push('/connections/listen');
         }
       "
     >
-      Listen
-    </button><button
+      Listen</button
+    ><button
+      class="p-2"
       @click="
         () => {
           $router.push('/connections/connected');

@@ -23,9 +23,10 @@ onActivated(() => {
         <li v-for="chat in active_chat" class="min-w-[2rem]">
           <button
             class="w-full"
+            :style="chat == route.params.id?{ backgroundColor:'#ddd' }:{ }"
             @click="
               () => {
-                $router.push(`/protocols/messaging/${chat.peer_id}`);
+                $router.push(`/protocols/messaging/${chat}`);
               }
             "
           >
@@ -36,7 +37,7 @@ onActivated(() => {
     </section>
     <RouterView v-slot="{ Component }">
       <KeepAlive>
-        <component :is="Component" />
+        <component :is="Component" :key="$route.params.id"/>
       </KeepAlive>
     </RouterView>
   </div>

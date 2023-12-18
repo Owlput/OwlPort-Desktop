@@ -11,19 +11,21 @@ function push_history(message) {
 function send(target, msg) {
   invoke("plugin:owlnest-messaging|send_msg", { target, msg });
 }
+console.log("new chat window built")
 </script>
 
 <template>
   <div class="grid grid-cols-1 grid-rows-2 h-auto m-0" id="chat-container">
     <section>
       <KeepAlive>
-        <MessagingHistory :message_history="message_history" />
+        <MessagingHistory :message_history="message_history"/>
       </KeepAlive>
     </section>
     <Suspense>
       <MessagingTextbox
         :send_message="send"
         :push_history="push_history"
+        :clear_history="()=>message_history = []"
         :remote="$route.params.id"
       />
     </Suspense>
@@ -31,6 +33,6 @@ function send(target, msg) {
 </template>
 <style>
 #chat-container {
-  grid-template-rows: 70% 30%;
+  grid-template-rows: auto 12rem;
 }
 </style>

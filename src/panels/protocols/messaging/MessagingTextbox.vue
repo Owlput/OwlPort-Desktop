@@ -4,6 +4,7 @@ import { onUnmounted, ref } from "vue";
 const props = defineProps({
   send_message: Function,
   push_history: Function,
+  clear_history: Function,
   remote: String,
 });
 let message = ref("");
@@ -26,14 +27,12 @@ function send() {
 </script>
 <template>
   <section class="h-full w-full border-t">
-    <textarea v-model="message" class="resize-none border"></textarea>
-    <section class="flex justify-between px-8">
+    <textarea v-model="message" class="resize-none border w-full h-[9rem]"></textarea>
+    <section class="flex justify-between items-center px-8 select-none">
       <ul class="flex flex-row">
-        <li>A</li>
-        <li>B</li>
-        <li>C</li>
+        <li class="hover:bg-slate-100 active:bg-slate-300 text" @click="props.clear_history"><span class="material-icons m-auto">delete_forever</span></li>
       </ul>
-      <button class="w-[5rem] h-10" @click="send">Send</button>
+      <button class="w-[4rem] h-10" @click="send">Send</button>
     </section>
   </section>
 </template>
