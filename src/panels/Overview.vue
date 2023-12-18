@@ -1,4 +1,5 @@
 <script setup>
+import { invoke } from "@tauri-apps/api";
 import { ref } from "vue";
 
 const showConnectedPeers = ref(false);
@@ -8,26 +9,10 @@ const nestState = {
   address: "127.0.0.1:20001",
   latency: "1",
 };
-const connectedPeers = [
-  {
-    addr: "1.1.1.1:57354",
-    ver: "0.0.1",
-    latency: "50",
-    potocols: ["ping"],
-  },
-  {
-    addr: "1.1.1.1:57354",
-    ver: "0.0.1",
-    latency: "50",
-    potocols: ["ping"],
-  },
-  {
-    addr: "1.1.1.1:57354",
-    ver: "0.0.1",
-    latency: "50",
-    potocols: ["ping"],
-  },
-];
+const connectedPeers = ref({});
+invoke("plugin:swarm|list_connected").then((list) => {
+  connectedPeers.value = list;
+});
 const trustedPeers = [
   {
     peerId: "test",
@@ -55,14 +40,6 @@ function nestStateSwitch(state) {
 </script>
 <template>
   <div class="flex flex-wrap min-h-screen">
-    <div
-      class="wrapper flex flex-col"
-      :style="`background-color:${nestStateSwitch(nestState.status)}`"
-    >
-      <p>Nest Connected</p>
-      <p>{{ nestState.address }}</p>
-      <p>Latency: {{ nestState.latency }} ms</p>
-    </div>
     <div class="wrapper bg-slate-200 flex flex-col">
       <button
         @click="
@@ -73,19 +50,24 @@ function nestStateSwitch(state) {
       >
         Connected Peers
       </button>
-      <ol v-if="showConnectedPeers">
-        <li class="grid grid-cols-4">
-          <p>Address</p>
-          <p>Version</p>
-          <p>Latency</p>
+      <ol v-if="showConnectedPeers" class="text-autowrap">
+        <li class="grid grid-cols-3">
+          <p>Peer ID</p>
+          <p>App Protocol Set</p>
           <p>Supported Potocols</p>
         </li>
         <ul>
-          <li v-for="peer in connectedPeers" class="grid grid-cols-4">
-            <p>{{ peer.addr }}</p>
-            <p>{{ peer.ver }}</p>
-            <p>{{ peer.latency }}</p>
-            <p>{{ peer.potocols }}</p>
+          <li
+            v-for="peer in Object.keys(connectedPeers)"
+            class="grid grid-cols-3 mx-4 my-2 border border-slate-950"
+          >
+            <p>{{ peer }}</p>
+            <p>{{ JSON.stringify(connectedPeers[peer].protocol_version) }}</p>
+            <ul>
+              <li v-for="protocol in connectedPeers[peer].supported_protocols">
+                {{ protocol }}
+              </li>
+            </ul>
           </li>
         </ul>
       </ol>

@@ -23,6 +23,17 @@
     >
       mDNS
     </li>
+    <li
+      class="border shadow-sm p-2"
+      :style="$route.path == '/network/kad'?{backgroundColor:'#ddd'}:{}"
+      @click="
+        () => {
+          $router.push('/network/kad');
+        }
+      "
+    >
+      Kad
+    </li>
   </ul>
   <RouterView v-slot="{ Component }"
     ><component :is="Component"></component

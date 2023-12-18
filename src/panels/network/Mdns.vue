@@ -3,10 +3,8 @@ import { ref } from "vue";
 import { invoke } from "@tauri-apps/api";
 let discovered_nodes = ref({});
 invoke("plugin:owlnest-mdns|list_discovered").then((v) => {
-  console.log(v);
   discovered_nodes.value = v;
 });
-console.log(discovered_nodes);
 </script>
 
 <template>

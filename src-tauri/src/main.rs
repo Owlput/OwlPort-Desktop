@@ -13,6 +13,7 @@ fn main() {
         .plugin(plugins::owlnest::swarm_plugin::init(peer_manager.clone()))
         .plugin(plugins::owlnest::messaging::init(peer_manager.clone()))
         .plugin(plugins::owlnest::mdns::init(peer_manager.clone()))
+        .plugin(plugins::owlnest::kad::init(peer_manager.clone()))
         .plugin(plugins::popup_test::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

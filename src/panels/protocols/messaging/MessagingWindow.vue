@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onUnmounted } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
 import MessagingHistory from "./MessagingHistory.vue";
 import MessagingTextbox from "./MessagingTextbox.vue";
@@ -11,14 +11,14 @@ function push_history(message) {
 function send(target, msg) {
   invoke("plugin:owlnest-messaging|send_msg", { target, msg });
 }
-console.log("new chat window built")
+onUnmounted(()=>{console.log("messaging window destroyed")})
 </script>
 
 <template>
-  <div class="grid grid-cols-1 grid-rows-2 h-auto m-0" id="chat-container">
-    <section>
+  <div class="grid grid-cols-1 grid-rows-2 h-full m-0" id="chat-container">
+    <section class="h-full overflow-auto">
       <KeepAlive>
-        <MessagingHistory :message_history="message_history"/>
+        <MessagingHistory v-model:history="message_history" :remote="$route.params.id"/>
       </KeepAlive>
     </section>
     <Suspense>
@@ -33,6 +33,7 @@ console.log("new chat window built")
 </template>
 <style>
 #chat-container {
+  height: calc(100vh - 3.5rem);
   grid-template-rows: auto 12rem;
 }
 </style>

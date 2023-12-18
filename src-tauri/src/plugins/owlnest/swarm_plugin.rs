@@ -1,9 +1,41 @@
-use super::*;
-use owlnest::net::p2p::swarm;
-use tracing::error;
+use std::{collections::HashMap, num::NonZeroU32, sync::Arc};
 
+use super::*;
+use libp2p::identify::Info;
+use owlnest::net::p2p::swarm::{self, behaviour::BehaviourEvent};
+use tokio::sync::RwLock;
+use tracing::{error, warn};
+
+#[derive(Clone)]
 struct State {
     pub swarm_manager: swarm::manager::Manager,
+    pub connected_peers: Arc<RwLock<HashMap<PeerId, PeerInfo>>>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct PeerInfo {
+    supported_protocols: Vec<String>,
+    protocol_version: String,
+}
+impl Default for PeerInfo {
+    fn default() -> Self {
+        Self {
+            supported_protocols: Default::default(),
+            protocol_version: "UNKNOWN".into(),
+        }
+    }
+}
+impl From<&Info> for PeerInfo {
+    fn from(value: &Info) -> Self {
+        PeerInfo {
+            supported_protocols: value
+                .protocols
+                .iter()
+                .map(|protocol| protocol.to_string())
+                .collect(),
+            protocol_version: value.protocol_version.clone(),
+        }
+    }
 }
 
 pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
@@ -11,20 +43,78 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
         .setup(|app| {
             let app_handle = app.clone();
             let mut listener = manager.event_subscriber().subscribe();
+            let state = State {
+                swarm_manager: manager,
+                connected_peers: Arc::new(RwLock::new(HashMap::new())),
+            };
+            let state_clone = state.clone();
             async_runtime::spawn(async move {
                 while let Ok(ev) = listener.recv().await {
                     if let Ok(ev) = TryInto::<SwarmEventEmit>::try_into(ev.as_ref()) {
                         let _ = app_handle.emit_all("swarm-event", ev);
                     }
+                    use libp2p::swarm::SwarmEvent::*;
+                    match ev.as_ref() {
+                        ConnectionEstablished {
+                            peer_id,
+                            num_established,
+                            ..
+                        } => {
+                            if *num_established < NonZeroU32::new(2).unwrap() {
+                                let mut guard = state.connected_peers.write().await;
+                                guard.insert(*peer_id, Default::default());
+                            }
+                        }
+                        ConnectionClosed {
+                            peer_id,
+                            num_established,
+                            ..
+                        } => {
+                            if *num_established < 1 {
+                                let mut guard = state.connected_peers.write().await;
+                                guard.remove(peer_id);
+                            }
+                        }
+                        IncomingConnection { .. } => {}
+                        IncomingConnectionError { .. } => {}
+                        OutgoingConnectionError { .. } => {}
+                        NewListenAddr { .. } => {}
+                        ExpiredListenAddr { .. } => {}
+                        ListenerClosed { .. } => {}
+                        ListenerError { .. } => {}
+                        Dialing { .. } => {}
+                        NewExternalAddrCandidate { .. } => {}
+                        ExternalAddrConfirmed { .. } => {}
+                        ExternalAddrExpired { .. } => {}
+                        Behaviour(ev) => {
+                            if let BehaviourEvent::Identify(identify::OutEvent::Received {
+                                peer_id,
+                                info,
+                            }) = ev
+                            {
+                                let mut guard = state.connected_peers.write().await;
+                                if let Some(v) = guard.get_mut(peer_id) {
+                                    *v = info.into()
+                                } else {
+                                    error!("Behaviour event handled before ConnectionEstablished")
+                                }
+                            }
+                        }
+                        _ => warn!("New branch for SwarmEvent not covered"),
+                    }
                 }
                 error!("Swarm sender Dropped! Internal state corrupted!");
             });
-            app.manage(State {
-                swarm_manager: manager,
-            });
+            app.manage(state_clone);
             Ok(())
         })
-        .invoke_handler(generate_handler![dial,listen,get_local_peer_id])
+        .invoke_handler(generate_handler![
+            dial,
+            listen,
+            get_local_peer_id,
+            list_listeners,
+            list_connected
+        ])
         .build()
 }
 
@@ -49,10 +139,7 @@ async fn listen(
     state: tauri::State<'_, State>,
     listen_options: ListenOptions,
 ) -> Result<(), String> {
-    let addr = listen_options
-        .addr
-        .parse()
-        .map_err(|e| format!("{}", e))?;
+    let addr = listen_options.addr.parse().map_err(|e| format!("{}", e))?;
     state
         .swarm_manager
         .swarm()
@@ -63,8 +150,20 @@ async fn listen(
 }
 
 #[tauri::command]
-async fn get_local_peer_id(state: tauri::State<'_, State>)->Result<String,String>{
+async fn get_local_peer_id(state: tauri::State<'_, State>) -> Result<String, String> {
     Ok(state.swarm_manager.identity().get_peer_id().to_string())
+}
+
+#[tauri::command]
+async fn list_listeners(state: tauri::State<'_, State>) -> Result<Vec<Multiaddr>, String> {
+    Ok(state.swarm_manager.swarm().list_listeners().await)
+}
+
+#[tauri::command]
+async fn list_connected(
+    state: tauri::State<'_, State>,
+) -> Result<HashMap<PeerId, PeerInfo>, String> {
+    Ok(state.connected_peers.read().await.clone())
 }
 
 #[derive(Debug, Deserialize)]

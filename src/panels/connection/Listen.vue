@@ -9,7 +9,7 @@ function listen_on() {
     listenOptions: { addr: listen_addr.value },
   }).then((res) => {
     console.log(res);
-  });
+  }).catch((e)=>dispatchEvent(new CustomEvent("swarm-listen-failed",{detail:e})));
 }
 </script>
 
@@ -17,13 +17,15 @@ function listen_on() {
   <section class="p-8 shadow-md m-8 rounded-sm">
     <p class="text-left w-full my-2">Listen on an address</p>
     <div class="flex w-full">
-      <input class="h-12 w-[70%] p-2 text-xl" v-model="listen_addr" />
+      <input
+        class="h-12 w-[70%] p-2 text-xl"
+        v-model="listen_addr"
+        @submit="listen_on"
+      />
       <button @click="listen_on" class="mx-4 h-12 w-16">Listen</button>
     </div>
   </section>
   <section>
-    <Suspense>
-      <ListenEvenListener />
-    </Suspense>
+    <Suspense><ListenEvenListener /></Suspense>
   </section>
 </template>

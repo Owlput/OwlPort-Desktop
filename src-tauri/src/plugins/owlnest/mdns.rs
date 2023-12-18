@@ -1,4 +1,5 @@
 use owlnest::net::p2p::swarm::behaviour::BehaviourEvent;
+use tracing::info;
 use std::{
     collections::{HashMap, HashSet},
     sync::Arc,
@@ -23,16 +24,20 @@ pub fn init<R: Runtime>(manager: swarm::Manager) -> TauriPlugin<R> {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Mdns(ev)) = ev.as_ref() {
                         match ev {
                             libp2p::mdns::Event::Discovered(nodes) => {
+                                info!("Getting lock");
                                 let mut guard = state.node_list.write().await;
+                                info!("Got Lock");
                                 for entry in nodes {
                                     if let Some(v) = guard.get_mut(&entry.0) {
                                         v.insert(entry.1.clone());
                                     } else {
+                                        info!("Inserting {}",entry.1);
                                         let mut set = HashSet::new();
                                         set.insert(entry.1.clone());
                                         guard.insert(entry.0, set);
                                     }
                                 }
+                                info!("Insertion Completed")
                             }
                             libp2p::mdns::Event::Expired(nodes) => {
                                 let mut guard = state.node_list.write().await;
@@ -46,17 +51,6 @@ pub fn init<R: Runtime>(manager: swarm::Manager) -> TauriPlugin<R> {
                                     
                                 }
                             }
-                        }
-                    }
-                    if let swarm::SwarmEvent::ConnectionClosed {
-                        peer_id,
-                        num_established,
-                        ..
-                    } = ev.as_ref()
-                    {
-                        let mut guard = state.node_list.write().await;
-                        if *num_established < 1 {
-                            guard.remove(peer_id);
                         }
                     }
                 }

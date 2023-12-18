@@ -8,7 +8,7 @@ import PopUpHandler from "./components/PopUpHandler.vue";
     <section class="w-[5rem]"><SideBar></SideBar></section>
     <main>
       <RouterView v-slot="{ Component }">
-        <KeepAlive>
+        <KeepAlive exclude="Overview">
           <component :is="Component" />
         </KeepAlive>
       </RouterView>
@@ -24,7 +24,8 @@ import PopUpHandler from "./components/PopUpHandler.vue";
   height: 100vh;
   width: 100vw;
 }
-main{
+main {
   width: calc(100vw - 5rem);
+  height: 100vh;
 }
 </style>
