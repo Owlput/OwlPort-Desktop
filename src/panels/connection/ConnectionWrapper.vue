@@ -19,7 +19,16 @@ onUnmounted(() => {
       "
     >
       Dial</button
-    ><button
+    >
+    <button
+      @click="
+        () => {
+          $router.push('/connections/listen');
+        }
+      "
+    >
+      Listen
+    </button><button
       @click="
         () => {
           $router.push('/connections/connected');
@@ -31,7 +40,7 @@ onUnmounted(() => {
   </div>
   <div class="w-[100%]">
     <RouterView v-slot="{ Component }">
-      <KeepAlive include="ConnectedPeers,Dial">
+      <KeepAlive>
         <component :is="Component" />
       </KeepAlive>
     </RouterView>

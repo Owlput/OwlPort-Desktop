@@ -5,8 +5,8 @@ import PopUpHandler from "./components/PopUpHandler.vue";
 
 <template>
   <div id="layout-grid">
-    <section><SideBar></SideBar></section>
-    <main class="w-full">
+    <section class="w-[5rem]"><SideBar></SideBar></section>
+    <main>
       <RouterView v-slot="{ Component }">
         <KeepAlive>
           <component :is="Component" />
@@ -20,8 +20,11 @@ import PopUpHandler from "./components/PopUpHandler.vue";
 <style scoped>
 #layout-grid {
   display: grid;
-  grid-template-columns: minmax(4rem, 5rem) auto;
+  grid-template-columns: 5rem auto;
   height: 100vh;
   width: 100vw;
+}
+main{
+  width: calc(100vw - 5rem);
 }
 </style>

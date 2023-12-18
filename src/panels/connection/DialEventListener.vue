@@ -1,11 +1,10 @@
 <script setup>
 import { onUnmounted ,ref} from 'vue';
 import {listen} from "@tauri-apps/api/event"
-defineOptions({name:"SwarmEventListener"});
+defineOptions({name:"DialEventListener"});
 
 let dial_events = ref([]);
 let handle = await listen("swarm-event", (ev) => {
-  console.log(ev);
   dial_events.value.push(ev);
 });
 onUnmounted(()=>{

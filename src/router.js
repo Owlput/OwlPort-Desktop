@@ -1,6 +1,7 @@
 import settingsRoutes from "./panels/settings/routes";
 import protocolRoutes from "./panels/protocols/routes";
-import connectionsRoutes from "./panels/connection/routes"
+import connectionsRoutes from "./panels/connection/routes";
+import networkRoutes from "./panels/network/routes";
 import { createRouter, createWebHashHistory } from "vue-router";
 
 const routes = [
@@ -15,7 +16,7 @@ const routes = [
   protocolRoutes,
   connectionsRoutes,
   settingsRoutes,
-
+  networkRoutes,
   // Always leave this as last one,
   // but you can also remove it
   // {

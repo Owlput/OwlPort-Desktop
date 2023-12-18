@@ -22,7 +22,7 @@ const active = computed(() => {
 });
 </script>
 <template>
-  <div class="w-[100%] flex flex-col bg-white shadow-md">
+  <div class="w-fit flex flex-col bg-white shadow-md">
     <div class="mx-auto">
       <p>v0.0.0</p>
     </div>
@@ -41,6 +41,14 @@ const active = computed(() => {
     >
       <span class="material-icons m-auto">dashboard</span>
       <p>Overview</p>
+    </button>
+    <button
+      class="navBtn"
+      @click="router.push('/network')"
+      :style="active == 4 ? 'background-color:gainsboro;' : ''"
+    >
+      <span class="material-icons m-auto">hub</span>
+      <p class="">Network</p>
     </button>
     <button
       class="navBtn"

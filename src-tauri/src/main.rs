@@ -12,6 +12,7 @@ fn main() {
     tauri::Builder::default()
         .plugin(plugins::owlnest::swarm_plugin::init(peer_manager.clone()))
         .plugin(plugins::owlnest::messaging::init(peer_manager.clone()))
+        .plugin(plugins::owlnest::mdns::init(peer_manager.clone()))
         .plugin(plugins::popup_test::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -39,7 +40,7 @@ fn setup_logging() {
         .with_target("libp2p_noise", Level::WARN)
         .with_target("libp2p_mdns", Level::DEBUG)
         .with_target("hickory_proto", Level::WARN)
-        .with_target("", Level::TRACE);
+        .with_target("", Level::INFO);
     let layer = tracing_subscriber::fmt::Layer::default()
         .with_ansi(false)
         .with_writer(Mutex::new(log_file_handle))

@@ -1,6 +1,5 @@
 <script setup>
 import { ref } from "vue";
-import KeyAndCert from "../utilities/KeyAndCert.vue";
 const pathToCertificate = ref("certs/");
 const kacUtil = ref(false);
 function toggleKacUtil(){

@@ -11,6 +11,10 @@ export default {
         component: () => import("./Dial.vue"),
       },
       {
+        path: "listen",
+        component: ()=> import("./Listen.vue")
+      },
+      {
         path: "",
         component: () => import("./Dial.vue"),
       },

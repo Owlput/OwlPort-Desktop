@@ -1,12 +1,16 @@
 <script setup>
-import { onUnmounted, ref } from "vue";
+import { onUnmounted,onActivated, ref } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
-import SwarmEventListener from "./SwarmEventListener.vue";
+import DialEventListener from "./DialEventListener.vue";
+import { useRoute } from "vue-router";
+let route = useRoute();
 defineOptions({
-  name:"Dial"
-})
-let peer_to_dial = ref("/ip4/127.0.0.1/tcp/10086");
-console.log("Dial created")
+  name: "Dial",
+});
+let peer_to_dial = ref(
+  route.query?.dial ? route.query.dial : "/ip4/127.0.0.1/tcp/10086"
+);
+console.log("Dial created");
 
 async function dial() {
   invoke("plugin:swarm|dial", {
@@ -14,8 +18,11 @@ async function dial() {
   }).then((v) => {});
 }
 onUnmounted(() => {
-  console.log("Dial destroyed")
+  console.log("Dial destroyed");
 });
+onActivated(()=>{
+  if (route.query?.dial )peer_to_dial.value = route.query.dial
+})
 </script>
 
 <template>
@@ -28,7 +35,7 @@ onUnmounted(() => {
   </section>
   <section>
     <Suspense>
-      <SwarmEventListener />
+      <DialEventListener />
     </Suspense>
   </section>
 </template>

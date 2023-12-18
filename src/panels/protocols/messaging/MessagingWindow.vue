@@ -9,9 +9,7 @@ function push_history(message) {
   message_history.value.push(message);
 }
 function send(target, msg) {
-  invoke("plugin:owlnest-messaging|send_msg", 
-    {target,msg}
-  );
+  invoke("plugin:owlnest-messaging|send_msg", { target, msg });
 }
 </script>
 

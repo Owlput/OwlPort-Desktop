@@ -83,3 +83,7 @@ button:active{
 .navBtn:hover {
   background-color: gainsboro;
 }
+
+.text-autowrap{
+  overflow-wrap:break-word;
+}

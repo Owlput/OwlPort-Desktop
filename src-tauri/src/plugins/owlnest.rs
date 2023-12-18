@@ -12,6 +12,7 @@ use tauri::{
 pub mod messaging;
 // pub mod statistics;
 pub mod swarm_plugin;
+pub mod mdns;
 
 pub fn setup_peer() -> swarm::Manager {
     let identity = IdentityUnion::generate();

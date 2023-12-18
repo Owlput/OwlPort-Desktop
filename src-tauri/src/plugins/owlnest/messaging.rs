@@ -1,48 +1,101 @@
-use std::{collections::HashMap, sync::Arc};
-use owlnest::net::p2p::protocols::messaging::OutEvent;
 use super::*;
+use owlnest::net::p2p::protocols::messaging::OutEvent;
 use owlnest::net::p2p::{
     protocols::messaging::Message,
     swarm::{self, behaviour::BehaviourEvent},
 };
+use std::{collections::HashMap, sync::Arc};
 use tokio::sync::RwLock;
-use tracing::info;
+use tracing::{info, warn};
 
 #[derive(Clone)]
-struct State{
-    pub manager:swarm::Manager,
-    pub connected_peers:Arc<RwLock<HashMap<PeerId,(bool,bool)>>>
+struct State {
+    pub manager: swarm::Manager,
+    pub connected_peers: Arc<RwLock<HashMap<PeerId, (bool, bool)>>>,
 }
 
 pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
-    let state = State{
-        manager:manager.clone(),
-        connected_peers:Arc::new(RwLock::new(HashMap::new()))
+    let state = State {
+        manager: manager.clone(),
+        connected_peers: Arc::new(RwLock::new(HashMap::new())),
     };
     Builder::new("owlnest-messaging")
-        .setup(|app| {
+        .setup(move |app| {
             let app_handle = app.clone();
-            let mut listener = manager.event_subscriber().subscribe();
-            let state = state.clone();
+            let state_clone = state.clone();
             async_runtime::spawn(async move {
+                let mut listener = manager.event_subscriber().subscribe();
                 while let Ok(ev) = listener.recv().await {
-                    if let Ok(ev) = TryInto::<MessagingEmit>::try_into(ev.as_ref()) {
-                        let _ = app_handle.emit_all("owlnest-messaging-emit", ev);
+                    if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Messaging(ev)) = ev.as_ref()
+                    {
+                        match ev {
+                            OutEvent::IncomingMessage { .. } => {
+                                if let Err(e) = app_handle.emit_all::<MessagingEmit>(
+                                    "owlnest-messaging-emit",
+                                    ev.try_into().unwrap(),
+                                ) {
+                                    warn!("{:?}", e)
+                                };
+                            }
+                            OutEvent::InboundNegotiated(peer_id) => {
+                                let mut guard = state.connected_peers.write().await;
+                                if let Some(v) = guard.get_mut(peer_id) {
+                                    v.0 = true;
+                                } else {
+                                    guard.insert(*peer_id, (true, false));
+
+                                    if let Err(e) = app_handle.emit_all::<MessagingEmit>(
+                                        "owlnest-messaging-emit",
+                                        ev.try_into().unwrap(),
+                                    ) {
+                                        warn!("{:?}", e)
+                                    };
+                                }
+
+                                drop(guard)
+                            }
+                            OutEvent::OutboundNegotiated(peer_id) => {
+                                let mut guard = state.connected_peers.write().await;
+                                if let Some(v) = guard.get_mut(peer_id) {
+                                    v.1 = true;
+                                } else {
+                                    guard.insert(*peer_id, (false, true));
+                                }
+                                if let Err(e) = app_handle.emit_all::<MessagingEmit>(
+                                    "owlnest-messaging-emit",
+                                    ev.try_into().unwrap(),
+                                ) {
+                                    warn!("{:?}", e)
+                                };
+
+                                drop(guard)
+                            }
+                            _ => {}
+                        }
                         continue;
                     }
-                    
+                    if let swarm::SwarmEvent::ConnectionClosed {
+                        peer_id,
+                        num_established,
+                        ..
+                    } = ev.as_ref()
+                    {
+                        if *num_established == 0 {
+                            state.connected_peers.write().await.remove(peer_id);
+                        }
+                    }
                 }
             });
-            app.manage(state);
+            app.manage(state_clone);
             Ok(())
         })
-        .invoke_handler(generate_handler![send_msg])
+        .invoke_handler(generate_handler![send_msg, setup])
         .build()
 }
 
 #[tauri::command]
 async fn send_msg(
-    state: tauri::State<'_, swarm::Manager>,
+    state: tauri::State<'_, State>,
     target: String,
     msg: String,
 ) -> Result<(), String> {
@@ -53,11 +106,12 @@ async fn send_msg(
             return Err("Invalid PeerId".into());
         }
     };
-    match state
+    let manager = &state.manager;
+    match manager
         .messaging()
         .send_message(
             peer_id,
-            Message::new(state.identity().get_peer_id(), peer_id, msg),
+            Message::new(manager.identity().get_peer_id(), peer_id, msg),
         )
         .await
     {
@@ -66,31 +120,32 @@ async fn send_msg(
     }
 }
 
+#[tauri::command]
+async fn setup(state: tauri::State<'_, State>) -> Result<HashMap<PeerId,(bool,bool)>, String> {
+    let map = state.connected_peers.read().await.clone();
+    Ok(map)
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub enum MessagingEmit {
     IncomingMessage { from: PeerId, msg: Message },
+    InboundNegotiated { peer: PeerId },
+    OutboundNegotiated { peer: PeerId },
 }
-impl TryFrom<&> for MessagingEmit {
+impl TryFrom<&OutEvent> for MessagingEmit {
     type Error = ();
-    fn try_from(value: &swarm::SwarmEvent) -> Result<Self, Self::Error> {
+    fn try_from(value: &OutEvent) -> Result<Self, Self::Error> {
+        use OutEvent::*;
         let ev = match value {
-            swarm::SwarmEvent::Behaviour(BehaviourEvent::Messaging(ev)) => {
-                match ev {
-                    owlnest::net::p2p::protocols::messaging::OutEvent::IncomingMessage {
-                        from,
-                        msg,
-                    } => Self::IncomingMessage {
-                        from: from.clone(),
-                        msg: msg.clone(),
-                    },
-                    // owlnest::net::p2p::protocols::messaging::OutEvent::SendResult(_, _) => todo!(),
-                    _ => return Err(()),
-                }
-            }
-            _ => {
-                return Err(());
-            }
+            IncomingMessage { from, msg } => Self::IncomingMessage {
+                from: from.clone(),
+                msg: msg.clone(),
+            },
+            OutboundNegotiated(peer) => Self::OutboundNegotiated { peer: *peer },
+            InboundNegotiated(peer) => Self::InboundNegotiated { peer: *peer },
+            _ => return Err(()),
         };
+
         Ok(ev)
     }
 }

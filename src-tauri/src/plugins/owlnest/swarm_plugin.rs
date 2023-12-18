@@ -24,7 +24,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
             });
             Ok(())
         })
-        .invoke_handler(generate_handler![dial])
+        .invoke_handler(generate_handler![dial,listen,get_local_peer_id])
         .build()
 }
 
@@ -42,6 +42,34 @@ async fn dial(state: tauri::State<'_, State>, dial_options: DialOptions) -> Resu
 #[derive(Debug, Deserialize)]
 pub struct DialOptions {
     pub address: String,
+}
+
+#[tauri::command]
+async fn listen(
+    state: tauri::State<'_, State>,
+    listen_options: ListenOptions,
+) -> Result<(), String> {
+    let addr = listen_options
+        .addr
+        .parse()
+        .map_err(|e| format!("{}", e))?;
+    state
+        .swarm_manager
+        .swarm()
+        .listen(&addr)
+        .await
+        .map_err(|e| format!("{}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn get_local_peer_id(state: tauri::State<'_, State>)->Result<String,String>{
+    Ok(state.swarm_manager.identity().get_peer_id().to_string())
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ListenOptions {
+    pub addr: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
