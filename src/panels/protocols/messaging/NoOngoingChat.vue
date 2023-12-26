@@ -7,10 +7,10 @@ invoke("plugin:owlnest-messaging|setup").then(
 );
 </script>
 <template>
-  <section>
-    <p>No ongoing chat.</p>
+  <section class="text-center">
+    <p class="mt-[20%] text-3xl">Feel free to chat</p>
     <p>Below are some peers you may start a chat with</p>
-    <ul class="mx-2 border-x border-b">
+    <ul class="mx-2 border">
       <li v-if="Object.keys(connected_peers).length < 1" class="p-2">
         No peer supports this protocol
       </li>

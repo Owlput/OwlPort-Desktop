@@ -105,9 +105,6 @@ button:active{
   height: 2.5rem;
   border: solid #ddd 1px;
 }
-.tab-l-container:has( + .tab-m-container){
-  margin:0px 5%
-}
 
 .tab-m-container{
   display: flex;
@@ -139,4 +136,18 @@ button:active{
 .single-input > button{
   height: 3rem;
   margin-left: 1rem;
+}
+
+.event-list{
+  padding: 0px 2rem;
+}
+.event-list > li{
+  width: 100%;
+  border-radius: 0.25rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+}
+
+.item-evenly-sized > *{
+  flex: 1;
 }

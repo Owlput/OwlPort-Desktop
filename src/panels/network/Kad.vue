@@ -5,7 +5,7 @@ import { RouterView } from "vue-router";
   <ul class="tab-m-container">
     <li
       @click="() => $router.push('/network/kad/activity')"
-      :style="$route.path.length == 12 || $route.path.slice(0,21) == '/network/kad/activity' ? { backgroundColor: '#ddd' } : {}"
+      :style="$route.path == '/network/kad/activity' ? { backgroundColor: '#ddd' } : {}"
     >
       <p>Activity</p>
     </li>
@@ -17,7 +17,7 @@ import { RouterView } from "vue-router";
     </li>
     <li
       @click="() => $router.push('/network/kad/bootstrap')"
-      :style="$route.path == '/network' ? { backgroundColor: '#ddd' } : {}"
+      :style="$route.path == '/network/kad/bootstrap' ? { backgroundColor: '#ddd' } : {}"
     >
       <p>Bootstrap</p>
     </li>

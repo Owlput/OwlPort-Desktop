@@ -3,11 +3,7 @@
   <ul class="tab-l-container">
     <li
       :style="$route.path == '/network' ? { backgroundColor: '#ddd' } : {}"
-      @click="
-        () => {
-          $router.push('/network');
-        }
-      "
+      @click="() => $router.push('/network')"
     >
       <p>Overview</p>
     </li>
@@ -17,11 +13,7 @@
           ? { backgroundColor: '#ddd' }
           : {}
       "
-      @click="
-        () => {
-          $router.push('/network/mdns');
-        }
-      "
+      @click="() => $router.push('/network/mdns')"
     >
       mDNS
     </li>
@@ -31,39 +23,27 @@
           ? { backgroundColor: '#ddd' }
           : {}
       "
-      @click="
-        () => {
-          $router.push('/network/kad');
-        }
-      "
+      @click="() => $router.push('/network/kad')"
     >
       Kad
     </li>
     <li
       :style="
-        $route.path.slice(0, 12) == '/network/autonat'
+        $route.path.slice(0, 16) == '/network/autonat'
           ? { backgroundColor: '#ddd' }
           : {}
       "
-      @click="
-        () => {
-          $router.push('/network/autonat');
-        }
-      "
+      @click="() => $router.push('/network/autonat')"
     >
       AutoNAT
     </li>
     <li
       :style="
-        $route.path.slice(0, 12) == '/network/upnp'
+        $route.path.slice(0, 13) == '/network/upnp'
           ? { backgroundColor: '#ddd' }
           : {}
       "
-      @click="
-        () => {
-          $router.push('/network/upnp');
-        }
-      "
+      @click="() => $router.push('/network/upnp')"
     >
       UPnP
     </li>

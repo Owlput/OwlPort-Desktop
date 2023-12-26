@@ -51,7 +51,9 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
             async_runtime::spawn(async move {
                 while let Ok(ev) = listener.recv().await {
                     if let Ok(ev) = TryInto::<SwarmEventEmit>::try_into(ev.as_ref()) {
-                        app_handle.emit_all("swarm-emit", ev).expect("event emit to succeed");
+                        app_handle
+                            .emit_all("swarm-emit", ev)
+                            .expect("event emit to succeed");
                     }
                     use libp2p::swarm::SwarmEvent::*;
                     match ev.as_ref() {
@@ -210,6 +212,9 @@ pub enum SwarmEventEmit {
         /// The expired address.
         address: Multiaddr,
     },
+    OutgoingConnectionError {
+        error: serde_types::DialError,
+    },
 }
 impl TryFrom<&swarm::SwarmEvent> for SwarmEventEmit {
     type Error = ();
@@ -253,6 +258,9 @@ impl TryFrom<&swarm::SwarmEvent> for SwarmEventEmit {
             SwarmEvent::ExpiredListenAddr { address, .. } => Self::ExpiredListenAddr {
                 address: address.clone(),
             },
+            SwarmEvent::OutgoingConnectionError { error, .. } => Self::OutgoingConnectionError {
+                error: error.into(),
+            },
             _ => return Err(()),
         };
         Ok(ev)
@@ -261,7 +269,9 @@ impl TryFrom<&swarm::SwarmEvent> for SwarmEventEmit {
 
 #[allow(unused)]
 mod serde_types {
-    use libp2p::core::Endpoint;
+    use std::f32::consts::E;
+
+    use libp2p::{core::Endpoint, PeerId, TransportError};
     use owlnest::net::p2p::{swarm, Multiaddr};
     use serde::{Deserialize, Serialize};
 
@@ -300,6 +310,69 @@ mod serde_types {
                     local_addr: local_addr.clone(),
                     send_back_addr: send_back_addr.clone(),
                 },
+            }
+        }
+    }
+
+    /// Possible errors when trying to establish or upgrade an outbound connection.
+    #[derive(Debug, Serialize, Clone)]
+    pub enum DialError {
+        /// The peer identity obtained on the connection matches the local peer.
+        LocalPeerId {
+            endpoint: ConnectedPoint,
+        },
+        /// No addresses have been provided by [`NetworkBehaviour::handle_pending_outbound_connection`] and [`DialOpts`].
+        /// Which basically never happens.
+        NoAddresses,
+        /// The provided [`dial_opts::PeerCondition`] evaluated to false and thus
+        /// the dial was aborted.
+        DialPeerConditionFalse,
+        /// Pending connection attempt has been aborted.
+        Aborted,
+        /// The peer identity obtained on the connection did not match the one that was expected.
+        WrongPeerId {
+            obtained: PeerId,
+            endpoint: ConnectedPoint,
+        },
+        Denied(String),
+        /// An error occurred while negotiating the transport protocol(s) on a connection.
+        Transport(Vec<(Multiaddr, String)>),
+    }
+
+    impl From<&libp2p::swarm::DialError> for DialError {
+        fn from(value: &libp2p::swarm::DialError) -> Self {
+            match value {
+                libp2p::swarm::DialError::LocalPeerId { endpoint } => Self::LocalPeerId {
+                    endpoint: endpoint.into(),
+                },
+                libp2p::swarm::DialError::NoAddresses => Self::NoAddresses,
+                libp2p::swarm::DialError::DialPeerConditionFalse(_) => Self::DialPeerConditionFalse,
+                libp2p::swarm::DialError::Aborted => Self::Aborted,
+                libp2p::swarm::DialError::WrongPeerId { obtained, endpoint } => Self::WrongPeerId {
+                    obtained: *obtained,
+                    endpoint: endpoint.into(),
+                },
+                libp2p::swarm::DialError::Denied { cause } => Self::Denied(cause.to_string()),
+                libp2p::swarm::DialError::Transport(e) => {
+                    let closure =
+                        |err: &(Multiaddr, libp2p::TransportError<std::io::Error>)| match &err.1 {
+                            TransportError::MultiaddrNotSupported(addr) => {
+                                (addr.clone(), "Multiaddr Not Supported".to_string())
+                            }
+                            TransportError::Other(e) => {
+                                let err_string = format!("{:?}",value);
+                                let regex =
+                                    regex::Regex::new("kind: [^,]*, m").expect("valid regex");
+                                let matched = regex
+                                    .find(&err_string)
+                                    .expect("found at least one match")
+                                    .as_str();
+                                (err.0.clone(), matched[6..matched.len() - 3].to_owned())
+                            }
+                        };
+                    let info = e.iter().map(closure).collect::<Vec<(Multiaddr, String)>>();
+                    Self::Transport(info)
+                }
             }
         }
     }

@@ -1,5 +1,5 @@
 <script setup>
-import { watch, ref, onActivated, onUnmounted } from "vue";
+import { watch, ref, onActivated, onDeactivated, onUnmounted } from "vue";
 const props = defineProps({
   history: Array,
   remote: String,
@@ -13,11 +13,10 @@ watch(props.history, () => {
     return;
   }
   let element = document.getElementById(`chat${props.remote}`);
-  console.log(element.scrollHeight - element.scrollTop);
   if (element.scrollHeight - element.scrollTop - 300 < 200) {
     setTimeout(
       () => document.getElementById("last-message")?.scrollIntoView(),
-      5
+      1
     );
   } else {
     show_scroll_bottom.value = true;
@@ -28,11 +27,12 @@ watch(remaining_pos, () => {
     show_scroll_bottom.value = false;
   }
 });
-addEventListener("wheel", detect_scroll);
-onUnmounted(() => {
+
+onDeactivated(() => {
   removeEventListener("wheel", detect_scroll);
 });
 onActivated(() => {
+  addEventListener("wheel", detect_scroll);
   document.getElementById("last-message")?.scrollIntoView();
 });
 function detect_scroll(ev) {
@@ -47,10 +47,7 @@ function scroll_to_bottom() {
 
 <template>
   <div class="relative h-full">
-    <section
-      class="w-full h-full overflow-auto"
-      :id="`chat${props.remote}`"
-    >
+    <section class="w-full h-full overflow-auto" :id="`chat${props.remote}`">
       <ul class="flex flex-col px-4 py-2">
         <template v-for="message in props.history">
           <li

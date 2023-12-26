@@ -2,19 +2,21 @@
 import { invoke } from "@tauri-apps/api";
 import { ref } from "vue";
 const address_to_probe = ref("");
-const nat_status = ref({confidence:0,status:"Unknown"})
-function get_nat_status(){
-  invoke("plugin:owlnest-autonat|get_nat_status").then((result)=>console.log(result))
+const nat_status = ref({ confidence: 0, status: "Unknown" });
+function get_nat_status() {
+  invoke("plugin:owlnest-autonat|get_nat_status").then(
+    (result) => (nat_status.value = result)
+  );
 }
-get_nat_status()
+get_nat_status();
 function probe() {
   if (!address_to_probe) {
     return;
   }
-  invoke("plugin:owlnest-autonat|probe", {address:address_to_probe.value}).catch((e) =>
-    console.log(e)
-  );
-  setTimeout(get_nat_status,50)
+  invoke("plugin:owlnest-autonat|probe", {
+    address: address_to_probe.value,
+  }).catch((e) => console.log(e));
+  setTimeout(get_nat_status, 500);
 }
 </script>
 

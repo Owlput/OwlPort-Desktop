@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
+import {writeText} from "@tauri-apps/api/clipboard"
 
 const listen_addr = ref("/ip4/0.0.0.0/tcp/0");
 const active_listeners = ref([]);
@@ -28,15 +29,16 @@ function listen_on() {
       <button @click="listen_on">Listen</button>
     </div>
   </section>
-  <section class="px-8 py-4">
-    <div class="flex justify-between">
-      <p class="text-lg px-4 w-fit">Active Listeners:</p>
-      <button class="float-right h-[26px]" @click="update_listener_list"><span class="material-icons">refresh</span></button>
+  <section>
+    <div class="flex justify-between items-center">
+      <p class="text-lg px-8 py-2 w-fit">Active Listeners:</p>
+      <button class="float-right h-[26px] mr-8" @click="update_listener_list"><span class="material-icons">refresh</span></button>
     </div>
-    <ul>
+    <ul style="height: calc(100vh - 13rem);overflow: auto;" class="event-list">
       <li
         v-for="addr in active_listeners"
         class="my-1 shadow-md rounded-sm w-full p-2 bg-green-100"
+        @dblclick="writeText(addr)"
       >
         <p>{{ addr }}</p>
       </li>

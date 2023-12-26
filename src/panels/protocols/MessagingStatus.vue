@@ -20,21 +20,28 @@ function toggleExpand() {
 <template>
   <section>
     <section
-      class="flex flex-row justify-between items-center border px-4 py-2"
+      class="flex flex-row justify-between items-center border px-4 py-2 item-evenly-sized"
       @click="toggleExpand"
     >
-      <p class="hover:cursor-pointer" @click="()=>$router.push('/protocols/messaging')">Messaging</p>
+      <p
+        class="hover:cursor-pointer"
+        @click="() => $router.push('/protocols/messaging')"
+      >
+        Messaging
+      </p>
       <p>
         Number of reachable peers: {{ Object.keys(connected_peers).length }}
       </p>
-      <span
-        class="material-icons"
-        style="transform: rotate(90deg)"
-        v-if="expand"
-      >
-        chevron_right
-      </span>
-      <span v-else class="material-icons"> chevron_right </span>
+      <div>
+        <span
+          class="material-icons float-right"
+          style="transform: rotate(90deg)"
+          v-if="expand"
+        >
+          chevron_right
+        </span>
+        <span v-else class="material-icons float-right"> chevron_right </span>
+      </div>
     </section>
     <ul v-if="expand" class="mx-2 border-x border-b">
       <li v-if="Object.keys(connected_peers).length < 1" class="p-2">

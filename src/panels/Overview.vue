@@ -9,10 +9,7 @@ const nestState = {
   address: "127.0.0.1:20001",
   latency: "1",
 };
-const connectedPeers = ref({});
-invoke("plugin:owlnest-swarm|list_connected").then((list) => {
-  connectedPeers.value = list;
-});
+
 const trustedPeers = [
   {
     peerId: "test",
@@ -40,38 +37,6 @@ function nestStateSwitch(state) {
 </script>
 <template>
   <div class="flex flex-wrap min-h-screen">
-    <div class="wrapper bg-slate-200 flex flex-col">
-      <button
-        @click="
-          () => {
-            showConnectedPeers = !showConnectedPeers;
-          }
-        "
-      >
-        Connected Peers
-      </button>
-      <ol v-if="showConnectedPeers" class="text-autowrap">
-        <li class="grid grid-cols-3">
-          <p>Peer ID</p>
-          <p>App Protocol Set</p>
-          <p>Supported Potocols</p>
-        </li>
-        <ul>
-          <li
-            v-for="peer in Object.keys(connectedPeers)"
-            class="grid grid-cols-3 mx-4 my-2 border border-slate-950"
-          >
-            <p>{{ peer }}</p>
-            <p>{{ JSON.stringify(connectedPeers[peer].protocol_version) }}</p>
-            <ul>
-              <li v-for="protocol in connectedPeers[peer].supported_protocols">
-                {{ protocol }}
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </ol>
-    </div>
     <div class="wrapper bg-slate-200 flex flex-col">
       <button
         @click="

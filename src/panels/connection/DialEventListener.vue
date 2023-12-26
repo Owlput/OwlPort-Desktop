@@ -1,25 +1,31 @@
 <script setup>
-import { onUnmounted, ref } from "vue";
+import { onActivated, onDeactivated, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 defineOptions({ name: "DialEventListener" });
 
 let dial_events = ref([]);
-let handle = await listen("swarm-emit", (ev) => {
-  dial_events.value.push(ev.payload);
+let listener_handle = ref(() => {});
+
+onActivated(() => {
+  addEventListener("swarm-dial-failed", handleFailedDial);
+  listen("swarm-emit", (ev) => {
+    dial_events.value.push(ev.payload);
+    console.log(ev);
+  }).then((handle) => (listener_handle.value = handle));
 });
-addEventListener("swarm-dial-failed", handleFailedDial);
-onUnmounted(() => {
-  handle();
+onDeactivated(() => {
+  listener_handle.value();
   removeEventListener("swarm-listen-failed", handleFailedDial);
 });
+
 function handleFailedDial(ev) {
   dial_events.value.push({ dialFailed: { reason: ev.detail } });
 }
 </script>
 <template>
-  <ul class="shadow-md rounded-md min-h-8">
+  <ul class="event-list" style="height: calc(100vh - 12.5rem - 1px);">
     <template v-for="event in dial_events">
-      <li v-if="event.ConnectionEstablished" class="bg-green-300 p-2">
+      <li v-if="event.ConnectionEstablished" class="bg-green-300">
         <p>
           Successfully dialed peer:
           {{ event.ConnectionEstablished.peer_id }}
@@ -30,7 +36,7 @@ function handleFailedDial(ev) {
           }}"
         </p>
       </li>
-      <li v-if="event.ConnectionClosed" class="bg-yellow-300 p-2">
+      <li v-else-if="event.ConnectionClosed" class="bg-yellow-300">
         <p>Connection to peer {{ event.ConnectionClosed.peer_id }} closed</p>
         <p>
           on remote address "{{
@@ -39,7 +45,7 @@ function handleFailedDial(ev) {
         </p>
         <p>Caused by {{ event.ConnectionClosed.cause }}</p>
       </li>
-      <li v-if="event.Dialing" class="bg-blue-300 p-2">
+      <li v-else-if="event.Dialing" class="bg-blue-300">
         <p>
           Dialing peer
           {{
@@ -47,8 +53,17 @@ function handleFailedDial(ev) {
           }}
         </p>
       </li>
-      <li v-if="event.dialFailed" class="bg-red-300 p-2">
+      <li v-else-if="event.dialFailed" class="bg-red-300">
         <p>{{ event.dialFailed.reason }}</p>
+      </li>
+      <li v-else-if="event.OutgoingConnectionError" class="bg-red-300">
+        <p>
+          Connection to address
+          {{ event.OutgoingConnectionError.error?.Transport?.[0][0] }} failed
+        </p>
+        <p>
+          Reason: {{ event.OutgoingConnectionError.error?.Transport?.[0][1] }}
+        </p>
       </li>
     </template>
   </ul>

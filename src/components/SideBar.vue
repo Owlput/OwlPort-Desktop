@@ -1,24 +1,6 @@
 <script setup>
-import { computed } from "vue";
-import { useRouter } from "vue-router";
-
-let router = useRouter();
 const props = defineProps({
   showDesp: Boolean,
-});
-const active = computed(() => {
-  switch (router.currentRoute.value.path.split("/")[1]) {
-    case "":
-      return 0;
-    case "overview":
-      return 1;
-    case "connections":
-      return 2;
-    case "apps":
-      return 3;
-    case "settings":
-      return 4;
-  }
 });
 </script>
 <template>
@@ -28,48 +10,48 @@ const active = computed(() => {
     </div>
     <button
       class="navBtn"
-      @click="router.push('/')"
-      :style="active == 0 ? 'background-color:gainsboro;' : ''"
+      @click="$router.push('/')"
+      :style="$route.path.length === 1 && $route.path.slice(0,1) === '/' ? 'background-color:gainsboro;' : ''"
     >
       <span class="material-icons m-auto">home</span>
       <p class="select-none">Home</p>
     </button>
     <button
       class="navBtn"
-      @click="router.push('/overview')"
-      :style="active == 1 ? 'background-color:gainsboro;' : ''"
+      @click="$router.push('/overview')"
+      :style="$route.path.slice(0,9) === '/overview' ? 'background-color:gainsboro;' : ''"
     >
       <span class="material-icons m-auto">dashboard</span>
       <p>Overview</p>
     </button>
     <button
       class="navBtn"
-      @click="router.push('/network')"
-      :style="active == 4 ? 'background-color:gainsboro;' : ''"
+      @click="$router.push('/network')"
+      :style="$route.path.slice(0,8) === '/network' ? 'background-color:gainsboro;' : ''"
     >
       <span class="material-icons m-auto">hub</span>
       <p class="">Network</p>
     </button>
     <button
       class="navBtn"
-      @click="router.push('/connections')"
-      :style="active == 2 ? 'background-color:gainsboro;' : ''"
+      @click="$router.push('/connections')"
+      :style="$route.path.slice(0,12) === '/connections' ? 'background-color:gainsboro;' : ''"
     >
       <span class="material-icons m-auto">lan</span>
       <p>Conns</p>
     </button>
     <button
       class="navBtn"
-      @click="router.push('/protocols')"
-      :style="active == 3 ? 'background-color:gainsboro;' : ''"
+      @click="$router.push('/protocols')"
+      :style="$route.path.slice(0,10) === '/protocols' ? 'background-color:gainsboro;' : ''"
     >
       <span class="material-icons m-auto">apps</span>
       <p>Apps</p>
     </button>
     <button
       class="navBtn"
-      @click="router.push('/settings')"
-      :style="active == 4 ? 'background-color:gainsboro;' : ''"
+      @click="$router.push('/settings')"
+      :style="$route.path.slice(0,9) === '/settings' ? 'background-color:gainsboro;' : ''"
     >
       <span class="material-icons m-auto">settings</span>
       <p class="">Settings</p>

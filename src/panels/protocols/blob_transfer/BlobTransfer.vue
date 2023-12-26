@@ -2,14 +2,22 @@
 import { invoke } from "@tauri-apps/api";
 import { listen } from "@tauri-apps/api/event";
 import { ref, onUnmounted } from "vue";
-const peer_to_send = ref("");
+import { useRoute } from "vue-router";
+const route = useRoute();
+const peer_to_send = ref(route.query?.remote ? route.query.remote : "");
 const file_path = ref("");
 const pending_send = ref([]);
 const pending_recv = ref([]);
-const listener = ref(() => {});
+const file_drop_listener = ref(() => {});
+const incoming_file_listener = ref(()=>{});
 listen("tauri://file-drop", (ev) => {
   handle_drop(ev);
-}).then((handle) => (listener.value = handle));
+}).then((handle) => (file_drop_listener.value = handle));
+listen("owlnest-blob-transfer-emit", (ev) => {
+  if (ev.payload?.IncomingFile || ev.payload?.CancelledSend ||ev.payload?.CancelledRecv){
+    update_pending()
+  }
+}).then((handle) => (incoming_file_listener.value = handle));
 function update_pending() {
   setTimeout(() => {
     invoke("plugin:owlnest-blob-transfer|list_pending_send").then(
@@ -18,7 +26,7 @@ function update_pending() {
     invoke("plugin:owlnest-blob-transfer|list_pending_recv").then(
       (v) => (pending_recv.value = v)
     );
-  },50);
+  }, 50);
 }
 update_pending();
 function send() {
@@ -29,11 +37,12 @@ function send() {
     peer: peer_to_send.value,
     filePath: file_path.value,
   });
-  update_pending()
+  update_pending();
 }
 
 onUnmounted(() => {
-  listener.value();
+  file_drop_listener.value();
+  incoming_file_listener.value();
 });
 function handle_drop(ev) {
   file_path.value = ev.payload[0].replaceAll("\\", "/");
