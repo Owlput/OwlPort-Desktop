@@ -80,23 +80,23 @@ function handle_drop(ev) {
           <button
             @click="
               () =>
-                invoke('plugin:owlnest-blob-transfer:recv', {
+                invoke('plugin:owlnest-blob-transfer|recv', {
                   recvId: item.local_recv_id,
-                  filePath: 'C:/Users/Public',
-                }).then(update_pending)
-            "
-          >
-            Cancel
-          </button>
-          <button
-            @click="
-              () =>
-                invoke('plugin:owlnest-blob-transfer:cancel_recv', {
-                  sendId: item.local_recv_id,
+                  fileName: item.file_name,
                 }).then(update_pending)
             "
           >
             Accept
+          </button>
+          <button
+            @click="
+              () =>
+                invoke('plugin:owlnest-blob-transfer|cancel_recv', {
+                  recvId: item.local_recv_id,
+                }).then(update_pending)
+            "
+          >
+            Cancel
           </button>
         </li>
       </ul>

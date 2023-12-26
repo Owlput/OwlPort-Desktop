@@ -111,8 +111,9 @@ async fn send(
 async fn recv(
     state: tauri::State<'_, State>,
     recv_id: u64,
-    file_path: String,
+    file_name: String,
 ) -> Result<(), String> {
+    let file_path = format!("C:/Users/{}/Downloads/{}",whoami::username(),file_name);
     match state
         .manager
         .blob_transfer()

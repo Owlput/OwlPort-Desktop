@@ -303,19 +303,4 @@ mod serde_types {
             }
         }
     }
-
-    #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-    pub struct ConnectionId(u64);
-    impl From<&owlnest::net::p2p::swarm::ConnectionId> for ConnectionId {
-        fn from(value: &owlnest::net::p2p::swarm::ConnectionId) -> Self {
-            Self(value.into_inner().try_into().unwrap())
-        }
-    }
-    #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-    pub struct ListenerId(u64);
-    impl From<&libp2p::core::transport::ListenerId> for ListenerId {
-        fn from(value: &libp2p::core::transport::ListenerId) -> Self {
-            Self(value.into_inner().try_into().unwrap())
-        }
-    }
 }
