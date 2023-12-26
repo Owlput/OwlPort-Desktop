@@ -1,20 +1,22 @@
 <script setup></script>
 <template>
-  <ul class="flex felx-row justify-evenly items-center">
+  <ul class="tab-l-container">
     <li
-      class="boorder shadow-sm p-2"
-      :style="$route.path == '/network'?{backgroundColor:'#ddd'}:{}"
+      :style="$route.path == '/network' ? { backgroundColor: '#ddd' } : {}"
       @click="
         () => {
           $router.push('/network');
         }
       "
     >
-      Overview
+      <p>Overview</p>
     </li>
     <li
-      class="border shadow-sm p-2"
-      :style="$route.path == '/network/mdns'?{backgroundColor:'#ddd'}:{}"
+      :style="
+        $route.path.slice(0, 13) == '/network/mdns'
+          ? { backgroundColor: '#ddd' }
+          : {}
+      "
       @click="
         () => {
           $router.push('/network/mdns');
@@ -24,8 +26,11 @@
       mDNS
     </li>
     <li
-      class="border shadow-sm p-2"
-      :style="$route.path == '/network/kad'?{backgroundColor:'#ddd'}:{}"
+      :style="
+        $route.path.slice(0, 12) == '/network/kad'
+          ? { backgroundColor: '#ddd' }
+          : {}
+      "
       @click="
         () => {
           $router.push('/network/kad');
@@ -33,6 +38,34 @@
       "
     >
       Kad
+    </li>
+    <li
+      :style="
+        $route.path.slice(0, 12) == '/network/autonat'
+          ? { backgroundColor: '#ddd' }
+          : {}
+      "
+      @click="
+        () => {
+          $router.push('/network/autonat');
+        }
+      "
+    >
+      AutoNAT
+    </li>
+    <li
+      :style="
+        $route.path.slice(0, 12) == '/network/upnp'
+          ? { backgroundColor: '#ddd' }
+          : {}
+      "
+      @click="
+        () => {
+          $router.push('/network/upnp');
+        }
+      "
+    >
+      UPnP
     </li>
   </ul>
   <RouterView v-slot="{ Component }"

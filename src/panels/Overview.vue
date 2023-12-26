@@ -10,7 +10,7 @@ const nestState = {
   latency: "1",
 };
 const connectedPeers = ref({});
-invoke("plugin:swarm|list_connected").then((list) => {
+invoke("plugin:owlnest-swarm|list_connected").then((list) => {
   connectedPeers.value = list;
 });
 const trustedPeers = [
@@ -88,7 +88,7 @@ function nestStateSwitch(state) {
           <p>Operations</p>
         </li>
         <ul>
-          <li v-for="peer in trustedPeers" class="grid grid-cols-2 m-1 p-1">
+          <li v-for="peer in trustedPeers" class="grid grid-cols-2 p-1">
             <button
               class="navBtn hover:ring-1 active:brightness-[0.9]"
               :style="`background-color:${nestStateSwitch(peer.state)}`"

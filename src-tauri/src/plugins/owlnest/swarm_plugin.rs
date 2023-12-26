@@ -39,7 +39,7 @@ impl From<&Info> for PeerInfo {
 }
 
 pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
-    Builder::new("swarm")
+    Builder::new("owlnest-swarm")
         .setup(|app| {
             let app_handle = app.clone();
             let mut listener = manager.event_subscriber().subscribe();
@@ -51,7 +51,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
             async_runtime::spawn(async move {
                 while let Ok(ev) = listener.recv().await {
                     if let Ok(ev) = TryInto::<SwarmEventEmit>::try_into(ev.as_ref()) {
-                        let _ = app_handle.emit_all("swarm-event", ev);
+                        app_handle.emit_all("swarm-emit", ev).expect("event emit to succeed");
                     }
                     use libp2p::swarm::SwarmEvent::*;
                     match ev.as_ref() {

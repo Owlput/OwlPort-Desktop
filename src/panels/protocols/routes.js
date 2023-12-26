@@ -1,9 +1,12 @@
-import messaging_routes from './messaging/routes'
-export default {
+import messaging_routes from "./messaging/routes";
+export default [
+  {
     path: "/protocols",
     component: () => import("./ProtocolOverview.vue"),
-    children: [
-      messaging_routes,
-    ],
-  };
-  
+  },
+  messaging_routes,
+  {
+    path: "/protocols/blob-transfer",
+    component: () => import("./blob_transfer/BlobTransfer.vue"),
+  },
+];

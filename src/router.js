@@ -13,7 +13,7 @@ const routes = [
     path: "/overview",
     component: () => import("./panels/Overview.vue"),
   },
-  protocolRoutes,
+  ...protocolRoutes,
   connectionsRoutes,
   settingsRoutes,
   networkRoutes,

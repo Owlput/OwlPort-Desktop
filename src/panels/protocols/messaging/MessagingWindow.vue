@@ -15,7 +15,7 @@ onUnmounted(()=>{console.log("messaging window destroyed")})
 </script>
 
 <template>
-  <div class="grid grid-cols-1 grid-rows-2 h-full m-0" id="chat-container">
+  <div class="grid grid-cols-1 grid-rows-2 h-full" id="chat-container">
     <section class="h-full overflow-auto">
       <KeepAlive>
         <MessagingHistory v-model:history="message_history" :remote="$route.params.id"/>

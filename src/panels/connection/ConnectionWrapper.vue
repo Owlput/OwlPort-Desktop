@@ -10,8 +10,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-row justify-evenly items-center p-1">
-    <button
+  <ul class="tab-l-container">
+    <li
       class="p-2"
       @click="
         () => {
@@ -20,8 +20,8 @@ onUnmounted(() => {
       "
     >
       Dial
-    </button>
-    <button
+      </li>
+    <li
       class="p-2"
       @click="
         () => {
@@ -29,8 +29,8 @@ onUnmounted(() => {
         }
       "
     >
-      Listen</button
-    ><button
+      Listen</li
+    ><li
       class="p-2"
       @click="
         () => {
@@ -39,9 +39,9 @@ onUnmounted(() => {
       "
     >
       Connected
-    </button>
-  </div>
-  <div class="w-[100%]">
+    </li>
+  </ul>
+  <div class="w-[100%]" style="height: calc(100vh - 3rem);">
     <RouterView v-slot="{ Component }">
       <KeepAlive>
         <component :is="Component" />

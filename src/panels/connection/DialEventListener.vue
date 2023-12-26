@@ -4,7 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 defineOptions({ name: "DialEventListener" });
 
 let dial_events = ref([]);
-let handle = await listen("swarm-event", (ev) => {
+let handle = await listen("swarm-emit", (ev) => {
   dial_events.value.push(ev.payload);
 });
 addEventListener("swarm-dial-failed", handleFailedDial);
@@ -17,7 +17,7 @@ function handleFailedDial(ev) {
 }
 </script>
 <template>
-  <ul class="shadow-md rounded-md min-h-8 my-4">
+  <ul class="shadow-md rounded-md min-h-8">
     <template v-for="event in dial_events">
       <li v-if="event.ConnectionEstablished" class="bg-green-300 p-2">
         <p>

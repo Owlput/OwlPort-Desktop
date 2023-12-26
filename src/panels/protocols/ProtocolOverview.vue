@@ -1,6 +1,7 @@
 <script setup>
 import { onUnmounted } from "vue";
-import Messaging from "./Messaging.vue";
+import MessagingStatus from "./MessagingStatus.vue";
+import BlobTransferStatus from "./BlobTransferStatus.vue";
 onUnmounted(() => {
   console.log("ProtocolOverview destroyed");
 });
@@ -11,11 +12,11 @@ onUnmounted(() => {
     class="w-full h-full p-4 select-none"
     v-show="$route.path == '/protocols'"
   >
-    <KeepAlive>
-      <Suspense><Messaging /></Suspense>
-    </KeepAlive>
+    <li class="p-2">
+      <KeepAlive>
+        <Suspense><MessagingStatus /></Suspense>
+      </KeepAlive>
+    </li>
+    <li class="p-2"><BlobTransferStatus /></li>
   </ul>
-  <RouterView v-slot="{ Component }"
-    ><KeepAlive><component :is="Component" /></KeepAlive
-  ></RouterView>
 </template>

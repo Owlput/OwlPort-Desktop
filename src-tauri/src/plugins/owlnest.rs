@@ -14,6 +14,9 @@ pub mod messaging;
 pub mod swarm_plugin;
 pub mod mdns;
 pub mod kad;
+pub mod blob_transfer;
+pub mod upnp;
+pub mod autonat;
 
 pub fn setup_peer() -> swarm::Manager {
     let identity = read_ident();

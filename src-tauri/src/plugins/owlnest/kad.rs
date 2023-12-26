@@ -21,8 +21,14 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
             });
             Ok(())
         })
-        .invoke_handler(generate_handler![insert_default, bootstrap])
+        .invoke_handler(generate_handler![
+            insert_default,
+            bootstrap,
+            insert_node,
+            lookup
+        ])
         .build()
+        
 }
 
 #[tauri::command]
@@ -69,6 +75,28 @@ async fn insert_default(state: tauri::State<'_, swarm::Manager>) -> Result<(), S
 async fn bootstrap(state: tauri::State<'_, swarm::Manager>) -> Result<(), String> {
     let _ = state.kad().bootstrap().await;
     Ok(())
+}
+
+#[tauri::command]
+async fn insert_node(
+    state: tauri::State<'_, swarm::Manager>,
+    peer_id: String,
+    address: String,
+) -> Result<String, String> {
+    let peer_id = PeerId::from_str(&peer_id).map_err(|e| e.to_string())?;
+    let address = Multiaddr::from_str(&address).map_err(|e| e.to_string())?;
+    let routing_update = state.kad().insert_node(peer_id, address).await;
+    Ok(format!("{:?}", routing_update))
+}
+
+#[tauri::command]
+async fn lookup(
+    state: tauri::State<'_, swarm::Manager>,
+    peer_id: String,
+) -> Result<String, String> {
+    let peer_id = PeerId::from_str(&peer_id).map_err(|e| e.to_string())?;
+    let result = state.kad().lookup(peer_id).await;
+    Ok(format!("{:?}", result))
 }
 
 #[derive(Debug, Clone, Serialize)]

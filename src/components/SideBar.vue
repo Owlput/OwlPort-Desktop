@@ -22,7 +22,7 @@ const active = computed(() => {
 });
 </script>
 <template>
-  <div class="w-fit flex flex-col bg-white shadow-md">
+  <div class="w-fit flex flex-col bg-white shadow-md h-[100vh]">
     <div class="mx-auto">
       <p>v0.0.0</p>
     </div>

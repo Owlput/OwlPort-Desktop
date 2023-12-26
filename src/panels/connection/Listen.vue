@@ -1,31 +1,45 @@
 <script setup>
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
-import ListenEvenListener from "./ListenEvenListener.vue";
 
-let listen_addr = ref("/ip4/127.0.0.1/tcp/0");
+const listen_addr = ref("/ip4/0.0.0.0/tcp/0");
+const active_listeners = ref([]);
+function update_listener_list(){
+  invoke("plugin:owlnest-swarm|list_listeners").then((result) => {
+  active_listeners.value = result;
+});
+}
+update_listener_list();
 function listen_on() {
-  invoke("plugin:swarm|listen", {
+  invoke("plugin:owlnest-swarm|listen", {
     listenOptions: { addr: listen_addr.value },
-  }).then((res) => {
-    console.log(res);
-  }).catch((e)=>dispatchEvent(new CustomEvent("swarm-listen-failed",{detail:e})));
+  }).catch((e) =>
+    dispatchEvent(new CustomEvent("swarm-listen-failed", { detail: e }))
+  );
+  setTimeout(update_listener_list,100)
 }
 </script>
 
 <template>
-  <section class="p-8 shadow-md m-8 rounded-sm">
-    <p class="text-left w-full my-2">Listen on an address</p>
-    <div class="flex w-full">
-      <input
-        class="h-12 w-[70%] p-2 text-xl"
-        v-model="listen_addr"
-        @submit="listen_on"
-      />
-      <button @click="listen_on" class="mx-4 h-12 w-16">Listen</button>
+  <section class="px-8 py-4 border-b">
+    <p class="text-left w-full px-4 text-lg">Listen on an address</p>
+    <div class="single-input">
+      <input class="text-xl" v-model="listen_addr" @submit="listen_on" />
+      <button @click="listen_on">Listen</button>
     </div>
   </section>
-  <section>
-    <Suspense><ListenEvenListener /></Suspense>
+  <section class="px-8 py-4">
+    <div class="flex justify-between">
+      <p class="text-lg px-4 w-fit">Active Listeners:</p>
+      <button class="float-right h-[26px]" @click="update_listener_list"><span class="material-icons">refresh</span></button>
+    </div>
+    <ul>
+      <li
+        v-for="addr in active_listeners"
+        class="my-1 shadow-md rounded-sm w-full p-2 bg-green-100"
+      >
+        <p>{{ addr }}</p>
+      </li>
+    </ul>
   </section>
 </template>

@@ -5,7 +5,7 @@ defineOptions({
   name: "Messaging",
 });
 let route = useRoute();
-let active_chat = ref([route.params.id]);
+let active_chat = ref(route.params.id?[route.params.id]:[]);
 onActivated(() => {
   if (!active_chat.value.includes(route.params.id) && route.params.id) {
     active_chat.value.push(route.params.id);
