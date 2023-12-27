@@ -1,9 +1,7 @@
-use std::str::FromStr;
-
 use super::*;
-
 use autonat::OutEvent;
-use owlnest::net::p2p::{protocols::autonat, swarm::behaviour::BehaviourEvent};
+use owlnest::net::p2p::protocols::autonat;
+use std::str::FromStr;
 
 pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-autonat")

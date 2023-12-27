@@ -1,7 +1,9 @@
 extern crate owlnest;
 use libp2p::{Multiaddr, PeerId};
 use owlnest::net::p2p::{identity::IdentityUnion, protocols::identify, swarm, SwarmConfig};
-use serde::{Serialize,Deserialize};
+use owlnest::net::p2p::swarm::behaviour::BehaviourEvent;
+use serde::{Deserialize, Serialize};
+use std::sync::{Arc, RwLock};
 use tauri::async_runtime;
 use tauri::{
     generate_handler,
@@ -11,12 +13,13 @@ use tauri::{
 
 pub mod messaging;
 // pub mod statistics;
-pub mod swarm_plugin;
-pub mod mdns;
-pub mod kad;
-pub mod blob_transfer;
-pub mod upnp;
 pub mod autonat;
+pub mod blob_transfer;
+pub mod kad;
+pub mod mdns;
+pub mod relay;
+pub mod swarm_plugin;
+pub mod upnp;
 
 pub fn setup_peer() -> swarm::Manager {
     let identity = read_ident();
@@ -31,15 +34,15 @@ pub fn setup_peer() -> swarm::Manager {
     swarm::Builder::new(swarm_config).build(16, async_runtime::handle().inner().clone())
 }
 
-fn read_ident()->IdentityUnion{
+fn read_ident() -> IdentityUnion {
     use tracing::warn;
-    match IdentityUnion::from_file_protobuf_encoding("./id.libp2pkeypair"){
+    match IdentityUnion::from_file_protobuf_encoding("./id.libp2pkeypair") {
         Ok(ident) => ident,
         Err(e) => {
-            warn!("Failed to read keypair: {:?}",e);
+            warn!("Failed to read keypair: {:?}", e);
             let ident = IdentityUnion::generate();
             ident.export_keypair(".", "id").unwrap();
             ident
-        },
+        }
     }
 }

@@ -1,8 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod plugins;
 mod event;
+mod plugins;
 extern crate owlnest;
 extern crate tokio;
 
@@ -17,6 +17,7 @@ fn main() {
         .plugin(plugins::owlnest::blob_transfer::init(peer_manager.clone()))
         .plugin(plugins::owlnest::autonat::init(peer_manager.clone()))
         .plugin(plugins::owlnest::upnp::init(peer_manager.clone()))
+        .plugin(plugins::owlnest::relay::init(peer_manager.clone()))
         .plugin(plugins::popup_test::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -24,8 +25,8 @@ fn main() {
 
 fn setup_logging() {
     use owlnest::logging_prelude::*;
-    use tracing_subscriber::Layer;
     use std::sync::Mutex;
+    use tracing_subscriber::Layer;
     let time = chrono::Local::now().timestamp_micros();
     let log_file_handle = match std::fs::create_dir("./logs") {
         Ok(_) => std::fs::File::create(format!("./logs/{}.log", time)).unwrap(),

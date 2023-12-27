@@ -1,9 +1,7 @@
-use std::{collections::HashMap, num::NonZeroU32, sync::Arc};
-
 use super::*;
 use libp2p::identify::Info;
 use owlnest::net::p2p::swarm::{self, behaviour::BehaviourEvent};
-use tokio::sync::RwLock;
+use std::{collections::HashMap, num::NonZeroU32};
 use tracing::{error, warn};
 
 #[derive(Clone)]
@@ -56,6 +54,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                             .expect("event emit to succeed");
                     }
                     use libp2p::swarm::SwarmEvent::*;
+                    let mut guard = state.connected_peers.write().expect("Not poisoned");
                     match ev.as_ref() {
                         ConnectionEstablished {
                             peer_id,
@@ -63,7 +62,6 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                             ..
                         } => {
                             if *num_established < NonZeroU32::new(2).unwrap() {
-                                let mut guard = state.connected_peers.write().await;
                                 guard.insert(*peer_id, Default::default());
                             }
                         }
@@ -73,7 +71,6 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                             ..
                         } => {
                             if *num_established < 1 {
-                                let mut guard = state.connected_peers.write().await;
                                 guard.remove(peer_id);
                             }
                         }
@@ -94,7 +91,6 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                                 info,
                             }) = ev
                             {
-                                let mut guard = state.connected_peers.write().await;
                                 if let Some(v) = guard.get_mut(peer_id) {
                                     *v = info.into()
                                 } else {
@@ -104,6 +100,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                         }
                         _ => warn!("New branch for SwarmEvent not covered"),
                     }
+                    drop(guard)
                 }
                 error!("Swarm sender Dropped! Internal state corrupted!");
             });
@@ -165,7 +162,7 @@ async fn list_listeners(state: tauri::State<'_, State>) -> Result<Vec<Multiaddr>
 async fn list_connected(
     state: tauri::State<'_, State>,
 ) -> Result<HashMap<PeerId, PeerInfo>, String> {
-    Ok(state.connected_peers.read().await.clone())
+    Ok(state.connected_peers.read().expect("Not poisoned").clone())
 }
 
 #[derive(Debug, Deserialize)]
@@ -360,7 +357,7 @@ mod serde_types {
                                 (addr.clone(), "Multiaddr Not Supported".to_string())
                             }
                             TransportError::Other(e) => {
-                                let err_string = format!("{:?}",value);
+                                let err_string = format!("{:?}", value);
                                 let regex =
                                     regex::Regex::new("kind: [^,]*, m").expect("valid regex");
                                 let matched = regex

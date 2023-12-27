@@ -1,11 +1,7 @@
 use super::*;
+use owlnest::net::p2p::protocols::messaging::Message;
 use owlnest::net::p2p::protocols::messaging::OutEvent;
-use owlnest::net::p2p::{
-    protocols::messaging::Message,
-    swarm::{self, behaviour::BehaviourEvent},
-};
-use std::{collections::HashMap, sync::Arc};
-use tokio::sync::RwLock;
+use std::collections::HashMap;
 use tracing::{info, warn};
 
 #[derive(Clone)]
@@ -38,7 +34,8 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                                 };
                             }
                             OutEvent::InboundNegotiated(peer_id) => {
-                                let mut guard = state.connected_peers.write().await;
+                                let mut guard =
+                                    state.connected_peers.write().expect("Not poisoned");
                                 if let Some(v) = guard.get_mut(peer_id) {
                                     v.0 = true;
                                 } else {
@@ -55,7 +52,8 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                                 drop(guard)
                             }
                             OutEvent::OutboundNegotiated(peer_id) => {
-                                let mut guard = state.connected_peers.write().await;
+                                let mut guard =
+                                    state.connected_peers.write().expect("Not poisoned");
                                 if let Some(v) = guard.get_mut(peer_id) {
                                     v.1 = true;
                                 } else {
@@ -81,7 +79,11 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                     } = ev.as_ref()
                     {
                         if *num_established == 0 {
-                            state.connected_peers.write().await.remove(peer_id);
+                            state
+                                .connected_peers
+                                .write()
+                                .expect("Not poisoned")
+                                .remove(peer_id);
                         }
                     }
                 }
@@ -121,8 +123,8 @@ async fn send_msg(
 }
 
 #[tauri::command]
-async fn setup(state: tauri::State<'_, State>) -> Result<HashMap<PeerId,(bool,bool)>, String> {
-    let map = state.connected_peers.read().await.clone();
+async fn setup(state: tauri::State<'_, State>) -> Result<HashMap<PeerId, (bool, bool)>, String> {
+    let map = state.connected_peers.read().expect("Not poisoned").clone();
     Ok(map)
 }
 

@@ -1,8 +1,6 @@
-use std::str::FromStr;
-
-use owlnest::net::p2p::{protocols::kad::OutEvent, swarm::behaviour::BehaviourEvent};
-
 use super::*;
+use owlnest::net::p2p::protocols::kad::OutEvent;
+use std::str::FromStr;
 
 pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-kad")
@@ -28,7 +26,6 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
             lookup
         ])
         .build()
-        
 }
 
 #[tauri::command]

@@ -1,30 +1,34 @@
 <script setup>
-import { watch, ref, onActivated, onDeactivated, onUnmounted } from "vue";
+import {
+  watch,
+  ref,
+  onActivated,
+  onDeactivated,
+  onUnmounted,
+  computed,
+  nextTick,
+} from "vue";
 const props = defineProps({
   history: Array,
   remote: String,
 });
-let will_scroll = ref(true);
 let remaining_pos = ref(0);
 let show_scroll_bottom = ref(false);
 defineEmits(["update:history"]);
-watch(props.history, () => {
-  if (!will_scroll) {
-    return;
-  }
-  let element = document.getElementById(`chat${props.remote}`);
-  if (element.scrollHeight - element.scrollTop - 300 < 200) {
-    setTimeout(
-      () => document.getElementById("last-message")?.scrollIntoView(),
-      1
-    );
-  } else {
-    show_scroll_bottom.value = true;
-  }
+
+const history = computed({
+  get() {
+    return props.history;
+  },
+  set(value) {
+    emit("update:history", value);
+  },
 });
 watch(remaining_pos, () => {
   if (remaining_pos.value < 120) {
     show_scroll_bottom.value = false;
+  } else{
+    show_scroll_bottom.value = true;
   }
 });
 
@@ -49,7 +53,7 @@ function scroll_to_bottom() {
   <div class="relative h-full">
     <section class="w-full h-full overflow-auto" :id="`chat${props.remote}`">
       <ul class="flex flex-col px-4 py-2">
-        <template v-for="message in props.history">
+        <template v-for="message in history">
           <li
             v-if="message.from"
             class="message-box bg-gray-300 self-start whitespace-pre-wrap"

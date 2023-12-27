@@ -1,8 +1,6 @@
 use super::*;
 use owlnest::net::p2p::protocols::blob_transfer::{OutEvent, RecvInfo, SendInfo};
-use owlnest::net::p2p::swarm::behaviour::BehaviourEvent;
 use std::collections::HashSet;
-use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use std::{fs, str::FromStr};
 
@@ -113,7 +111,7 @@ async fn recv(
     recv_id: u64,
     file_name: String,
 ) -> Result<(), String> {
-    let file_path = format!("C:/Users/{}/Downloads/{}",whoami::username(),file_name);
+    let file_path = format!("C:/Users/{}/Downloads/{}", whoami::username(), file_name);
     match state
         .manager
         .blob_transfer()
