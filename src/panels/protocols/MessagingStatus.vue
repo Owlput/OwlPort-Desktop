@@ -21,7 +21,6 @@ function toggleExpand() {
   <section>
     <section
       class="flex flex-row justify-between items-center border px-4 py-2 item-evenly-sized"
-      @click="toggleExpand"
     >
       <p
         class="hover:cursor-pointer"
@@ -32,7 +31,7 @@ function toggleExpand() {
       <p>
         Number of reachable peers: {{ Object.keys(connected_peers).length }}
       </p>
-      <div>
+      <div class="hover:cursor-pointer" @click="toggleExpand">
         <span
           class="material-icons float-right"
           style="transform: rotate(90deg)"

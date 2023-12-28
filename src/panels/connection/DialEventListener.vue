@@ -1,19 +1,19 @@
 <script setup>
-import { onActivated, onDeactivated, ref } from "vue";
+import { onActivated, onDeactivated, onUnmounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 defineOptions({ name: "DialEventListener" });
 
 let dial_events = ref([]);
 let listener_handle = ref(() => {});
 
-onActivated(() => {
+
   addEventListener("swarm-dial-failed", handleFailedDial);
   listen("swarm-emit", (ev) => {
     dial_events.value.push(ev.payload);
-    console.log(ev);
+    console.log(dial_events.value)
   }).then((handle) => (listener_handle.value = handle));
-});
-onDeactivated(() => {
+
+onUnmounted(() => {
   listener_handle.value();
   removeEventListener("swarm-listen-failed", handleFailedDial);
 });
@@ -23,7 +23,7 @@ function handleFailedDial(ev) {
 }
 </script>
 <template>
-  <ul class="event-list" style="height: calc(100vh - 12.5rem - 1px);">
+  <ul class="event-list text-autowrap" style="height: calc(100% - 2.75rem);">
     <template v-for="event in dial_events">
       <li v-if="event.ConnectionEstablished" class="bg-green-300">
         <p>

@@ -1,5 +1,5 @@
 <script setup>
-import { onActivated, ref } from "vue";
+import {  ref } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
 import DialEventListener from "./DialEventListener.vue";
 import { useRoute } from "vue-router";
@@ -11,15 +11,15 @@ let peer_to_dial = ref(
   route.query?.dial ? route.query.dial : ""
 );
 function dial() {
+  if (!peer_to_dial.value){
+    return;
+  }
   invoke("plugin:owlnest-swarm|dial", {
     dialOptions: { address: peer_to_dial.value },
   }).catch((e) =>
     dispatchEvent(new CustomEvent("swarm-dial-failed", { detail: e }))
   );
 }
-onActivated(() => {
-  if (route.query?.dial) peer_to_dial.value = route.query.dial;
-});
 </script>
 
 <template>
@@ -30,10 +30,8 @@ onActivated(() => {
       <button @click="dial">Dial</button>
     </div>
   </section>
-  <section>
+  <section style="height: calc(100vh - 9.25rem - 1px);">
     <p class="px-8 py-2 text-lg">Events:</p>
-    <Suspense>
       <DialEventListener />
-    </Suspense>
   </section>
 </template>

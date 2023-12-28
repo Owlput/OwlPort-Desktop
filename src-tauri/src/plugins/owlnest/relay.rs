@@ -1,7 +1,6 @@
-use libp2p::StreamProtocol;
-
 use super::*;
-use std::collections::HashMap;
+use libp2p::StreamProtocol;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Clone)]
 struct State {
@@ -35,19 +34,91 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                                 )) && info.protocols.contains(&StreamProtocol::new(
                                     "/libp2p/circuit/relay/0.2.0/stop",
                                 )) {
-                                    state.connected.write().expect("Not poisoned").insert(
-                                        *peer_id,
-                                        Relay {
-                                            address: info.listen_addrs.clone(),
-                                            supports_ext: info.protocols.contains(
-                                                &StreamProtocol::new("/owlnest/relay_ext/0.0.1"),
-                                            ),
-                                        },
+                                    let mut connected_list =
+                                        state.connected.write().expect("Not poisoned");
+                                    if let None = connected_list.get(peer_id) {
+                                        connected_list.insert(
+                                            *peer_id,
+                                            Relay {
+                                                address: HashSet::from_iter(
+                                                    info.listen_addrs.iter().cloned(),
+                                                ),
+                                                listened_address: HashSet::new(),
+                                                supports_ext: info.protocols.contains(
+                                                    &StreamProtocol::new(
+                                                        "/owlnest/relay_ext/0.0.1",
+                                                    ),
+                                                ),
+                                                latency: -1,
+                                            },
+                                        );
+                                        continue;
+                                    };
+
+                                    let entry_to_update = connected_list.get_mut(peer_id).unwrap();
+                                    entry_to_update.listened_address.retain(|v| {
+                                        info.listen_addrs.iter().filter(|new_addr| {
+                                            v.to_string().contains(&new_addr.to_string())
+                                        }).next().is_some()
+                                    });
+                                    entry_to_update.address = HashSet::from_iter(
+                                        info.listen_addrs
+                                            .iter()
+                                            .filter(|v| {
+                                                !entry_to_update.listened_address.contains(*v)
+                                            })
+                                            .cloned(),
                                     );
                                 }
                             }
                             _ => {}
                         }
+                        continue;
+                    }
+                    match ev.as_ref() {
+                        libp2p::swarm::SwarmEvent::NewListenAddr { address, .. } => {
+                            let mut relay_list = state.connected.write().expect("Not poisoned");
+                            let address_string = address.to_string();
+                            if let Some((_, v)) = relay_list
+                                .iter_mut()
+                                .filter(|(k, v)| {
+                                    // get the one that has the address that is part of the newly listened address
+                                    v.address
+                                        .iter()
+                                        .filter(|_| {
+                                            address_string.contains(&format!("{}/p2p-circuit", k))
+                                        })
+                                        .next()
+                                        .is_some()
+                                })
+                                .next()
+                            {
+                                v.address
+                                    .retain(|v| !address_string.contains(&v.to_string()));
+                                v.listened_address.insert(address.clone());
+                            };
+                            continue;
+                        }
+                        libp2p::swarm::SwarmEvent::ListenerClosed { addresses, .. } => {
+                            let mut relay_list = state.connected.write().expect("Not poisoned");
+                            for address in addresses {
+                                if let Some(v) = relay_list
+                                    .values_mut()
+                                    .filter(|v| {
+                                        // get the one that has the address that is part of the newly closed address
+                                        v.listened_address
+                                            .iter()
+                                            .filter(|v| **v == *address)
+                                            .next()
+                                            .is_some()
+                                    })
+                                    .next()
+                                {
+                                    v.listened_address.remove(address);
+                                };
+                            }
+                        }
+                        _ => {}
                     }
                     if let swarm::SwarmEvent::ConnectionClosed {
                         peer_id,
@@ -62,6 +133,27 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                                 .expect("Not poisoned")
                                 .remove(peer_id);
                         }
+                        continue;
+                    }
+                    if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Ping(ev)) = ev.as_ref() {
+                        if let Some(v) = state
+                            .connected
+                            .write()
+                            .expect("Not poisoned")
+                            .get_mut(&ev.peer)
+                        {
+                            if let Err(_) = ev.result {
+                                v.latency = -1;
+                            } else {
+                                v.latency = ev
+                                    .result
+                                    .as_ref()
+                                    .unwrap()
+                                    .as_millis()
+                                    .try_into()
+                                    .unwrap_or(isize::MAX);
+                            }
+                        }
                     }
                 }
             });
@@ -71,14 +163,34 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
             list_relays,
             query_advertised,
             set_remote_advertisement,
-            set_local_provider_state
+            set_local_provider_state,
+            get_relay_status
         ])
         .build()
 }
 
 #[tauri::command]
-async fn list_relays(state: tauri::State<'_, State>) -> Result<HashMap<PeerId, Relay>, String> {
-    Ok(state.connected.read().expect("Not poisoned").clone())
+async fn list_relays(state: tauri::State<'_, State>) -> Result<Vec<PeerId>, String> {
+    Ok(state
+        .connected
+        .read()
+        .expect("Not poisoned")
+        .keys()
+        .cloned()
+        .collect())
+}
+
+#[tauri::command]
+async fn get_relay_status(
+    state: tauri::State<'_, State>,
+    relay: PeerId,
+) -> Result<Option<Relay>, String> {
+    Ok(state
+        .connected
+        .read()
+        .expect("Not poisoned")
+        .get(&relay)
+        .cloned())
 }
 
 #[tauri::command]
@@ -122,6 +234,8 @@ async fn set_local_provider_state(
 
 #[derive(Debug, Clone, Serialize)]
 struct Relay {
-    pub address: Vec<Multiaddr>,
+    pub address: HashSet<Multiaddr>,
+    pub listened_address: HashSet<Multiaddr>,
     pub supports_ext: bool,
+    pub latency: isize,
 }

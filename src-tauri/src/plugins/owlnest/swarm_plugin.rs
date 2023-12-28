@@ -112,25 +112,26 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
             listen,
             get_local_peer_id,
             list_listeners,
-            list_connected
+            list_connected,
+            get_peer_info,
+            disconnect_peer
         ])
         .build()
 }
 
 #[tauri::command]
 async fn dial(state: tauri::State<'_, State>, dial_options: DialOptions) -> Result<(), String> {
-    let addr = dial_options.address.parse().map_err(|e| format!("{}", e))?;
     state
         .swarm_manager
         .swarm()
-        .dial(&addr)
+        .dial(&dial_options.address)
         .await
         .map_err(|e| format!("{}", e))
 }
 
 #[derive(Debug, Deserialize)]
 pub struct DialOptions {
-    pub address: String,
+    pub address: Multiaddr,
 }
 
 #[tauri::command]
@@ -138,13 +139,16 @@ async fn listen(
     state: tauri::State<'_, State>,
     listen_options: ListenOptions,
 ) -> Result<(), String> {
-    let addr = listen_options.addr.parse().map_err(|e| format!("{}", e))?;
+    let addr = listen_options
+        .addr
+        .parse()
+        .map_err(|e| format!("{:?}", e))?;
     state
         .swarm_manager
         .swarm()
         .listen(&addr)
         .await
-        .map_err(|e| format!("{}", e))?;
+        .map_err(|e| format!("{:?}", e))?;
     Ok(())
 }
 
@@ -159,10 +163,36 @@ async fn list_listeners(state: tauri::State<'_, State>) -> Result<Vec<Multiaddr>
 }
 
 #[tauri::command]
-async fn list_connected(
+async fn list_connected(state: tauri::State<'_, State>) -> Result<Vec<PeerId>, String> {
+    Ok(state
+        .connected_peers
+        .read()
+        .expect("Not poisoned")
+        .keys()
+        .cloned()
+        .collect())
+}
+#[tauri::command]
+async fn get_peer_info(
     state: tauri::State<'_, State>,
-) -> Result<HashMap<PeerId, PeerInfo>, String> {
-    Ok(state.connected_peers.read().expect("Not poisoned").clone())
+    peer_id: PeerId,
+) -> Result<Option<PeerInfo>, String> {
+    Ok(state
+        .connected_peers
+        .read()
+        .expect("Not poisoned")
+        .get(&peer_id)
+        .cloned())
+}
+
+#[tauri::command]
+async fn disconnect_peer(state: tauri::State<'_, State>, peer_id: PeerId) -> Result<(), String> {
+    state
+        .swarm_manager
+        .swarm()
+        .disconnect_peer_id(peer_id)
+        .await
+        .map_err(|_| "Cannot disconnect".into())
 }
 
 #[derive(Debug, Deserialize)]
@@ -360,11 +390,15 @@ mod serde_types {
                                 let err_string = format!("{:?}", value);
                                 let regex =
                                     regex::Regex::new("kind: [^,]*, m").expect("valid regex");
-                                let matched = regex
-                                    .find(&err_string)
-                                    .expect("found at least one match")
-                                    .as_str();
-                                (err.0.clone(), matched[6..matched.len() - 3].to_owned())
+                                if let Some(matched) = regex.find(&err_string) {
+                                    let matched_str = matched.as_str();
+                                    (
+                                        err.0.clone(),
+                                        matched_str[6..matched_str.len() - 3].to_owned(),
+                                    )
+                                } else {
+                                    (err.0.clone(), format!("{:?}", e))
+                                }
                             }
                         };
                     let info = e.iter().map(closure).collect::<Vec<(Multiaddr, String)>>();

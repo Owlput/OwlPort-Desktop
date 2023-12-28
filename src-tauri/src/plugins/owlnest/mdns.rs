@@ -20,9 +20,7 @@ pub fn init<R: Runtime>(manager: swarm::Manager) -> TauriPlugin<R> {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Mdns(ev)) = ev.as_ref() {
                         match ev {
                             libp2p::mdns::Event::Discovered(nodes) => {
-                                info!("Getting lock");
                                 let mut guard = state.node_list.write().expect("Not Poisoned");
-                                info!("Got Lock");
                                 for entry in nodes {
                                     if let Some(v) = guard.get_mut(&entry.0) {
                                         v.insert(entry.1.clone());
@@ -33,7 +31,6 @@ pub fn init<R: Runtime>(manager: swarm::Manager) -> TauriPlugin<R> {
                                         guard.insert(entry.0, set);
                                     }
                                 }
-                                info!("Insertion Completed")
                             }
                             libp2p::mdns::Event::Expired(nodes) => {
                                 let mut guard = state.node_list.write().expect("Not Poisoned");

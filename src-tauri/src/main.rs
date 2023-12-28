@@ -43,7 +43,6 @@ fn setup_logging() {
         .with_target("owlnest", Level::DEBUG)
         .with_target("rustyline", LevelFilter::ERROR)
         .with_target("libp2p_noise", Level::WARN)
-        .with_target("libp2p_mdns", Level::DEBUG)
         .with_target("hickory_proto", Level::WARN)
         .with_target("", Level::INFO);
     let layer = tracing_subscriber::fmt::Layer::default()
