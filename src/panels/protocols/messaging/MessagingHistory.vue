@@ -4,9 +4,7 @@ import {
   ref,
   onActivated,
   onDeactivated,
-  onUnmounted,
   computed,
-  nextTick,
 } from "vue";
 const props = defineProps({
   history: Array,
@@ -50,7 +48,7 @@ function scroll_to_bottom() {
 </script>
 
 <template>
-  <div class="relative h-full">
+  <div class="relative">
     <section class="w-full h-full overflow-auto" :id="`chat${props.remote}`">
       <ul class="flex flex-col px-4 py-2">
         <template v-for="message in history">

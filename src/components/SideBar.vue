@@ -10,48 +10,48 @@ const props = defineProps({
     </div>
     <button
       class="navBtn"
-      @click="$router.push('/')"
-      :style="$route.path.length === 1 && $route.path.slice(0,1) === '/' ? 'background-color:gainsboro;' : ''"
+      @click="$router.push('/main/home')"
+      :style="$route.path.slice(0,11) === '/main/home' ? 'background-color:gainsboro;' : ''"
     >
       <span class="material-icons m-auto">home</span>
       <p class="select-none">Home</p>
     </button>
     <button
       class="navBtn"
-      @click="$router.push('/overview')"
-      :style="$route.path.slice(0,9) === '/overview' ? 'background-color:gainsboro;' : ''"
+      @click="$router.push('/main/overview')"
+      :style="$route.path.slice(0,14) === '/main/overview' ? 'background-color:gainsboro;' : ''"
     >
       <span class="material-icons m-auto">dashboard</span>
       <p>Overview</p>
     </button>
     <button
       class="navBtn"
-      @click="$router.push('/network')"
-      :style="$route.path.slice(0,8) === '/network' ? 'background-color:gainsboro;' : ''"
+      @click="$router.push('/main/network')"
+      :style="$route.path.slice(0,13) === '/main/network' ? 'background-color:gainsboro;' : ''"
     >
       <span class="material-icons m-auto">hub</span>
       <p class="">Network</p>
     </button>
     <button
       class="navBtn"
-      @click="$router.push('/connections')"
-      :style="$route.path.slice(0,12) === '/connections' ? 'background-color:gainsboro;' : ''"
+      @click="$router.push('/main/connections')"
+      :style="$route.path.slice(0,17) === '/main/connections' ? 'background-color:gainsboro;' : ''"
     >
       <span class="material-icons m-auto">lan</span>
       <p>Conns</p>
     </button>
     <button
       class="navBtn"
-      @click="$router.push('/protocols')"
-      :style="$route.path.slice(0,10) === '/protocols' ? 'background-color:gainsboro;' : ''"
+      @click="$router.push('/main/apps')"
+      :style="$route.path.slice(0,11) === '/main/apps' ? 'background-color:gainsboro;' : ''"
     >
       <span class="material-icons m-auto">apps</span>
       <p>Apps</p>
     </button>
     <button
       class="navBtn"
-      @click="$router.push('/settings')"
-      :style="$route.path.slice(0,9) === '/settings' ? 'background-color:gainsboro;' : ''"
+      @click="$router.push('/main/settings')"
+      :style="$route.path.slice(0,14) === '/main/settings' ? 'background-color:gainsboro;' : ''"
     >
       <span class="material-icons m-auto">settings</span>
       <p class="">Settings</p>

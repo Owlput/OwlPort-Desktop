@@ -16,7 +16,7 @@ export default{
         },
         {
             path:"",
-            component:()=>import("./Activity.vue")
+            redirect:"/main/network/kad/activity"
         }
     ]
 }

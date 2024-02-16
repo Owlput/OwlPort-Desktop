@@ -3,6 +3,7 @@
 
 mod event;
 mod plugins;
+mod macros;
 extern crate owlnest;
 extern crate tokio;
 

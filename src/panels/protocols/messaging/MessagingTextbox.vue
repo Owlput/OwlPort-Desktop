@@ -1,6 +1,6 @@
 <script setup>
 import { listen } from "@tauri-apps/api/event";
-import { onUnmounted, ref, nextTick } from "vue";
+import { onUnmounted, ref } from "vue";
 const props = defineProps({
   send_message: Function,
   push_history: Function,
@@ -22,13 +22,6 @@ function send() {
     return;
   }
   props.push_history({ msg: message.value });
-  nextTick(() => {
-    console.log("next tick called");
-    let element = document.getElementById(`chat${props.remote}`);
-    if (element.scrollHeight - element.scrollTop - 300 < 200) {
-      document.getElementById("last-message")?.scrollIntoView();
-    }
-  });
   props.send_message(props.remote, message.value);
   message.value = "";
 }

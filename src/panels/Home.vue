@@ -14,4 +14,7 @@ invoke("plugin:owlnest-swarm|get_local_peer_id").then((res) => {
   <button @click="() => invoke('plugin:popup-tester|emit_test_event')">
     Test popup
   </button>
+  <button @click="() => invoke('plugin:owlnest-messaging|init_subapp')">
+    init subwindow
+  </button>
 </template>

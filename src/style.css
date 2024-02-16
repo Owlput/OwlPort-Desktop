@@ -139,7 +139,6 @@ button:active{
 }
 
 .event-list{
-  padding: 0px 2rem;
   overflow: auto;
 }
 .event-list > li{

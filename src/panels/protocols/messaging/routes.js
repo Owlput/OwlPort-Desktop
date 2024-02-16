@@ -1,5 +1,5 @@
 export default{
-    path:"/protocols/messaging",
+    path:"messaging",
     component:()=>import("./Messaging.vue"),
     children:[
         {

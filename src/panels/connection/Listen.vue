@@ -27,7 +27,7 @@ function listen_on() {
       Listen on an address
     </p>
     <div class="single-input">
-      <input class="text-xl" v-model="listen_addr" @submit="listen_on" />
+      <input class="text-xl" v-model="listen_addr" @keypress.enter.exact.prevent="()=>listen_on()" />
       <button @click="listen_on">Listen</button>
     </div>
   </section>
@@ -39,7 +39,10 @@ function listen_on() {
       </button>
     </div>
 
-    <ul style="height: calc(100vh - 12.5rem - 1px); overflow: auto" class="event-list select-none">
+    <ul
+      style="height: calc(100vh - 12.5rem - 1px); overflow: auto"
+      class="event-list select-none px-8"
+    >
       <li v-if="active_listeners.length < 1"><p>No active listeners.</p></li>
       <li
         v-for="addr in active_listeners"

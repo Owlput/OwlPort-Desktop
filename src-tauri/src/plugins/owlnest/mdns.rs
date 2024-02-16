@@ -1,7 +1,4 @@
 use owlnest::net::p2p::swarm::behaviour::BehaviourEvent;
-use std::collections::{HashMap, HashSet};
-use tracing::info;
-
 use super::*;
 
 #[derive(Debug, Clone, Default)]
@@ -18,27 +15,25 @@ pub fn init<R: Runtime>(manager: swarm::Manager) -> TauriPlugin<R> {
                 let mut listener = manager.event_subscriber().subscribe();
                 while let Ok(ev) = listener.recv().await {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Mdns(ev)) = ev.as_ref() {
+                        let mut list = state.node_list.write().await;
                         match ev {
                             libp2p::mdns::Event::Discovered(nodes) => {
-                                let mut guard = state.node_list.write().expect("Not Poisoned");
                                 for entry in nodes {
-                                    if let Some(v) = guard.get_mut(&entry.0) {
+                                    if let Some(v) = list.get_mut(&entry.0) {
                                         v.insert(entry.1.clone());
                                     } else {
-                                        info!("Inserting {}", entry.1);
                                         let mut set = HashSet::new();
                                         set.insert(entry.1.clone());
-                                        guard.insert(entry.0, set);
+                                        list.insert(entry.0, set);
                                     }
                                 }
                             }
                             libp2p::mdns::Event::Expired(nodes) => {
-                                let mut guard = state.node_list.write().expect("Not Poisoned");
                                 for entry in nodes {
-                                    if let Some(v) = guard.get_mut(&entry.0) {
+                                    if let Some(v) = list.get_mut(&entry.0) {
                                         v.remove(&entry.1);
                                         if v.len() < 1 {
-                                            guard.remove(&entry.0);
+                                            list.remove(&entry.0);
                                         }
                                     }
                                 }
@@ -58,6 +53,6 @@ pub fn init<R: Runtime>(manager: swarm::Manager) -> TauriPlugin<R> {
 async fn list_discovered(
     state: tauri::State<'_, State>,
 ) -> Result<HashMap<PeerId, HashSet<Multiaddr>>, String> {
-    let map = state.node_list.read().expect("Not Poisoned").clone();
+    let map = state.node_list.read().await.clone();
     Ok(map)
 }

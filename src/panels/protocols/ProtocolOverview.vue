@@ -8,14 +8,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <ul
-    class="w-full h-full p-4 select-none"
-    v-show="$route.path == '/protocols'"
-  >
+  <ul class="w-full h-full p-4 select-none">
     <li class="p-2">
-      <KeepAlive>
-        <Suspense><MessagingStatus /></Suspense>
-      </KeepAlive>
+      <Suspense><MessagingStatus /></Suspense>
     </li>
     <li class="p-2"><BlobTransferStatus /></li>
   </ul>

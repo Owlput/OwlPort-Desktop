@@ -1,5 +1,5 @@
 export default {
-  path: "/settings",
+  path: "settings",
   component: () => import("./SettingsOverview.vue"),
   children: [
     {

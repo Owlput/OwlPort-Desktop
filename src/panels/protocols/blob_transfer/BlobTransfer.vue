@@ -6,29 +6,56 @@ import { useRoute } from "vue-router";
 const route = useRoute();
 const peer_to_send = ref(route.query?.remote ? route.query.remote : "");
 const file_path = ref("");
-const pending_send = ref([]);
-const pending_recv = ref([]);
+const pending_send = ref(new Map());
+const pending_recv = ref(new Map());
 const file_drop_listener = ref(() => {});
-const incoming_file_listener = ref(()=>{});
+const incoming_file_listener = ref(() => {});
 listen("tauri://file-drop", (ev) => {
   handle_drop(ev);
 }).then((handle) => (file_drop_listener.value = handle));
 listen("owlnest-blob-transfer-emit", (ev) => {
-  if (ev.payload?.IncomingFile || ev.payload?.CancelledSend ||ev.payload?.CancelledRecv){
-    update_pending()
+  if (ev.payload?.IncomingFile) {
+    pending_recv.value.set(ev.payload.IncomingFile.local_recv_id, {
+      from: ev.payload.IncomingFile.from,
+      file_name: ev.payload.IncomingFile.file_name,
+      local_recv_id: ev.payload.IncomingFile.local_recv_id,
+      bytes_total: ev.payload.IncomingFile.bytes_total,
+      bytes_sent: null,
+    });
+    return;
+  }
+  if (ev.payload?.CancelledRecv) {
+    console.log(ev)
+    if (!pending_recv.value.delete(ev.payload.CancelledRecv)){
+      console.error("Incorrect internal state!")
+    };
+    return;
+  }
+  if (ev.payload?.CancelledSend) {
+    if (!pending_send.value.delete(ev.payload.CancelledSend)){
+      console.error("Incorrect internal state!")
+    }
+    return
+  }
+  if (ev.payload?.SendProgressed) {
+    let entry = pending_send.value.get(ev.payload.SendProgressed.local_send_id);
+    if (!entry) {
+      console.error("Incorrect internal state!");
+      return;
+    }
+    entry.bytes_sent = ev.payload.SendProgressed.bytes_sent;
+    return;
+  }
+  if (ev.payload?.RecvProgressed) {
+    let entry = pending_recv.get(ev.payload.RecvProgressed.local_recv_id);
+    if (!entry) {
+      console.error("Incorrect internal state!");
+      return;
+    }
+    entry.bytes_received = ev.payload.RecvProgressed.bytes_received;
+    return;
   }
 }).then((handle) => (incoming_file_listener.value = handle));
-function update_pending() {
-  setTimeout(() => {
-    invoke("plugin:owlnest-blob-transfer|list_pending_send").then(
-      (v) => (pending_send.value = v)
-    );
-    invoke("plugin:owlnest-blob-transfer|list_pending_recv").then(
-      (v) => (pending_recv.value = v)
-    );
-  }, 50);
-}
-update_pending();
 function send() {
   if (!(peer_to_send.value && file_path.value)) {
     return;
@@ -36,8 +63,15 @@ function send() {
   invoke("plugin:owlnest-blob-transfer|send", {
     peer: peer_to_send.value,
     filePath: file_path.value,
+  }).then((local_send_id) => {
+    let path_parts = file_path.value.split("/");
+    pending_send.value.set(local_send_id, {
+      file_name: path_parts[path_parts.length - 1],
+      local_send_id,
+      bytes_total: null,
+      bytes_sent: 0,
+    });
   });
-  update_pending();
 }
 
 onUnmounted(() => {
@@ -63,10 +97,13 @@ function handle_drop(ev) {
       <p>Pending send</p>
       <ul class="p-2">
         <li
-          v-for="item in pending_send"
+          v-for="item in pending_send.values()"
           class="p-2 border border-gray-300 rounded-sm"
         >
           <p>{{ item.file_name }}</p>
+          <p v-if="item.bytes_total">
+            {{ item.bytes_sent / item.bytes_total }}%
+          </p>
           <button
             @click="
               () => {
@@ -84,15 +121,16 @@ function handle_drop(ev) {
     <section>
       <p>Pending recv</p>
       <ul>
-        <li v-for="item in pending_recv">
+        <li v-for="item in pending_recv.values()">
           <p>{{ item.file_name }}</p>
+          <p>{{ item.bytes_total / 1024 / 1024 }}MB</p>
           <button
             @click="
               () =>
                 invoke('plugin:owlnest-blob-transfer|recv', {
                   recvId: item.local_recv_id,
                   fileName: item.file_name,
-                }).then(update_pending)
+                })
             "
           >
             Accept
@@ -102,7 +140,7 @@ function handle_drop(ev) {
               () =>
                 invoke('plugin:owlnest-blob-transfer|cancel_recv', {
                   recvId: item.local_recv_id,
-                }).then(update_pending)
+                }).catch((e)=> console.error(e))
             "
           >
             Cancel

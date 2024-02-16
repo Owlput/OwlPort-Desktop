@@ -1,6 +1,5 @@
 use super::*;
 use libp2p::StreamProtocol;
-use std::collections::{HashMap, HashSet};
 
 #[derive(Clone)]
 struct State {
@@ -34,8 +33,7 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                                 )) && info.protocols.contains(&StreamProtocol::new(
                                     "/libp2p/circuit/relay/0.2.0/stop",
                                 )) {
-                                    let mut connected_list =
-                                        state.connected.write().expect("Not poisoned");
+                                    let mut connected_list = state.connected.write().await;
                                     if let None = connected_list.get(peer_id) {
                                         connected_list.insert(
                                             *peer_id,
@@ -57,9 +55,13 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
 
                                     let entry_to_update = connected_list.get_mut(peer_id).unwrap();
                                     entry_to_update.listened_address.retain(|v| {
-                                        info.listen_addrs.iter().filter(|new_addr| {
-                                            v.to_string().contains(&new_addr.to_string())
-                                        }).next().is_some()
+                                        info.listen_addrs
+                                            .iter()
+                                            .filter(|new_addr| {
+                                                v.to_string().contains(&new_addr.to_string())
+                                            })
+                                            .next()
+                                            .is_some()
                                     });
                                     entry_to_update.address = HashSet::from_iter(
                                         info.listen_addrs
@@ -77,7 +79,7 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                     }
                     match ev.as_ref() {
                         libp2p::swarm::SwarmEvent::NewListenAddr { address, .. } => {
-                            let mut relay_list = state.connected.write().expect("Not poisoned");
+                            let mut relay_list = state.connected.write().await;
                             let address_string = address.to_string();
                             if let Some((_, v)) = relay_list
                                 .iter_mut()
@@ -100,7 +102,7 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                             continue;
                         }
                         libp2p::swarm::SwarmEvent::ListenerClosed { addresses, .. } => {
-                            let mut relay_list = state.connected.write().expect("Not poisoned");
+                            let mut relay_list = state.connected.write().await;
                             for address in addresses {
                                 if let Some(v) = relay_list
                                     .values_mut()
@@ -127,21 +129,12 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                     } = ev.as_ref()
                     {
                         if *num_established < 1 {
-                            state
-                                .connected
-                                .write()
-                                .expect("Not poisoned")
-                                .remove(peer_id);
+                            state.connected.write().await.remove(peer_id);
                         }
                         continue;
                     }
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Ping(ev)) = ev.as_ref() {
-                        if let Some(v) = state
-                            .connected
-                            .write()
-                            .expect("Not poisoned")
-                            .get_mut(&ev.peer)
-                        {
+                        if let Some(v) = state.connected.write().await.get_mut(&ev.peer) {
                             if let Err(_) = ev.result {
                                 v.latency = -1;
                             } else {
@@ -174,7 +167,7 @@ async fn list_relays(state: tauri::State<'_, State>) -> Result<Vec<PeerId>, Stri
     Ok(state
         .connected
         .read()
-        .expect("Not poisoned")
+        .await
         .keys()
         .cloned()
         .collect())
@@ -188,7 +181,7 @@ async fn get_relay_status(
     Ok(state
         .connected
         .read()
-        .expect("Not poisoned")
+        .await
         .get(&relay)
         .cloned())
 }

@@ -1,6 +1,5 @@
 use super::*;
-use crate::event::popup_manager::Popup;
-use serde::Serialize;
+use crate::event::popup_manager::{Popup, DefaultPopupProps};
 use tauri::Manager;
 
 macro_rules! get_timestamp {
@@ -38,10 +37,4 @@ async fn emit_test_event<R: Runtime>(
         },
     );
     Ok(())
-}
-
-#[derive(Serialize)]
-struct DefaultPopupProps {
-    pub message: String,
-    pub title: Option<String>,
 }

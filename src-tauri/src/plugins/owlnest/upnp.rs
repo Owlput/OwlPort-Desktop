@@ -1,10 +1,6 @@
-use std::{
-    collections::HashSet,
-    sync::{atomic::AtomicI8, Arc, RwLock},
-};
-
 use super::*;
 use owlnest::net::p2p::{protocols::upnp, swarm::behaviour::BehaviourEvent};
+use std::{collections::HashSet, sync::atomic::AtomicI8};
 
 ///
 /// Gateway state:
@@ -33,18 +29,10 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                                 state
                                     .gateway_state
                                     .store(1, std::sync::atomic::Ordering::SeqCst);
-                                state
-                                    .external_addr
-                                    .write()
-                                    .expect("Not poisoned")
-                                    .insert(addr.clone());
+                                state.external_addr.write().await.insert(addr.clone());
                             }
                             upnp::OutEvent::ExpiredExternalAddr(addr) => {
-                                state
-                                    .external_addr
-                                    .write()
-                                    .expect("Not poisoned")
-                                    .remove(addr);
+                                state.external_addr.write().await.remove(addr);
                             }
                             upnp::OutEvent::GatewayNotFound => state
                                 .gateway_state
@@ -70,13 +58,7 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
 async fn list_available_external_addr(
     state: tauri::State<'_, State>,
 ) -> Result<Vec<Multiaddr>, String> {
-    Ok(state
-        .external_addr
-        .read()
-        .expect("Not poisoned")
-        .iter()
-        .cloned()
-        .collect())
+    Ok(state.external_addr.read().await.iter().cloned().collect())
 }
 
 #[tauri::command]

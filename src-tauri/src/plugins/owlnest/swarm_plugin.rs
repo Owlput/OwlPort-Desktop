@@ -1,7 +1,7 @@
 use super::*;
 use libp2p::identify::Info;
 use owlnest::net::p2p::swarm::{self, behaviour::BehaviourEvent};
-use std::{collections::HashMap, num::NonZeroU32};
+use std::num::NonZeroU32;
 use tracing::{error, warn};
 
 #[derive(Clone)]
@@ -54,7 +54,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                             .expect("event emit to succeed");
                     }
                     use libp2p::swarm::SwarmEvent::*;
-                    let mut guard = state.connected_peers.write().expect("Not poisoned");
+                    let mut guard = state.connected_peers.write().await;
                     match ev.as_ref() {
                         ConnectionEstablished {
                             peer_id,
@@ -98,6 +98,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                                 }
                             }
                         }
+                        NewExternalAddrOfPeer { .. } => {}
                         _ => warn!("New branch for SwarmEvent not covered"),
                     }
                     drop(guard)
@@ -164,25 +165,14 @@ async fn list_listeners(state: tauri::State<'_, State>) -> Result<Vec<Multiaddr>
 
 #[tauri::command]
 async fn list_connected(state: tauri::State<'_, State>) -> Result<Vec<PeerId>, String> {
-    Ok(state
-        .connected_peers
-        .read()
-        .expect("Not poisoned")
-        .keys()
-        .cloned()
-        .collect())
+    Ok(state.connected_peers.read().await.keys().cloned().collect())
 }
 #[tauri::command]
 async fn get_peer_info(
     state: tauri::State<'_, State>,
     peer_id: PeerId,
 ) -> Result<Option<PeerInfo>, String> {
-    Ok(state
-        .connected_peers
-        .read()
-        .expect("Not poisoned")
-        .get(&peer_id)
-        .cloned())
+    Ok(state.connected_peers.read().await.get(&peer_id).cloned())
 }
 
 #[tauri::command]

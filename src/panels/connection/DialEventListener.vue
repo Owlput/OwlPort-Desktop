@@ -1,17 +1,23 @@
 <script setup>
-import { onActivated, onDeactivated, onUnmounted, ref } from "vue";
+import { onUnmounted, ref, nextTick } from "vue";
 import { listen } from "@tauri-apps/api/event";
 defineOptions({ name: "DialEventListener" });
 
 let dial_events = ref([]);
 let listener_handle = ref(() => {});
 
-
-  addEventListener("swarm-dial-failed", handleFailedDial);
-  listen("swarm-emit", (ev) => {
-    dial_events.value.push(ev.payload);
-    console.log(dial_events.value)
-  }).then((handle) => (listener_handle.value = handle));
+addEventListener("swarm-dial-failed", handleFailedDial);
+listen("swarm-emit", (ev) => {
+  dial_events.value.push(ev.payload);
+  if (dial_events.value.length > 25){
+    dial_events.value.splice(0,1)
+  }
+  nextTick(() => {
+    let element = document.getElementById("dial-event-listener") 
+    element?.scrollTo(0,element.scrollHeight)
+  });
+  
+}).then((handle) => (listener_handle.value = handle));
 
 onUnmounted(() => {
   listener_handle.value();
@@ -23,7 +29,7 @@ function handleFailedDial(ev) {
 }
 </script>
 <template>
-  <ul class="event-list text-autowrap" style="height: calc(100% - 2.75rem);">
+  <ul class="event-list text-autowrap pb-2 px-4" style="height: calc(100% - 2.75rem)" id="dial-event-listener">
     <template v-for="event in dial_events">
       <li v-if="event.ConnectionEstablished" class="bg-green-300">
         <p>
@@ -32,7 +38,7 @@ function handleFailedDial(ev) {
         </p>
         <p>
           on remote address "{{
-            event.ConnectionEstablished.endpoint.Dialer.address
+            event.ConnectionEstablished.endpoint?.Dialer?.address
           }}"
         </p>
       </li>

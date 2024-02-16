@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api";
 import { onDeactivated, ref } from "vue";
 let expand = ref(false);
 let connected_peers = ref({});
-invoke("plugin:owlnest-messaging|setup").then(
+invoke("plugin:owlnest-messaging|get_connected_peers").then(
   (peers) => (connected_peers.value = peers)
 );
 onDeactivated(() => {
@@ -11,10 +11,13 @@ onDeactivated(() => {
 });
 function toggleExpand() {
   if (!expand.value)
-    invoke("plugin:owlnest-messaging|setup").then(
-      (peers) => (connected_peers.value = peers)
-    );
+    invoke("plugin:owlnest-messaging|get_connected_peers").then((peers) => {
+      connected_peers.value = peers;
+    });
   expand.value = !expand.value;
+}
+function spawn_window(peer){
+  invoke("plugin:owlnest-messaging|spawn_window",{peer})
 }
 </script>
 <template>
@@ -24,7 +27,7 @@ function toggleExpand() {
     >
       <p
         class="hover:cursor-pointer"
-        @click="() => $router.push('/protocols/messaging')"
+        @click="()=>spawn_window(null)"
       >
         Messaging
       </p>
@@ -49,9 +52,11 @@ function toggleExpand() {
       <li
         v-for="peer in Object.keys(connected_peers)"
         class="p-2"
-        @click="() => $router.push(`/protocols/messaging/${peer}`)"
+        @click="() => spawn_window(peer)"
       >
-        {{ peer }}
+        <p>{{ peer }}</p>
+        <p v-if="connected_peers[peer][0]">In</p>
+        <p v-if="connected_peers[peer][1]">Out</p>
       </li>
     </ul>
   </section>

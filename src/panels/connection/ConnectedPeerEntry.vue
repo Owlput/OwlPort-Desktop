@@ -20,9 +20,9 @@ function toggleExpand() {
 }
 </script>
 <template>
-  <section class="flex flex-nowrap flex-row justify-between">
+  <section class="flex flex-nowrap flex-row justify-between hover:cursor-pointer">
     <p @click="toggleExpand">{{ props.peerId }}</p>
-    <button
+    <button class="rounded-sm"
       @dblclick="
         () =>
           invoke('plugin:owlnest-swarm|disconnect_peer', {

@@ -1,22 +1,47 @@
 import settingsRoutes from "./panels/settings/routes";
-import protocolRoutes from "./panels/protocols/routes";
+import messagingApp from "./panels/protocols/messaging/routes";
 import connectionsRoutes from "./panels/connection/routes";
 import networkRoutes from "./panels/network/routes";
 import { createRouter, createWebHashHistory } from "vue-router";
 
 const routes = [
   {
-    path: "/",
-    component: () => import("./panels/Home.vue"),
+    path: "/main",
+    component: () => import("./MainWindow.vue"),
+    children: [
+      connectionsRoutes,
+      settingsRoutes,
+      networkRoutes,
+      {
+        path: "apps",
+        component: () => import("./panels/protocols/ProtocolOverview.vue"),
+      },
+      {
+        path: "overview",
+        component: () => import("./panels/Overview.vue"),
+      },
+      {
+        path: "home",
+        component: () => import("./panels/Home.vue"),
+      },
+    ],
   },
   {
-    path: "/overview",
-    component: () => import("./panels/Overview.vue"),
+    path: "/app",
+    component: () => import("./AppWrapper.vue"),
+    children: [
+      messagingApp,
+      {
+        path: "blob-transfer",
+        component: () =>
+          import("./panels/protocols/blob_transfer/BlobTransfer.vue"),
+      },
+    ],
   },
-  ...protocolRoutes,
-  connectionsRoutes,
-  settingsRoutes,
-  networkRoutes,
+  {
+    path: "/",
+    redirect: "/main/home",
+  },
   // Always leave this as last one,
   // but you can also remove it
   // {

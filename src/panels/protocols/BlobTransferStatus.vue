@@ -16,13 +16,16 @@ function toggleExpand() {
     );
   setTimeout(() => (expand.value = !expand.value), 5);
 }
+function spawn_window(peer){
+  invoke("plugin:owlnest-blob-transfer|spawn_window",{peer})
+}
 </script>
 <template>
   <section>
     <section
       class="flex flex-row justify-between items-center border px-4 py-2 item-evenly-sized"
     >
-      <p class="hover:cursor-pointer" @click="()=>$router.push('/protocols/blob-transfer')">File Transfer</p>
+      <p class="hover:cursor-pointer">File Transfer</p>
       <p>Number of reachable peers: {{ connected_peers.length }}</p>
       <div @click="toggleExpand" class="w-6 h-6 hover:cursor-pointer">
         <span
@@ -42,7 +45,7 @@ function toggleExpand() {
       <li
         v-for="peer in connected_peers"
         class="p-2"
-        @click="() => $router.push(`/protocols/blob-transfer?remote=${peer}`)"
+        @click="() => spawn_window(peer)"
       >
         {{ peer }}
       </li>

@@ -1,6 +1,6 @@
 import kadRoutes from "./kad/routes";
 export default {
-  path: "/network",
+  path: "network",
   component: () => import("./Layout.vue"),
   children: [
     { path: "mdns", component: () => import("./Mdns.vue") },

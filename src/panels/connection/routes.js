@@ -1,6 +1,6 @@
 export default {
-  path: "/connections",
-  component: () => import("./ConnectionWrapper.vue"),
+  path: "connections",
+  component: () => import("./Layout.vue"),
   children: [
     {
       path: "connected",
@@ -20,7 +20,7 @@ export default {
     },
     {
       path: "",
-      redirect: "/connections/dial",
+      redirect: "/main/connections/dial",
     },
   ],
 };
