@@ -208,6 +208,7 @@ pub enum SwarmEventEmit {
         /// Reason for the disconnection, if it was not a successful
         /// active close.
         cause: String,
+        num_established: u64,
     },
     Dialing {
         /// Identity of the peer that we are connecting to.
@@ -255,10 +256,11 @@ impl TryFrom<&swarm::SwarmEvent> for SwarmEventEmit {
                 peer_id,
                 cause,
                 endpoint,
-                ..
+                num_established,..
             } => Self::ConnectionClosed {
                 peer_id: *peer_id,
                 endpoint: endpoint.into(),
+                num_established: *num_established as u64,
                 cause: format!("{:?}", cause),
             },
             SwarmEvent::IncomingConnection {

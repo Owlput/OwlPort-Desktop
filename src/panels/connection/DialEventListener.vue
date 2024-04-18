@@ -9,14 +9,13 @@ let listener_handle = ref(() => {});
 addEventListener("swarm-dial-failed", handleFailedDial);
 listen("swarm-emit", (ev) => {
   dial_events.value.push(ev.payload);
-  if (dial_events.value.length > 25){
-    dial_events.value.splice(0,1)
+  if (dial_events.value.length > 25) {
+    dial_events.value.splice(0, 1);
   }
   nextTick(() => {
-    let element = document.getElementById("dial-event-listener") 
-    element?.scrollTo(0,element.scrollHeight)
+    let element = document.getElementById("dial-event-listener");
+    element?.scrollTo(0, element.scrollHeight);
   });
-  
 }).then((handle) => (listener_handle.value = handle));
 
 onUnmounted(() => {
@@ -29,7 +28,11 @@ function handleFailedDial(ev) {
 }
 </script>
 <template>
-  <ul class="event-list text-autowrap pb-2 px-4" style="height: calc(100% - 2.75rem)" id="dial-event-listener">
+  <ul
+    class="event-list text-autowrap pb-2 px-4"
+    style="height: calc(100% - 2.75rem)"
+    id="dial-event-listener"
+  >
     <template v-for="event in dial_events">
       <li v-if="event.ConnectionEstablished" class="bg-green-300">
         <p>

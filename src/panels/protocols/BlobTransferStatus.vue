@@ -16,8 +16,8 @@ function toggleExpand() {
     );
   setTimeout(() => (expand.value = !expand.value), 5);
 }
-function spawn_window(peer){
-  invoke("plugin:owlnest-blob-transfer|spawn_window",{peer})
+function spawn_window(peer) {
+  invoke("plugin:owlnest-blob-transfer|spawn_window", { peer });
 }
 </script>
 <template>

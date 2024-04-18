@@ -22,17 +22,22 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
             app.manage(state.clone());
             let _app_handle = app.clone();
             async_runtime::spawn(async move {
+                static RELAY_HOP: StreamProtocol =
+                    StreamProtocol::new("/libp2p/circuit/relay/0.2.0/hop");
+                static RELAY_STOP: StreamProtocol =
+                    StreamProtocol::new("/libp2p/circuit/relay/0.2.0/stop");
+                static advertise: StreamProtocol = StreamProtocol::new(
+                    "/owlnest/advertise/0.0.1",
+                );
                 let mut listener = peer_manager.event_subscriber().subscribe();
                 while let Ok(ev) = listener.recv().await {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Identify(ev)) = ev.as_ref()
                     {
                         match ev {
                             identify::OutEvent::Received { peer_id, info } => {
-                                if info.protocols.contains(&StreamProtocol::new(
-                                    "/libp2p/circuit/relay/0.2.0/hop",
-                                )) && info.protocols.contains(&StreamProtocol::new(
-                                    "/libp2p/circuit/relay/0.2.0/stop",
-                                )) {
+                                if info.protocols.contains(&RELAY_HOP)
+                                    && info.protocols.contains(&RELAY_STOP)
+                                {
                                     let mut connected_list = state.connected.write().await;
                                     if let None = connected_list.get(peer_id) {
                                         connected_list.insert(
@@ -43,9 +48,7 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                                                 ),
                                                 listened_address: HashSet::new(),
                                                 supports_ext: info.protocols.contains(
-                                                    &StreamProtocol::new(
-                                                        "/owlnest/relay_ext/0.0.1",
-                                                    ),
+                                                    &advertise,
                                                 ),
                                                 latency: -1,
                                             },
@@ -164,13 +167,7 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
 
 #[tauri::command]
 async fn list_relays(state: tauri::State<'_, State>) -> Result<Vec<PeerId>, String> {
-    Ok(state
-        .connected
-        .read()
-        .await
-        .keys()
-        .cloned()
-        .collect())
+    Ok(state.connected.read().await.keys().cloned().collect())
 }
 
 #[tauri::command]
@@ -178,12 +175,7 @@ async fn get_relay_status(
     state: tauri::State<'_, State>,
     relay: PeerId,
 ) -> Result<Option<Relay>, String> {
-    Ok(state
-        .connected
-        .read()
-        .await
-        .get(&relay)
-        .cloned())
+    Ok(state.connected.read().await.get(&relay).cloned())
 }
 
 #[tauri::command]
@@ -193,7 +185,7 @@ async fn query_advertised(
 ) -> Result<Vec<PeerId>, String> {
     state
         .manager
-        .relay_ext()
+        .advertise()
         .query_advertised_peer(relay)
         .await
         .map_err(|e| e.to_string())
@@ -207,7 +199,7 @@ async fn set_remote_advertisement(
 ) -> Result<(), String> {
     Ok(state
         .manager
-        .relay_ext()
+        .advertise()
         .set_remote_advertisement(relay, advertisement_state)
         .await)
 }
@@ -219,7 +211,7 @@ async fn set_local_provider_state(
 ) -> Result<(), String> {
     state
         .manager
-        .relay_ext()
+        .advertise()
         .set_provider_state(provider_state)
         .await;
     Ok(())

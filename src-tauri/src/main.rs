@@ -15,10 +15,11 @@ fn main() {
         .plugin(plugins::owlnest::messaging::init(peer_manager.clone()))
         .plugin(plugins::owlnest::mdns::init(peer_manager.clone()))
         .plugin(plugins::owlnest::kad::init(peer_manager.clone()))
-        .plugin(plugins::owlnest::blob_transfer::init(peer_manager.clone()))
+        .plugin(plugins::owlnest::blob::init(peer_manager.clone()))
         .plugin(plugins::owlnest::autonat::init(peer_manager.clone()))
         .plugin(plugins::owlnest::upnp::init(peer_manager.clone()))
         .plugin(plugins::owlnest::relay::init(peer_manager.clone()))
+        .plugin(plugins::owlnest::advertise::init(peer_manager.clone()))
         .plugin(plugins::popup_test::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

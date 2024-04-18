@@ -27,7 +27,11 @@ function listen_on() {
       Listen on an address
     </p>
     <div class="single-input">
-      <input class="text-xl" v-model="listen_addr" @keypress.enter.exact.prevent="()=>listen_on()" />
+      <input
+        class="text-xl"
+        v-model="listen_addr"
+        @keypress.enter.exact.prevent="() => listen_on()"
+      />
       <button @click="listen_on">Listen</button>
     </div>
   </section>

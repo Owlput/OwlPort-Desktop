@@ -1,6 +1,6 @@
-use crate::event::popup_manager::{get_timestamp, DefaultPopupProps, Popup};
 use super::*;
-use owlnest::net::p2p::protocols::blob_transfer::{OutEvent, RecvInfo, SendInfo};
+use crate::event::popup_manager::{get_timestamp, DefaultPopupProps, Popup};
+use owlnest::net::p2p::protocols::blob::{OutEvent, RecvInfo, SendInfo};
 use std::time::Duration;
 use std::{fs, str::FromStr};
 
@@ -27,9 +27,7 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
             async_runtime::spawn(async move {
                 let mut listener = peer_manager.event_subscriber().subscribe();
                 while let Ok(ev) = listener.recv().await {
-                    if let swarm::SwarmEvent::Behaviour(BehaviourEvent::BlobTransfer(ev)) =
-                        ev.as_ref()
-                    {
+                    if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Blob(ev)) = ev.as_ref() {
                         if let Ok(ev) = ev.try_into() {
                             let _ = app_handle
                                 .emit_all::<BlobTransferEmit>("owlnest-blob-transfer-emit", ev);
@@ -58,10 +56,11 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                             }
                             OutEvent::RecvProgressed {
                                 local_recv_id,
-                                finished,
+                                bytes_received,
+                                bytes_total,
                                 ..
                             } => {
-                                if *finished {
+                                if *bytes_received == *bytes_total {
                                     let _ = app_handle.emit_to(
                                         "BlobTransfer",
                                         "newPopup",
@@ -86,10 +85,11 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                             }
                             OutEvent::SendProgressed {
                                 local_send_id,
-                                finished,
+                                bytes_sent,
+                                bytes_total,
                                 ..
                             } => {
-                                if *finished {
+                                if *bytes_sent == *bytes_total {
                                     let _ = app_handle.emit_to(
                                         "BlobTransfer",
                                         "newPopup",
@@ -199,13 +199,8 @@ async fn send(
         .read(true)
         .open(&file_path)
         .map_err(|e| e.to_string())?;
-    match state
-        .manager
-        .blob_transfer()
-        .send_file(peer, file_path)
-        .await
-    {
-        Ok(v) => Ok(v.0),
+    match state.manager.blob().send_file(peer, file_path).await {
+        Ok(v) => Ok(v),
         Err(e) => Err(format!("{:?}", e)),
     }
 }
@@ -217,12 +212,7 @@ async fn recv(
     file_name: String,
 ) -> Result<(), String> {
     let file_path = format!("C:/Users/{}/Downloads/{}", whoami::username(), file_name);
-    match state
-        .manager
-        .blob_transfer()
-        .recv_file(recv_id, file_path)
-        .await
-    {
+    match state.manager.blob().recv_file(recv_id, file_path).await {
         Ok(_) => Ok(()),
         Err(e) => Err(format!("{:?}", e)),
     }
@@ -232,7 +222,7 @@ async fn recv(
 async fn cancel_send(state: tauri::State<'_, State>, send_id: u64) -> Result<(), String> {
     state
         .manager
-        .blob_transfer()
+        .blob()
         .cancel_send(send_id)
         .await
         .map_err(|_| "ID not found or not acknowledged".to_string())
@@ -242,7 +232,7 @@ async fn cancel_send(state: tauri::State<'_, State>, send_id: u64) -> Result<(),
 async fn cancel_recv(state: tauri::State<'_, State>, recv_id: u64) -> Result<(), String> {
     state
         .manager
-        .blob_transfer()
+        .blob()
         .cancel_recv(recv_id)
         .await
         .map_err(|_| "ID not found".to_string())
@@ -250,12 +240,12 @@ async fn cancel_recv(state: tauri::State<'_, State>, recv_id: u64) -> Result<(),
 
 #[tauri::command]
 async fn list_pending_send(state: tauri::State<'_, State>) -> Result<Vec<SendInfo>, String> {
-    Ok(state.manager.blob_transfer().list_pending_send().await)
+    Ok(state.manager.blob().list_pending_send().await)
 }
 
 #[tauri::command]
 async fn list_pending_recv(state: tauri::State<'_, State>) -> Result<Vec<RecvInfo>, String> {
-    Ok(state.manager.blob_transfer().list_pending_recv().await)
+    Ok(state.manager.blob().list_pending_recv().await)
 }
 
 #[allow(unused_variables)]
@@ -293,14 +283,11 @@ pub enum BlobTransferEmit {
     },
     RecvProgressed {
         local_recv_id: u64,
-        finished: bool,
         bytes_received: u64,
         bytes_total: u64,
     },
     SendProgressed {
         local_send_id: u64,
-        finished: bool,
-        time_taken: Option<Duration>,
         bytes_sent: u64,
         bytes_total: u64,
     },
@@ -313,8 +300,12 @@ pub enum BlobTransferEmit {
         local_send_id: u64,
         error: String,
     },
-    CancelledSend(u64),
-    CancelledRecv(u64),
+    CancelledSend {
+        local_send_id: u64,
+    },
+    CancelledRecv {
+        local_recv_id: u64,
+    },
     Error(String),
 }
 
@@ -327,21 +318,19 @@ impl TryFrom<&OutEvent> for BlobTransferEmit {
                 from,
                 file_name,
                 local_recv_id,
-                bytes_total
+                bytes_total,
             } => Self::IncomingFile {
                 from: from.clone(),
                 file_name: file_name.clone(),
                 local_recv_id: *local_recv_id,
-                bytes_total: *bytes_total
+                bytes_total: *bytes_total,
             },
             RecvProgressed {
                 local_recv_id,
-                finished,
                 bytes_received,
                 bytes_total,
             } => Self::RecvProgressed {
                 local_recv_id: *local_recv_id,
-                finished: *finished,
                 bytes_received: *bytes_received,
                 bytes_total: *bytes_total,
             },
@@ -354,18 +343,16 @@ impl TryFrom<&OutEvent> for BlobTransferEmit {
             },
             SendProgressed {
                 local_send_id,
-                finished,
-                time_taken,
                 bytes_sent,
                 bytes_total,
             } => Self::SendProgressed {
                 local_send_id: *local_send_id,
-                finished: *finished,
-                time_taken: *time_taken,
                 bytes_sent: *bytes_sent,
-                bytes_total: *bytes_total
+                bytes_total: *bytes_total,
             },
-            CancelledSend(id) => Self::CancelledSend(*id),
+            CancelledSend(local_send_id) => Self::CancelledSend {
+                local_send_id: *local_send_id,
+            },
             OngoingSendError {
                 local_send_id,
                 error,
@@ -373,7 +360,9 @@ impl TryFrom<&OutEvent> for BlobTransferEmit {
                 local_send_id: *local_send_id,
                 error: error.clone(),
             },
-            CancelledRecv(id) => Self::CancelledRecv(*id),
+            CancelledRecv(local_recv_id) => Self::CancelledRecv {
+                local_recv_id: *local_recv_id,
+            },
             Error(e) => Self::Error(e.to_string()),
             _ => return Err(()),
         };

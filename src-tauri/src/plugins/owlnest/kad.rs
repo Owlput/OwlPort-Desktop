@@ -1,18 +1,51 @@
 use super::*;
+use libp2p::kad::Mode;
 use owlnest::net::p2p::protocols::kad::OutEvent;
-use std::str::FromStr;
+use std::{str::FromStr, sync::atomic::AtomicBool};
+
+#[derive(Debug, Clone)]
+struct State {
+    /// Current Kad mode. `true` for server mode(active sharing),
+    /// `false` for client mode(listen only)
+    mode: Arc<AtomicBool>,
+}
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            mode: Arc::new(AtomicBool::new(false)),
+        }
+    }
+}
 
 pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-kad")
         .setup(|app| {
             app.manage(peer_manager.clone());
             let app_handle = app.clone();
+            let state = State::default();
+            app.manage(state.clone());
             async_runtime::spawn(async move {
                 let mut listener = peer_manager.event_subscriber().subscribe();
                 while let Ok(ev) = listener.recv().await {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Kad(ev)) = ev.as_ref() {
                         if let Ok(ev) = ev.try_into() {
                             let _ = app_handle.emit_all::<KadEmit>("owlnest-kad-emit", ev);
+                        }
+                        match ev {
+                            libp2p::kad::Event::InboundRequest { .. } => {}
+                            libp2p::kad::Event::OutboundQueryProgressed { .. } => {}
+                            libp2p::kad::Event::RoutingUpdated { .. } => {}
+                            libp2p::kad::Event::UnroutablePeer { .. } => {}
+                            libp2p::kad::Event::RoutablePeer { .. } => {}
+                            libp2p::kad::Event::PendingRoutablePeer { .. } => {}
+                            libp2p::kad::Event::ModeChanged { new_mode } => match new_mode {
+                                Mode::Client => {
+                                    state.mode.store(false, std::sync::atomic::Ordering::SeqCst)
+                                }
+                                Mode::Server => {
+                                    state.mode.store(true, std::sync::atomic::Ordering::SeqCst)
+                                }
+                            },
                         }
                     }
                 }
@@ -23,7 +56,10 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
             insert_default,
             bootstrap,
             insert_node,
-            lookup
+            lookup,
+            get_mode,
+            set_mode,
+            // get_num_kbuckets,
         ])
         .build()
 }
@@ -70,8 +106,10 @@ async fn insert_default(state: tauri::State<'_, swarm::Manager>) -> Result<(), S
 
 #[tauri::command]
 async fn bootstrap(state: tauri::State<'_, swarm::Manager>) -> Result<(), String> {
-    let _ = state.kad().bootstrap().await;
-    Ok(())
+    match state.kad().bootstrap().await {
+        Ok(()) => Ok(()),
+        Err(e) => Err(format!("{:?}", e)),
+    }
 }
 
 #[tauri::command]
@@ -95,6 +133,26 @@ async fn lookup(
     let result = state.kad().lookup(peer_id).await;
     Ok(format!("{:?}", result))
 }
+
+#[tauri::command]
+async fn get_mode(state: tauri::State<'_, State>) -> Result<bool, ()> {
+    Ok(state.mode.load(std::sync::atomic::Ordering::SeqCst))
+}
+
+#[tauri::command]
+async fn set_mode(state: tauri::State<'_, swarm::Manager>, mode: bool) -> Result<(), ()> {
+    let _ = if mode {
+        state.kad().set_mode(Some(Mode::Server)).await
+    } else {
+        state.kad().set_mode(Some(Mode::Client)).await
+    };
+    Ok(())
+}
+
+// #[tauri::command]
+// async fn get_num_kbuckets(state: tauri::State<'_, swarm::Manager>) -> Result<u64, ()> {
+//     Ok(state.kad().num_kbuckets().await)
+// }
 
 #[derive(Debug, Clone, Serialize)]
 enum KadEmit {

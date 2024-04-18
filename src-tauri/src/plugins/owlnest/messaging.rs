@@ -1,4 +1,4 @@
-use std::num::NonZeroU32;
+use std::{num::NonZeroU32, str::FromStr};
 
 use super::*;
 use owlnest::net::p2p::protocols::messaging::*;
@@ -112,7 +112,9 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
             send_msg,
             get_connected_peers,
             get_peer_status,
-            spawn_window
+            spawn_window,
+            get_chat_history,
+            clear_chat_history
         ])
         .build()
 }
@@ -151,6 +153,38 @@ async fn get_connected_peers(
 ) -> Result<HashMap<PeerId, (bool, bool)>, String> {
     let map = state.connected_peers.read().await.clone();
     Ok(map)
+}
+
+#[tauri::command]
+async fn get_chat_history(
+    state: tauri::State<'_, State>,
+    peer_id: String,
+) -> Result<Vec<Message>, String> {
+    let peer_id = PeerId::from_str(&peer_id).map_err(|e| e.to_string())?;
+    match state.message_history_store.read().await.get(&peer_id) {
+        Some(v) => Ok(v.clone()),
+        None => Err("NotFound".into()),
+    }
+}
+
+#[tauri::command]
+async fn clear_chat_history(
+    state: tauri::State<'_, State>,
+    peer_id: Option<String>,
+) -> Result<(), String> {
+    if peer_id.is_some() {
+        let peer_id = PeerId::from_str(&peer_id.unwrap()).map_err(|e| e.to_string())?;
+        if let Some(v) = state.message_history_store.write().await.get_mut(&peer_id) {
+            v.clear();
+            v.shrink_to_fit();
+        }
+    } else {
+        for (_, value) in state.message_history_store.write().await.iter_mut() {
+            value.clear();
+            value.shrink_to_fit();
+        }
+    }
+    Ok(())
 }
 
 #[allow(unused)]

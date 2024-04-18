@@ -17,7 +17,7 @@ await invoke("plugin:owlnest-relay|get_relay_status", {
 const show_listenable = ref(false);
 const show_listened = ref(false);
 
-watch([show_listenable, show_listened],() => {
+watch([show_listenable, show_listened], () => {
   invoke("plugin:owlnest-relay|get_relay_status", {
     relay: props.peerId,
   }).then((v) => {

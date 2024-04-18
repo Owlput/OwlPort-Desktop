@@ -88,39 +88,38 @@ button:active{
   overflow-wrap:break-word;
 }
 
-.tab-l-container{
+.tab-container{
   display: flex;
   height: 2.5rem;
   flex-direction: row;
   flex-wrap: nowrap;
   user-select: none;
-  font-size: large;
 }
-.tab-l-container > *{
+.tab-container > *{
   flex:1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 2.5rem;
-  border: solid #ddd 1px;
+  margin: auto;
+  text-align: center;
+  height: 100%;
+  font-size: 1.25rem;
+  border-left: solid #ddd 1px;
+  border-right: solid #ddd 1px ;
+  border-bottom: 0.125rem solid #ddd ;
 }
-
-.tab-m-container{
-  display: flex;
-  height: 2rem;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  user-select: none;
+.tab-container p{
+  margin-top: 0.375rem;
+  margin-bottom: 0.375rem;
 }
-.tab-m-container > *{
-  flex:1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 2rem;
-  border: solid #ddd 1px;
+.tab-container > :last-child{
+  border-left: none;
+}
+.tab-container > :first-child{
+  border-right: none;
+}
+.tab-container > *:hover{
+  background-color: #eee;
+}
+.tab-container > *.selected{
+  border-bottom: #2a7fff solid 0.125rem;
 }
 
 .single-input{
@@ -150,4 +149,30 @@ button:active{
 
 .item-evenly-sized > *{
   flex: 1;
+}
+.card-wrapper{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  padding: 2% 1%;
+  justify-content: space-evenly;
+}
+.card-wrapper > section{
+  text-align: center;
+  user-select: none;
+  width: 10rem;
+  height: 10rem;
+  margin: 1%;
+  align-items: center;
+  border: 1px solid grey;
+  border-radius: 0.5rem;
+}
+.card-wrapper > section:hover{
+  cursor: pointer;
+  animation: hover-scale 0.1s ease-out forwards;
+}
+
+@keyframes hover-scale {
+  from {transform: none;}
+  to {transform: scale(1.02);}
 }

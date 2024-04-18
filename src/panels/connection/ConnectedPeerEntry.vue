@@ -20,9 +20,16 @@ function toggleExpand() {
 }
 </script>
 <template>
-  <section class="flex flex-nowrap flex-row justify-between hover:cursor-pointer">
-    <p @click="toggleExpand">{{ props.peerId }}</p>
-    <button class="rounded-sm"
+  <section
+    class="flex flex-nowrap flex-row justify-between hover:cursor-pointer"
+  >
+    <p @click="toggleExpand">
+      {{ props.peerId.slice(0, 6) }}..{{
+        props.peerId.slice(props.peerId.length - 6, props.peerId.length)
+      }}
+    </p>
+    <button
+      class="rounded-sm"
       @dblclick="
         () =>
           invoke('plugin:owlnest-swarm|disconnect_peer', {
@@ -34,6 +41,7 @@ function toggleExpand() {
     </button>
   </section>
   <section class="mx-1" v-if="show_supported_protocols">
+    <p>Peer ID: {{ props.peerId }}</p>
     <p>Protocol stack: {{ peer_info.protocol_version }}</p>
     <p>Suported protocols({{ peer_info.supported_protocols.length }}):</p>
     <ul class="flex flex-wrap">

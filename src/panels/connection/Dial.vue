@@ -24,7 +24,11 @@ function dial() {
   <section class="px-8 py-4 border-b">
     <p class="text-left w-full px-4 text-lg">Dial a peer</p>
     <div class="single-input">
-      <input class="text-xl" v-model="peer_to_dial" @keypress.enter.exact.prevent="()=>dial()" />
+      <input
+        class="text-xl"
+        v-model="peer_to_dial"
+        @keypress.enter.exact.prevent="() => dial()"
+      />
       <button @click="dial">Dial</button>
     </div>
   </section>

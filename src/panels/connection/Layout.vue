@@ -1,47 +1,44 @@
-<script setup>
-</script>
+<script setup></script>
 
 <template>
-  <ul class="tab-l-container">
+  <ul class="tab-container">
     <li
-      :style="
-        $route.path.slice(0, 22) === '/main/connections/dial'
-          ? 'background-color:gainsboro;'
-          : ''
+      :class="
+        $route.path.slice(0, 22) === '/main/connections/dial' ? 'selected' : ''
       "
       @click="() => $router.push('/main/connections/dial')"
     >
-      Dial
+      <p>Dial</p>
     </li>
     <li
-      :style="
+      :class="
         $route.path.slice(0, 24) === '/main/connections/listen'
-          ? 'background-color:gainsboro;'
+          ? 'selected'
           : ''
       "
       @click="() => $router.push('/main/connections/listen')"
     >
-      Listen
+      <p>Listen</p>
     </li>
     <li
-      :style="
+      :class="
         $route.path.slice(0, 27) === '/main/connections/connected'
-          ? 'background-color:gainsboro;'
+          ? 'selected'
           : ''
       "
       @click="() => $router.push('/main/connections/connected')"
     >
-      Connected
+      <p>Connected</p>
     </li>
     <li
-      :style="
+      :class="
         $route.path.slice(0, 25) === '/main/connections/relays'
-          ? 'background-color:gainsboro;'
+          ? 'selected'
           : ''
       "
       @click="() => $router.push('/main/connections/relays')"
     >
-      Relays
+      <p>Relays</p>
     </li>
   </ul>
   <div class="w-[100%]" style="height: calc(100vh - 2.5rem)">
