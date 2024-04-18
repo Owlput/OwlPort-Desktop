@@ -7,7 +7,6 @@ import { listen } from "@tauri-apps/api/event";
 const connected_peers = ref(new Set());
 const listener_handle = ref(() => {});
 function handle_swarm_event(ev) {
-  console.log(ev);
   if (ev.payload?.ConnectionClosed) {
     if (ev.payload.ConnectionClosed.num_established < 1) {
       connected_peers.value.delete(ev.payload.ConnectionClosed.peer_id);
@@ -15,7 +14,7 @@ function handle_swarm_event(ev) {
     return;
   }
   if (ev.payload?.ConnectionEstablished) {
-    connected_peers.value.add(ev.payload.ConnectionEstablished);
+    connected_peers.value.add(ev.payload.ConnectionEstablished.peer_id);
   }
 }
 invoke("plugin:owlnest-swarm|list_connected").then((list) => {
@@ -40,7 +39,7 @@ onUnmounted(() => {
       <li v-if="connected_peers.size === 0" class="text-center">
         No peers connected.
       </li>
-      <li v-for="peer in connected_peers.keys()" class="bg-green-200">
+      <li v-for="peer in connected_peers" class="bg-green-200">
         <Suspense>
           <ConnectedPeerEntry :peer-id="peer" />
         </Suspense>
