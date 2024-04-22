@@ -21,12 +21,16 @@ function toggleExpand() {
 </script>
 <template>
   <section
+    @click="toggleExpand"
     class="flex flex-nowrap flex-row justify-between hover:cursor-pointer"
   >
-    <p @click="toggleExpand">
+    <p class="sm:hidden">
       {{ props.peerId.slice(0, 6) }}..{{
         props.peerId.slice(props.peerId.length - 6, props.peerId.length)
       }}
+    </p>
+    <p class="hidden sm:block">
+      {{ props.peerId }}
     </p>
     <button
       class="rounded-sm"
@@ -41,11 +45,11 @@ function toggleExpand() {
     </button>
   </section>
   <section class="mx-1" v-if="show_supported_protocols">
-    <p>Peer ID: {{ props.peerId }}</p>
+    <p class="sm:hidden">Peer ID: {{ props.peerId }}</p>
     <p>Protocol stack: {{ peer_info.protocol_version }}</p>
     <p>Suported protocols({{ peer_info.supported_protocols.length }}):</p>
     <ul class="flex flex-wrap">
-      <li v-for="item in peer_info.supported_protocols" class="m-2">
+      <li v-for="item in peer_info.supported_protocols" class="m-1">
         {{ item }}
       </li>
     </ul>

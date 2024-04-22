@@ -2,7 +2,6 @@
 import {useRouter} from 'vue-router'
 const router = useRouter();
 document.addEventListener('keypress',(ev)=>{
-  console.log(ev)
   if (ev.key === "Esc"){
     router.back()
   }

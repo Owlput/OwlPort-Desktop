@@ -2,8 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod event;
-mod plugins;
 mod macros;
+mod plugins;
 extern crate owlnest;
 extern crate tokio;
 
@@ -41,12 +41,7 @@ fn setup_logging() {
             }
         }
     };
-    let filter = tracing_subscriber::filter::Targets::new()
-        .with_target("owlnest", Level::DEBUG)
-        .with_target("rustyline", LevelFilter::ERROR)
-        .with_target("libp2p_noise", Level::WARN)
-        .with_target("hickory_proto", Level::WARN)
-        .with_target("", Level::INFO);
+    let filter = tracing_subscriber::filter::Targets::new().with_target("", Level::WARN);
     let layer = tracing_subscriber::fmt::Layer::default()
         .with_ansi(false)
         .with_writer(Mutex::new(log_file_handle))

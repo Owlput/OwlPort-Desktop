@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 let local_peer_id = ref("");
 invoke("plugin:owlnest-swarm|get_local_peer_id").then((res) => {
   local_peer_id.value = res;
+  localStorage.setItem("local_peer_id", res)
 });
 </script>
 

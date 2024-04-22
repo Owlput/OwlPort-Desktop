@@ -1,5 +1,5 @@
 use super::*;
-use crate::event::popup_manager::{Popup, DefaultPopupProps};
+use crate::event::popup_manager::{DefaultPopupProps, Popup};
 use tauri::Manager;
 
 macro_rules! get_timestamp {

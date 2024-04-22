@@ -256,7 +256,8 @@ impl TryFrom<&swarm::SwarmEvent> for SwarmEventEmit {
                 peer_id,
                 cause,
                 endpoint,
-                num_established,..
+                num_established,
+                ..
             } => Self::ConnectionClosed {
                 peer_id: *peer_id,
                 endpoint: endpoint.into(),

@@ -143,8 +143,8 @@ button:active{
 .event-list > li{
   width: 100%;
   border-radius: 0.25rem;
-  margin-top: 0.5rem;
-  padding: 0.5rem;
+  margin-top: 0.25rem;
+  padding: 0.25rem;
 }
 
 .item-evenly-sized > *{

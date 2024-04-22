@@ -1,5 +1,5 @@
-use owlnest::net::p2p::swarm::behaviour::BehaviourEvent;
 use super::*;
+use owlnest::net::p2p::swarm::behaviour::BehaviourEvent;
 
 #[derive(Debug, Clone, Default)]
 struct State {

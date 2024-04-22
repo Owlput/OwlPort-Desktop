@@ -28,7 +28,8 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Advertise(ev)) = ev.as_ref()
                     {
                         if let Ok(ev) = ev.try_into() {
-                            let _ = app_handle.emit_all::<AdvertiseEmit>("owlnest-autonat-emit", ev);
+                            let _ =
+                                app_handle.emit_all::<AdvertiseEmit>("owlnest-advertise-emit", ev);
                         }
                     }
                 }

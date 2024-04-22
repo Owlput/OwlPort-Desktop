@@ -15,6 +15,7 @@ use tokio::sync::RwLock;
 
 pub mod messaging;
 // pub mod statistics;
+pub mod advertise;
 pub mod autonat;
 pub mod blob;
 pub mod kad;
@@ -22,7 +23,6 @@ pub mod mdns;
 pub mod relay;
 pub mod swarm_plugin;
 pub mod upnp;
-pub mod advertise;
 
 pub fn setup_peer() -> swarm::Manager {
     #[cfg(not(feature = "debug"))]
