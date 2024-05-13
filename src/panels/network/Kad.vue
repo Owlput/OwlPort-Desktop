@@ -4,10 +4,10 @@ import { RouterView } from "vue-router";
 <template>
   <ul class="tab-container">
     <li
-      @click="() => $router.push('/main/network/kad/activity')"
-      :class="$route.path == '/main/network/kad/activity' ? 'selected' : ''"
+      @click="() => $router.push('/main/network/kad/peers')"
+      :class="$route.path == '/main/network/kad/peers' ? 'selected' : ''"
     >
-      <p>Activity</p>
+      <p>Peers</p>
     </li>
     <li
       @click="() => $router.push('/main/network/kad/query')"
@@ -22,7 +22,7 @@ import { RouterView } from "vue-router";
       <p>Bootstrap</p>
     </li>
   </ul>
-  <section style="height: calc(100vh - 4rem)">
+  <section style="height: calc(100vh - 2.5rem);" class="overflow-auto">
     <RouterView v-slot="{ Component }">
       <KeepAlive>
         <component :is="Component" />

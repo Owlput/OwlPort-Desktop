@@ -3,13 +3,15 @@ import { invoke } from "@tauri-apps/api";
 import { listen } from "@tauri-apps/api/event";
 import { ref, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
+import RecvEntry from "./RecvEntry.vue";
+import SendEntry from "./SendEntry.vue";
 const route = useRoute();
-const peer_to_send = ref(route.query?.remote ? route.query.remote : "");
+const peer_to_send = ref(route.query.remote ? route.query.remote : "");
 const file_path = ref("");
 const pending_send = ref(new Map());
 const pending_recv = ref(new Map());
 const file_drop_listener = ref(() => {});
-const incoming_file_listener = ref(() => {});
+const incoming_file_rlisten = ref(() => {});
 listen("tauri://file-drop", (ev) => {
   handle_drop(ev);
 }).then((handle) => (file_drop_listener.value = handle));
@@ -17,45 +19,42 @@ listen("owlnest-blob-transfer-emit", (ev) => {
   if (ev.payload?.IncomingFile) {
     pending_recv.value.set(ev.payload.IncomingFile.local_recv_id, {
       from: ev.payload.IncomingFile.from,
-      file_name: ev.payload.IncomingFile.file_name,
-      local_recv_id: ev.payload.IncomingFile.local_recv_id,
-      bytes_total: ev.payload.IncomingFile.bytes_total,
-      bytes_sent: null,
+      fileName: ev.payload.IncomingFile.file_name,
+      recvId: ev.payload.IncomingFile.local_recv_id,
+      bytesTotal: ev.payload.IncomingFile.bytes_total,
     });
     return;
   }
   if (ev.payload?.CancelledRecv) {
-    console.log(ev)
-    if (!pending_recv.value.delete(ev.payload.CancelledRecv)){
-      console.error("Incorrect internal state!")
-    };
+    if (!pending_recv.value.delete(ev.payload.CancelledRecv.local_recv_id)) {
+      console.error("Incorrect internal state!");
+    }
     return;
   }
   if (ev.payload?.CancelledSend) {
-    if (!pending_send.value.delete(ev.payload.CancelledSend)){
-      console.error("Incorrect internal state!")
-    }
-    return
-  }
-  if (ev.payload?.SendProgressed) {
-    let entry = pending_send.value.get(ev.payload.SendProgressed.local_send_id);
-    if (!entry) {
+    if (!pending_send.value.delete(ev.payload.CancelledSend.local_send_id)) {
       console.error("Incorrect internal state!");
-      return;
     }
-    entry.bytes_sent = ev.payload.SendProgressed.bytes_sent;
     return;
   }
-  if (ev.payload?.RecvProgressed) {
-    let entry = pending_recv.get(ev.payload.RecvProgressed.local_recv_id);
-    if (!entry) {
-      console.error("Incorrect internal state!");
-      return;
-    }
-    entry.bytes_received = ev.payload.RecvProgressed.bytes_received;
-    return;
+}).then((handle) => (incoming_file_rlisten.value = handle));
+invoke("plugin:owlnest-blob-transfer|list_pending_send").then((v) => {
+  v.forEach((item) => {
+    pending_send.value.set(item.local_send_id, {
+      filePath: item.file_path,
+      sendId: item.local_send_id,
+    });
+  });
+});
+invoke("plugin:owlnest-blob-transfer|list_pending_recv").then((v) => {
+  for (let item of v) {
+    pending_recv.value.set(item.local_recv_id, {
+      fileName: item.file_name,
+      recvId: item.local_recv_id,
+      bytesTotal: item.bytes_total,
+    });
   }
-}).then((handle) => (incoming_file_listener.value = handle));
+});
 function send() {
   if (!(peer_to_send.value && file_path.value)) {
     return;
@@ -64,19 +63,15 @@ function send() {
     peer: peer_to_send.value,
     filePath: file_path.value,
   }).then((local_send_id) => {
-    let path_parts = file_path.value.split("/");
     pending_send.value.set(local_send_id, {
-      file_name: path_parts[path_parts.length - 1],
-      local_send_id,
-      bytes_total: null,
-      bytes_sent: 0,
+      filePath: file_path,
+      sendId: local_send_id,
     });
   });
 }
-
 onUnmounted(() => {
   file_drop_listener.value();
-  incoming_file_listener.value();
+  incoming_file_rlisten.value();
 });
 function handle_drop(ev) {
   file_path.value = ev.payload[0].replaceAll("\\", "/");
@@ -92,61 +87,37 @@ function handle_drop(ev) {
       <input v-model="peer_to_send" /><button @click="send">Send</button>
     </section>
   </section>
-  <div class="grid grid-cols-2 text-center select-none">
+  <div
+    class="grid grid-cols-2 text-center select-none"
+    style="height: calc(100vh - 8rem)"
+  >
     <section>
       <p>Pending send</p>
-      <ul class="p-2">
+      <ul class="m-2 p-2 overflow-auto" v-if="pending_send.size > 0">
         <li
           v-for="item in pending_send.values()"
-          class="p-2 border border-gray-300 rounded-sm"
+          class="mx-2 mt-2 border-gray-300 rounded-md shadow-md"
         >
-          <p>{{ item.file_name }}</p>
-          <p v-if="item.bytes_total">
-            {{ item.bytes_sent / item.bytes_total }}%
-          </p>
-          <button
-            @click="
-              () => {
-                invoke('plugin:owlnest-blob-transfer|cancel_send', {
-                  sendId: item.local_send_id,
-                }).then(update_pending);
-              }
-            "
-          >
-            Cancel
-          </button>
+          <SendEntry
+            :file-path="item.filePath"
+            :send-id="item.sendId"
+          ></SendEntry>
         </li>
       </ul>
+      <p v-else class="p-2">No item</p>
     </section>
     <section>
       <p>Pending recv</p>
-      <ul>
-        <li v-for="item in pending_recv.values()">
-          <p>{{ item.file_name }}</p>
-          <p>{{ item.bytes_total / 1024 / 1024 }}MB</p>
-          <button
-            @click="
-              () =>
-                invoke('plugin:owlnest-blob-transfer|recv', {
-                  recvId: item.local_recv_id,
-                  fileName: item.file_name,
-                })
-            "
-          >
-            Accept
-          </button>
-          <button
-            @click="
-              () =>
-                invoke('plugin:owlnest-blob-transfer|cancel_recv', {
-                  recvId: item.local_recv_id,
-                }).catch((e)=> console.error(e))
-            "
-          >
-            Cancel
-          </button>
+      <ul class="m-2 p-2 overflow-auto" v-if="pending_recv.size > 0">
+        <li v-for="item in pending_recv.values()" class="mx-2 mt-2 rounded-md shadow-md">
+          <RecvEntry
+            :file-name="item.fileName"
+            :recv-id="item.recvId"
+            :bytes-total="item.bytesTotal"
+          ></RecvEntry>
         </li>
       </ul>
+      <p v-else class="p-2">No item</p>
     </section>
   </div>
 </template>

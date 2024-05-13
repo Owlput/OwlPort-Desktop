@@ -1,31 +1,17 @@
 use super::*;
 use crate::event::popup_manager::{get_timestamp, DefaultPopupProps, Popup};
 use owlnest::net::p2p::protocols::blob::{OutEvent, RecvInfo, SendInfo};
-use std::time::Duration;
 use std::{fs, str::FromStr};
 
-#[derive(Clone)]
-struct State {
-    connected_peers: Arc<RwLock<HashSet<PeerId>>>,
-    manager: swarm::Manager,
-}
-impl State {
-    fn new(manager: swarm::Manager) -> Self {
-        Self {
-            connected_peers: Default::default(),
-            manager,
-        }
-    }
-}
-
-pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
+pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("owlnest-blob-transfer")
         .setup(|app| {
-            let state = State::new(peer_manager.clone());
-            app.manage(state.clone());
             let app_handle = app.clone();
             async_runtime::spawn(async move {
-                let mut listener = peer_manager.event_subscriber().subscribe();
+                let mut listener = app_handle
+                    .state::<swarm::Manager>()
+                    .event_subscriber()
+                    .subscribe();
                 while let Ok(ev) = listener.recv().await {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Blob(ev)) = ev.as_ref() {
                         if let Ok(ev) = ev.try_into() {
@@ -150,20 +136,7 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                                     },
                                 );
                             }
-                            OutEvent::OutboundNegotiated(peer) => {
-                                state.connected_peers.write().await.insert(*peer);
-                            }
                             _ => {}
-                        }
-                    }
-                    if let swarm::SwarmEvent::ConnectionClosed {
-                        peer_id,
-                        num_established,
-                        ..
-                    } = ev.as_ref()
-                    {
-                        if *num_established < 1 {
-                            state.connected_peers.write().await.remove(peer_id);
                         }
                     }
                 }
@@ -184,13 +157,13 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
 }
 
 #[tauri::command]
-async fn list_connected(state: tauri::State<'_, State>) -> Result<Vec<PeerId>, String> {
-    Ok(state.connected_peers.read().await.iter().copied().collect())
+async fn list_connected(state: tauri::State<'_, swarm::Manager>) -> Result<Vec<PeerId>, String> {
+    Ok(state.blob().list_connected().await)
 }
 
 #[tauri::command]
 async fn send(
-    state: tauri::State<'_, State>,
+    state: tauri::State<'_, swarm::Manager>,
     peer: String,
     file_path: String,
 ) -> Result<u64, String> {
@@ -199,7 +172,7 @@ async fn send(
         .read(true)
         .open(&file_path)
         .map_err(|e| e.to_string())?;
-    match state.manager.blob().send_file(peer, file_path).await {
+    match state.blob().send_file(peer, file_path).await {
         Ok(v) => Ok(v),
         Err(e) => Err(format!("{:?}", e)),
     }
@@ -207,21 +180,20 @@ async fn send(
 
 #[tauri::command]
 async fn recv(
-    state: tauri::State<'_, State>,
+    state: tauri::State<'_, swarm::Manager>,
     recv_id: u64,
     file_name: String,
 ) -> Result<(), String> {
     let file_path = format!("C:/Users/{}/Downloads/{}", whoami::username(), file_name);
-    match state.manager.blob().recv_file(recv_id, file_path).await {
+    match state.blob().recv_file(recv_id, file_path).await {
         Ok(_) => Ok(()),
         Err(e) => Err(format!("{:?}", e)),
     }
 }
 
 #[tauri::command]
-async fn cancel_send(state: tauri::State<'_, State>, send_id: u64) -> Result<(), String> {
+async fn cancel_send(state: tauri::State<'_, swarm::Manager>, send_id: u64) -> Result<(), String> {
     state
-        .manager
         .blob()
         .cancel_send(send_id)
         .await
@@ -229,9 +201,8 @@ async fn cancel_send(state: tauri::State<'_, State>, send_id: u64) -> Result<(),
 }
 
 #[tauri::command]
-async fn cancel_recv(state: tauri::State<'_, State>, recv_id: u64) -> Result<(), String> {
+async fn cancel_recv(state: tauri::State<'_, swarm::Manager>, recv_id: u64) -> Result<(), String> {
     state
-        .manager
         .blob()
         .cancel_recv(recv_id)
         .await
@@ -239,20 +210,22 @@ async fn cancel_recv(state: tauri::State<'_, State>, recv_id: u64) -> Result<(),
 }
 
 #[tauri::command]
-async fn list_pending_send(state: tauri::State<'_, State>) -> Result<Vec<SendInfo>, String> {
-    Ok(state.manager.blob().list_pending_send().await)
+async fn list_pending_send(
+    state: tauri::State<'_, swarm::Manager>,
+) -> Result<Vec<SendInfo>, String> {
+    Ok(state.blob().list_pending_send().await)
 }
 
 #[tauri::command]
-async fn list_pending_recv(state: tauri::State<'_, State>) -> Result<Vec<RecvInfo>, String> {
-    Ok(state.manager.blob().list_pending_recv().await)
+async fn list_pending_recv(
+    state: tauri::State<'_, swarm::Manager>,
+) -> Result<Vec<RecvInfo>, String> {
+    Ok(state.blob().list_pending_recv().await)
 }
 
-#[allow(unused_variables)]
 #[tauri::command]
 async fn spawn_window<R: Runtime>(
     app: tauri::AppHandle<R>,
-    state: tauri::State<'_, State>,
     peer: Option<PeerId>,
 ) -> Result<(), String> {
     if let Some(window) = app.get_window("BlobTransfer") {

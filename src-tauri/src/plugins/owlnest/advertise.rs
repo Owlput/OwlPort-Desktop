@@ -1,29 +1,15 @@
 use super::*;
 use owlnest::net::p2p::protocols::advertise;
-use std::sync::atomic::AtomicBool;
 
-#[derive(Debug, Clone)]
-struct State {
-    /// The state of the provider
-    /// `true` for active, `false` for inactive.
-    is_providing: Arc<AtomicBool>,
-}
-impl Default for State {
-    fn default() -> Self {
-        Self {
-            is_providing: Arc::new(AtomicBool::new(false)),
-        }
-    }
-}
-
-pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
+pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("owlnest-advertise")
         .setup(|app| {
             let app_handle = app.clone();
-            let state = State::default();
-            app.manage(state.clone());
             async_runtime::spawn(async move {
-                let mut listener = peer_manager.event_subscriber().subscribe();
+                let mut listener = app_handle
+                    .state::<swarm::Manager>()
+                    .event_subscriber()
+                    .subscribe();
                 while let Ok(ev) = listener.recv().await {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Advertise(ev)) = ev.as_ref()
                     {
@@ -62,7 +48,7 @@ async fn set_provider_state(
 async fn query_advertised(
     state: tauri::State<'_, swarm::Manager>,
     peer_id: PeerId,
-) -> Result<Vec<PeerId>, advertise::Error> {
+) -> Result<Option<Box<[PeerId]>>, advertise::Error> {
     state.advertise().query_advertised_peer(peer_id).await
 }
 
@@ -80,7 +66,7 @@ async fn set_remote_advertisement(
 
 #[derive(Debug, Serialize, Clone)]
 enum AdvertiseEmit {
-    QueryAnswered { from: PeerId, list: Vec<PeerId> },
+    QueryAnswered { from: PeerId, list: Option<Box<[PeerId]>> },
     RemoteAdvertisementResult { from: PeerId, result: bool },
     ProviderState { state: bool },
     AdvertisedPeerChanged { peer: PeerId, state: bool },

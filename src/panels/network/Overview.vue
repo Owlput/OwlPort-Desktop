@@ -2,7 +2,7 @@
 import { invoke } from "@tauri-apps/api";
 import { ref, onUnmounted } from "vue";
 const mdns = ref({ discovered: 0 });
-const kad = ref({ mode: false, entries: 0 });
+const kad = ref({ mode: false });
 const autonat = ref({ status: "Unknown", confidence: 0 });
 const upnp = ref({ status: false, num_of_exposed: 0 });
 function update_display() {
@@ -13,7 +13,6 @@ function update_display() {
     autonat.value = result;
   });
   invoke("plugin:owlnest-kad|get_mode").then((result)=>kad.value.mode = result)
-  invoke("plugin:owlnest-kad|get_num_kbuckets").then((result)=> kad.value.entries = result)
 }
 update_display();
 let interval_id = setInterval(update_display,5000)
@@ -37,11 +36,9 @@ onUnmounted(()=>{
       class="shadow-md hover:shadow-lg relative"
       @click="$router.push('/main/network/kad')"
     >
-      <p>Kad</p>
-      <div class="absolute w-full bottom-0">
+      <p class="text-xxl">Kad</p>
+      <div class="w-full">
         <p>Mode: {{ kad.mode ? "Server" : "Client" }}</p>
-        <p>Number of buckets:</p>
-        <p class="text-[3rem] p-4">{{ kad.entries }}</p>
       </div>
     </section>
     <section

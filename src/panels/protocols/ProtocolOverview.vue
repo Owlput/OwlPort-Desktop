@@ -10,8 +10,10 @@ onUnmounted(() => {
 <template>
   <ul class="w-full h-full p-4 select-none">
     <li class="p-2">
-      <Suspense><MessagingStatus /></Suspense>
+      <MessagingStatus />
     </li>
-    <li class="p-2"><BlobTransferStatus /></li>
+    <li class="p-2">
+      <BlobTransferStatus />
+    </li>
   </ul>
 </template>

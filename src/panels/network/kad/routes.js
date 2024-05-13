@@ -3,8 +3,8 @@ export default {
   component: () => import("../Kad.vue"),
   children: [
     {
-      path: "activity",
-      component: () => import("./Activity.vue"),
+      path: "peers",
+      component: () => import("./Peers.vue"),
     },
     {
       path: "query",
@@ -16,7 +16,7 @@ export default {
     },
     {
       path: "",
-      redirect: "/main/network/kad/activity",
+      redirect: "/main/network/kad/peers",
     },
   ],
 };

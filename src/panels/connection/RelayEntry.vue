@@ -19,22 +19,23 @@ function toggle_relay_info() {
   if (!show_relay_info.value) {
     invoke("plugin:owlnest-relay|get_relay_status", {
       relay: props.peerId,
-    }).then((v) => {
-      v.address = v.address.filter(
-        (v) => !(v.includes("127.0.0.1") || v.includes("wss"))
-      );
-      relay_info.value = v;
-      invoke("plugin:owlnest-advertise|query_advertised", {
-        peerId: props.peerId,
-      })
-        .then((v) => {
-          (relay_info.value.advertised = v), (show_relay_info.value = true);
+    })
+      .then((v) => {
+        v.address = v.address.filter(
+          (v) => !(v.includes("127.0.0.1") || v.includes("wss"))
+        );
+        relay_info.value = v;
+        invoke("plugin:owlnest-advertise|query_advertised", {
+          peerId: props.peerId,
         })
-        .catch((e) => {
-          console.log(e);
-          show_relay_info.value = true;
-        });
-    });
+          .then((v) => {
+            (relay_info.value.advertised = v), (show_relay_info.value = true);
+          })
+          .catch((e) => {
+            show_relay_info.value = true;
+          });
+      })
+      .catch((_) => {});
   } else {
     show_relay_info.value = false;
     relay_info.value = false;
@@ -43,7 +44,7 @@ function toggle_relay_info() {
 function listen_on_relay() {
   invoke("plugin:owlnest-swarm|listen", {
     listenOptions: {
-      addr: `${relay_info.address[0]}/p2p/${props.peerId}/p2p-circuit`,
+      addr: `${relay_info.value.address[0]}/p2p/${props.peerId}/p2p-circuit`,
     },
   }).catch((e) => console.log(e));
 }
@@ -67,23 +68,26 @@ function toggle_advertise() {
         })
           .then((v) => {
             console.log(v);
-            (relay_info.value.advertised = v),
-              (advertise_throttle.value = false);
+            relay_info.value.advertised = v;
           })
           .catch((e) => {
             console.log(e);
-          }),
-      50
+          })
+          .finally(() => (advertise_throttle.value = false)),
+      100
     );
   });
 }
 </script>
 <template>
   <div
-    class="flex justify-between flex-nowrap border px-2"
-    @dblclick="() => toggle_relay_info()"
+    class="flex justify-between flex-nowrap border px-2 cursor-pointer"
+    @click.prevent.self="() => toggle_relay_info()"
   >
-    <p class="select-none" @dblclick="writeText(props.peerId)">
+    <p
+      class="select-none font-mono cursor-default"
+      @dblclick.prevent="writeText(props.peerId)"
+    >
       {{ props.peerId }}
     </p>
     <p>RTT: {{ props.latency }}ms</p>
@@ -109,7 +113,7 @@ function toggle_advertise() {
           No listenable address(Addresses not public)
         </li>
         <li v-for="addr in relay_info.address" class="my-0 w-full">
-          <p @dblclick="() => listen_on_relay(addr, props.peerId)">
+          <p>
             {{ addr }}
           </p>
         </li>
@@ -131,7 +135,10 @@ function toggle_advertise() {
       <ul class="px-4">
         <li v-if="relay_info.advertised.length === 0">No advertised peers</li>
         <li v-for="peerId in relay_info.advertised" class="my-0 w-full">
-          <p class="sm:hidden hover:cursor-pointer" @dblclick="dial_relayed(peerId)">
+          <p
+            class="sm:hidden hover:cursor-pointer"
+            @dblclick="dial_relayed(peerId)"
+          >
             {{ peerId.slice(0, 6) }}..{{
               peerId.slice(peerId.length - 6, peerId.length)
             }}

@@ -6,7 +6,6 @@ use std::str::FromStr;
 pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-autonat")
         .setup(|app| {
-            app.manage(peer_manager.clone());
             let app_handle = app.clone();
             async_runtime::spawn(async move {
                 let mut listener = peer_manager.event_subscriber().subscribe();

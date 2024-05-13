@@ -1,16 +1,10 @@
 <script setup>
-import {
-  watch,
-  ref,
-  onActivated,
-  onDeactivated,
-  computed,
-} from "vue";
+import { ref, onActivated, onDeactivated, computed, onMounted } from "vue";
 const props = defineProps({
   history: Array,
   remote: String,
+  local: String,
 });
-let remaining_pos = ref(0);
 let show_scroll_bottom = ref(false);
 defineEmits(["update:history"]);
 
@@ -22,61 +16,52 @@ const history = computed({
     emit("update:history", value);
   },
 });
-watch(remaining_pos, () => {
-  if (remaining_pos.value < 120) {
-    show_scroll_bottom.value = false;
-  } else{
-    show_scroll_bottom.value = true;
-  }
-});
 
 onDeactivated(() => {
-  removeEventListener("wheel", detect_scroll);
+  removeEventListener("wheel", show_scroll_to_bottom);
 });
 onActivated(() => {
-  addEventListener("wheel", detect_scroll);
-  document.getElementById("last-message")?.scrollIntoView();
+  addEventListener("wheel", show_scroll_to_bottom);
+  scroll_to_bottom()
 });
-function detect_scroll(ev) {
-  let element = document.getElementById(`chat${props.remote}`);
-  remaining_pos.value = element.scrollHeight - element.scrollTop - 350;
+function show_scroll_to_bottom(ev) {
+  let element = document.getElementById(`chat-history`);
+  if (element.scrollHeight - element.scrollTop - 350 < 200) {
+    show_scroll_bottom.value = false;
+  } else {
+    show_scroll_bottom.value = true;
+  }
 }
 function scroll_to_bottom() {
-  document.getElementById("last-message")?.scrollIntoView();
+  let latest = document.querySelector("#chat-history > li:last-child");
+  if (latest) {
+    latest.scrollIntoView();
+  } else {
+    let wrapper = document.getElementById(`chat-history`);
+    wrapper.scroll(0, wrapper.scrollHeight);
+  }
   show_scroll_bottom.value = false;
 }
 </script>
 
 <template>
-  <div class="relative">
-    <section class="w-full h-full overflow-auto" :id="`chat${props.remote}`">
-      <ul class="flex flex-col px-4 py-2">
-        <template v-for="message in history">
-          <li
-            v-if="message.from"
-            class="message-box bg-gray-300 self-start whitespace-pre-wrap"
-            :id="
-              props.history[props.history.length - 1] == message
-                ? 'last-message'
-                : ''
-            "
-          >
-            {{ message.msg }}
-          </li>
-          <li
-            v-else
-            class="message-box bg-green-300 self-end whitespace-pre-wrap"
-            :id="
-              props.history[props.history.length - 1] == message
-                ? 'last-message'
-                : ''
-            "
-          >
-            {{ message.msg }}
-          </li>
-        </template>
-      </ul>
-    </section>
+  <section class="w-full h-full relative">
+    <ul class="flex flex-col h-full px-4 py-2 overflow-auto gutter" id="chat-history">
+      <template v-for="message in history">
+        <li
+          v-if="message.from === props.remote"
+          class="message-box bg-gray-300 self-start whitespace-pre-wrap"
+        >
+          {{ message.msg }}
+        </li>
+        <li
+          v-else
+          class="message-box bg-green-300 self-end whitespace-pre-wrap"
+        >
+          {{ message.msg }}
+        </li>
+      </template>
+    </ul>
     <button
       v-if="show_scroll_bottom"
       class="absolute bottom-0 right-4 bg-transparent shadow-none border-none"
@@ -84,7 +69,7 @@ function scroll_to_bottom() {
     >
       <span class="material-icons"> arrow_downward </span>
     </button>
-  </div>
+  </section>
 </template>
 <style>
 .message-box {

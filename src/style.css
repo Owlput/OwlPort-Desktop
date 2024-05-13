@@ -176,3 +176,7 @@ button:active{
   from {transform: none;}
   to {transform: scale(1.02);}
 }
+
+.gutter{
+  scrollbar-gutter: stable;
+}

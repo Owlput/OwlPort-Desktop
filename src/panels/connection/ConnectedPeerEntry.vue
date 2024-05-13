@@ -1,4 +1,5 @@
 <script setup>
+import { writeText } from "@tauri-apps/api/clipboard";
 import { invoke } from "@tauri-apps/api/tauri";
 import { ref } from "vue";
 const props = defineProps({
@@ -21,15 +22,15 @@ function toggleExpand() {
 </script>
 <template>
   <section
-    @click="toggleExpand"
-    class="flex flex-nowrap flex-row justify-between hover:cursor-pointer"
+    @click.prevent.self="toggleExpand"
+    class="flex flex-nowrap flex-row justify-between cursor-pointer"
   >
-    <p class="sm:hidden">
+    <p class="sm:hidden font-mono cursor-default" @dblclick="()=>writeText(props.peerId)">
       {{ props.peerId.slice(0, 6) }}..{{
         props.peerId.slice(props.peerId.length - 6, props.peerId.length)
       }}
     </p>
-    <p class="hidden sm:block">
+    <p class="hidden sm:block font-mono cursor-default">
       {{ props.peerId }}
     </p>
     <button

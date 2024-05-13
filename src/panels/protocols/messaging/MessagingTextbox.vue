@@ -1,6 +1,5 @@
 <script setup>
-import { listen } from "@tauri-apps/api/event";
-import { onUnmounted, ref } from "vue";
+import { ref } from "vue";
 const props = defineProps({
   send_message: Function,
   push_history: Function,
@@ -9,14 +8,6 @@ const props = defineProps({
 });
 let message = ref("");
 let send_on_enter = ref(true);
-let incoming_handle = await listen("owlnest-messaging-emit", (ev) => {
-  if (ev.payload.IncomingMessage.from == props.remote) {
-    props.push_history(ev.payload.IncomingMessage.msg);
-  }
-});
-onUnmounted(() => {
-  incoming_handle();
-});
 function send() {
   if (!message.value) {
     return;
@@ -30,7 +21,8 @@ function send() {
   <section class="h-full w-full border-t">
     <textarea
       v-model="message"
-      class="resize-none border w-full h-[9rem] p-4"
+      class="resize-none border w-full p-4"
+      style="height: calc(100% - 3.5rem);"
       @keydown.enter.exact.prevent="
         () => {
           if (!send_on_enter) message = message + `\n`;
@@ -42,7 +34,7 @@ function send() {
         }
       "
     ></textarea>
-    <section class="flex justify-between items-center px-8 select-none">
+    <section class="flex justify-between items-center px-8 select-none h-[3rem]">
       <ul class="flex flex-row">
         <li
           class="hover:bg-slate-100 active:bg-slate-300 text"

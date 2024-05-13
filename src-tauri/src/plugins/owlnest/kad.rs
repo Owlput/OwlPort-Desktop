@@ -20,7 +20,6 @@ impl Default for State {
 pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-kad")
         .setup(|app| {
-            app.manage(peer_manager.clone());
             let app_handle = app.clone();
             let state = State::default();
             app.manage(state.clone());
@@ -59,7 +58,7 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
             lookup,
             get_mode,
             set_mode,
-            // get_num_kbuckets,
+            get_all_records
         ])
         .build()
 }
@@ -107,7 +106,7 @@ async fn insert_default(state: tauri::State<'_, swarm::Manager>) -> Result<(), S
 #[tauri::command]
 async fn bootstrap(state: tauri::State<'_, swarm::Manager>) -> Result<(), String> {
     match state.kad().bootstrap().await {
-        Ok(()) => Ok(()),
+        Ok(_) => Ok(()),
         Err(e) => Err(format!("{:?}", e)),
     }
 }
@@ -130,13 +129,13 @@ async fn lookup(
     peer_id: String,
 ) -> Result<String, String> {
     let peer_id = PeerId::from_str(&peer_id).map_err(|e| e.to_string())?;
-    let result = state.kad().lookup(peer_id).await;
+    let result = state.kad().lookup(&peer_id).await;
     Ok(format!("{:?}", result))
 }
 
 #[tauri::command]
 async fn get_mode(state: tauri::State<'_, State>) -> Result<bool, ()> {
-    Ok(state.mode.load(std::sync::atomic::Ordering::SeqCst))
+    Ok(state.mode.load(std::sync::atomic::Ordering::Relaxed))
 }
 
 #[tauri::command]
@@ -149,10 +148,18 @@ async fn set_mode(state: tauri::State<'_, swarm::Manager>, mode: bool) -> Result
     Ok(())
 }
 
-// #[tauri::command]
-// async fn get_num_kbuckets(state: tauri::State<'_, swarm::Manager>) -> Result<u64, ()> {
-//     Ok(state.kad().num_kbuckets().await)
-// }
+#[tauri::command]
+async fn get_all_records(
+    state: tauri::State<'_, swarm::Manager>,
+) -> Result<Vec<(PeerId, Vec<Multiaddr>)>, ()> {
+    Ok(state
+        .kad()
+        .all_records()
+        .await
+        .into_iter()
+        .map(|(peer, addrs)| (peer, addrs.into_vec()))
+        .collect::<Vec<(PeerId, Vec<Multiaddr>)>>())
+}
 
 #[derive(Debug, Clone, Serialize)]
 enum KadEmit {

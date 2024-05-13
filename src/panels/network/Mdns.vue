@@ -25,7 +25,7 @@ invoke("plugin:owlnest-mdns|list_discovered").then((v) => {
           <li
             v-for="addr in discovered_nodes[peer]"
             class="w-full text-autowrap"
-            @click="() => $router.push(`/connections/dial?dial=${addr}`)"
+            @click="() => $router.push(`/main/connections/dial?dial=${addr}`)"
           >
             <p class="text-autowrap">{{ addr }}</p>
           </li>

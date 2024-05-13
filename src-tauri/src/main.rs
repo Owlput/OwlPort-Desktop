@@ -1,28 +1,32 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use anyhow::Ok;
+
 mod event;
 mod macros;
 mod plugins;
 extern crate owlnest;
 extern crate tokio;
 
-fn main() {
+fn main()->anyhow::Result<()> {
     setup_logging();
-    let peer_manager = plugins::owlnest::setup_peer();
+    let peer_manager = plugins::owlnest::setup_peer()?;
     tauri::Builder::default()
+        .manage(peer_manager.clone())
         .plugin(plugins::owlnest::swarm_plugin::init(peer_manager.clone()))
         .plugin(plugins::owlnest::messaging::init(peer_manager.clone()))
         .plugin(plugins::owlnest::mdns::init(peer_manager.clone()))
         .plugin(plugins::owlnest::kad::init(peer_manager.clone()))
-        .plugin(plugins::owlnest::blob::init(peer_manager.clone()))
+        .plugin(plugins::owlnest::blob::init())
         .plugin(plugins::owlnest::autonat::init(peer_manager.clone()))
         .plugin(plugins::owlnest::upnp::init(peer_manager.clone()))
         .plugin(plugins::owlnest::relay::init(peer_manager.clone()))
-        .plugin(plugins::owlnest::advertise::init(peer_manager.clone()))
+        .plugin(plugins::owlnest::advertise::init())
         .plugin(plugins::popup_test::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+    Ok(())
 }
 
 fn setup_logging() {
@@ -31,7 +35,7 @@ fn setup_logging() {
     use tracing_subscriber::Layer;
     let time = chrono::Local::now().timestamp_micros();
     let log_file_handle = match std::fs::create_dir("./logs") {
-        Ok(_) => std::fs::File::create(format!("./logs/{}.log", time)).unwrap(),
+        core::result::Result::Ok(_) => std::fs::File::create(format!("./logs/{}.log", time)).unwrap(),
         Err(e) => {
             let error = format!("{:?}", e);
             if error.contains("AlreadyExists") {

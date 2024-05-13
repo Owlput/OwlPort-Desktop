@@ -56,7 +56,7 @@ const props = defineProps({
       <span class="material-icons m-auto">settings</span>
       <p class="">Settings</p>
     </button>
-    <button @click="()=>console.log($route.fullPath)">Show Full Path</button>
+    <!-- <button @click="()=>console.log($route.fullPath)">Show Full Path</button> -->
   </div>
 </template>
 <style scoped>

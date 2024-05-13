@@ -2,7 +2,7 @@
 import { invoke } from "@tauri-apps/api";
 import { ref } from "vue";
 let connected_peers = ref({});
-invoke("plugin:owlnest-messaging|setup").then(
+invoke("plugin:owlnest-messaging|list_connected").then(
   (peers) => (connected_peers.value = peers)
 );
 </script>
@@ -15,7 +15,7 @@ invoke("plugin:owlnest-messaging|setup").then(
         No peer supports this protocol
       </li>
       <li
-        v-for="peer in Object.keys(connected_peers)"
+        v-for="peer in connected_peers"
         class="p-2"
         @click="() => $router.push(`/protocols/messaging/${peer}`)"
       >
