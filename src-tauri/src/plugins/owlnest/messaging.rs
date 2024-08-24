@@ -166,7 +166,7 @@ async fn clear_chat_history(
 }
 
 #[tauri::command]
-async fn list_connected(state: tauri::State<'_, State>) -> Result<Vec<PeerId>, ()> {
+async fn list_connected(state: tauri::State<'_, State>) -> Result<Box<[PeerId]>, ()> {
     Ok(state.manager.messaging().list_connected().await)
 }
 

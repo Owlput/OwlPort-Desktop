@@ -157,7 +157,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
 }
 
 #[tauri::command]
-async fn list_connected(state: tauri::State<'_, swarm::Manager>) -> Result<Vec<PeerId>, String> {
+async fn list_connected(state: tauri::State<'_, swarm::Manager>) -> Result<Box<[PeerId]>, String> {
     Ok(state.blob().list_connected().await)
 }
 
@@ -212,14 +212,14 @@ async fn cancel_recv(state: tauri::State<'_, swarm::Manager>, recv_id: u64) -> R
 #[tauri::command]
 async fn list_pending_send(
     state: tauri::State<'_, swarm::Manager>,
-) -> Result<Vec<SendInfo>, String> {
+) -> Result<Box<[SendInfo]>, String> {
     Ok(state.blob().list_pending_send().await)
 }
 
 #[tauri::command]
 async fn list_pending_recv(
     state: tauri::State<'_, swarm::Manager>,
-) -> Result<Vec<RecvInfo>, String> {
+) -> Result<Box<[RecvInfo]>, String> {
     Ok(state.blob().list_pending_recv().await)
 }
 

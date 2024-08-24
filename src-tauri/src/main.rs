@@ -9,7 +9,7 @@ mod plugins;
 extern crate owlnest;
 extern crate tokio;
 
-fn main()->anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     setup_logging();
     let peer_manager = plugins::owlnest::setup_peer()?;
     tauri::Builder::default()
@@ -35,7 +35,9 @@ fn setup_logging() {
     use tracing_subscriber::Layer;
     let time = chrono::Local::now().timestamp_micros();
     let log_file_handle = match std::fs::create_dir("./logs") {
-        core::result::Result::Ok(_) => std::fs::File::create(format!("./logs/{}.log", time)).unwrap(),
+        core::result::Result::Ok(_) => {
+            std::fs::File::create(format!("./logs/{}.log", time)).unwrap()
+        }
         Err(e) => {
             let error = format!("{:?}", e);
             if error.contains("AlreadyExists") {

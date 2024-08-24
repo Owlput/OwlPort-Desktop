@@ -66,10 +66,21 @@ async fn set_remote_advertisement(
 
 #[derive(Debug, Serialize, Clone)]
 enum AdvertiseEmit {
-    QueryAnswered { from: PeerId, list: Option<Box<[PeerId]>> },
-    RemoteAdvertisementResult { from: PeerId, result: bool },
-    ProviderState { state: bool },
-    AdvertisedPeerChanged { peer: PeerId, state: bool },
+    QueryAnswered {
+        from: PeerId,
+        list: Option<Box<[PeerId]>>,
+    },
+    RemoteAdvertisementResult {
+        from: PeerId,
+        result: bool,
+    },
+    ProviderState {
+        state: bool,
+    },
+    AdvertisedPeerChanged {
+        peer: PeerId,
+        state: bool,
+    },
     Error(String),
 }
 impl TryFrom<&advertise::OutEvent> for AdvertiseEmit {

@@ -24,3 +24,5 @@ dist-ssr
 
 target
 id.libp2pkeypair
+src-tauri/owlnest_config.toml
+

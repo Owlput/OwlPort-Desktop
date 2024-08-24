@@ -32,7 +32,7 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Identify(ev)) = ev.as_ref()
                     {
                         match ev {
-                            identify::OutEvent::Received { peer_id, info } => {
+                            identify::OutEvent::Received { peer_id, info, .. } => {
                                 if info.protocols.contains(&RELAY_HOP)
                                     && info.protocols.contains(&RELAY_STOP)
                                 {

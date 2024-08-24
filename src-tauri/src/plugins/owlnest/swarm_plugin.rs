@@ -7,7 +7,7 @@ use tracing::{error, warn};
 #[derive(Clone)]
 struct State {
     pub swarm_manager: swarm::manager::Manager,
-    pub connected_peers: Arc<RwLock<HashMap<PeerId, PeerInfo>>>,
+    pub connected_peers: Arc<RwLock<HashMap<PeerId, (PeerInfo, Vec<ConnectionInfo>)>>>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -15,6 +15,12 @@ struct PeerInfo {
     supported_protocols: Vec<String>,
     protocol_version: String,
 }
+#[derive(Debug, Clone, Serialize)]
+struct ConnectionInfo {
+    connection_id: u64,
+    remote_address: Multiaddr,
+}
+
 impl Default for PeerInfo {
     fn default() -> Self {
         Self {
@@ -32,6 +38,7 @@ impl From<&Info> for PeerInfo {
                 .map(|protocol| protocol.to_string())
                 .collect(),
             protocol_version: value.protocol_version.clone(),
+            ..Default::default()
         }
     }
 }
@@ -59,11 +66,17 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                         ConnectionEstablished {
                             peer_id,
                             num_established,
+                            connection_id,
+                            endpoint,
                             ..
                         } => {
                             if *num_established < NonZeroU32::new(2).unwrap() {
                                 guard.insert(*peer_id, Default::default());
                             }
+                            guard.get_mut(peer_id).unwrap().1.push(ConnectionInfo {
+                                connection_id: connection_id.into_inner() as u64,
+                                remote_address: endpoint.get_remote_address().clone(),
+                            });
                         }
                         ConnectionClosed {
                             peer_id,
@@ -89,10 +102,11 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                             if let BehaviourEvent::Identify(identify::OutEvent::Received {
                                 peer_id,
                                 info,
+                                ..
                             }) = ev
                             {
                                 if let Some(v) = guard.get_mut(peer_id) {
-                                    *v = info.into()
+                                    v.0 = info.into()
                                 } else {
                                     error!("Behaviour event handled before ConnectionEstablished")
                                 }
@@ -159,7 +173,7 @@ async fn get_local_peer_id(state: tauri::State<'_, State>) -> Result<String, Str
 }
 
 #[tauri::command]
-async fn list_listeners(state: tauri::State<'_, State>) -> Result<Vec<Multiaddr>, String> {
+async fn list_listeners(state: tauri::State<'_, State>) -> Result<Box<[Multiaddr]>, String> {
     Ok(state.swarm_manager.swarm().list_listeners().await)
 }
 
@@ -171,7 +185,7 @@ async fn list_connected(state: tauri::State<'_, State>) -> Result<Vec<PeerId>, S
 async fn get_peer_info(
     state: tauri::State<'_, State>,
     peer_id: PeerId,
-) -> Result<Option<PeerInfo>, String> {
+) -> Result<Option<(PeerInfo, Vec<ConnectionInfo>)>, String> {
     Ok(state.connected_peers.read().await.get(&peer_id).cloned())
 }
 
@@ -312,6 +326,7 @@ mod serde_types {
                 swarm::ConnectedPoint::Dialer {
                     address,
                     role_override,
+                    ..
                 } => {
                     let is_override = if let Endpoint::Dialer = role_override {
                         false
