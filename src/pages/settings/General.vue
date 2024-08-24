@@ -1,1 +1,0 @@
-<template>General Settings</template>
