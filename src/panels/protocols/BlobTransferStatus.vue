@@ -2,7 +2,7 @@
 import { invoke } from "@tauri-apps/api";
 import { onUnmounted, ref } from "vue";
 let expand = ref(false);
-let connected_peers = ref({});
+let connected_peers = ref([]);
 invoke("plugin:owlnest-blob-transfer|list_connected").then(
   (peers) => (connected_peers.value = peers)
 );

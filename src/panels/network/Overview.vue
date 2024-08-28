@@ -1,6 +1,7 @@
 <script setup>
 import { invoke } from "@tauri-apps/api";
 import { ref, onUnmounted } from "vue";
+
 const mdns = ref({ discovered: 0 });
 const kad = ref({ mode: false });
 const autonat = ref({ status: "Unknown", confidence: 0 });
@@ -12,13 +13,15 @@ function update_display() {
   invoke("plugin:owlnest-autonat|get_nat_status").then((result) => {
     autonat.value = result;
   });
-  invoke("plugin:owlnest-kad|get_mode").then((result)=>kad.value.mode = result)
+  invoke("plugin:owlnest-kad|get_mode").then(
+    (result) => (kad.value.mode = result)
+  );
 }
 update_display();
-let interval_id = setInterval(update_display,5000)
-onUnmounted(()=>{
-  clearInterval(interval_id)
-})
+let interval_id = setInterval(update_display, 5000);
+onUnmounted(() => {
+  clearInterval(interval_id);
+});
 </script>
 <template>
   <main class="card-wrapper">

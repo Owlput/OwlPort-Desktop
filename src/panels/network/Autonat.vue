@@ -1,6 +1,7 @@
 <script setup>
 import { invoke } from "@tauri-apps/api";
 import { ref } from "vue";
+
 const address_to_probe = ref("");
 const nat_status = ref({ confidence: 0, status: "Unknown" });
 function get_nat_status() {

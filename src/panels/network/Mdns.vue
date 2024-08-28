@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api";
+
 let discovered_nodes = ref({});
 invoke("plugin:owlnest-mdns|list_discovered").then((v) => {
   discovered_nodes.value = v;

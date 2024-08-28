@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
 import DialEventListener from "./DialEventListener.vue";
 import { useRoute } from "vue-router";
+
 let route = useRoute();
 defineOptions({
   name: "Dial",

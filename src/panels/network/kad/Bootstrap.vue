@@ -1,6 +1,7 @@
 <script setup>
 import { invoke } from "@tauri-apps/api";
 import KadEventListener from "./KadEventListener.vue";
+
 </script>
 <template>
   <section class="flex py-4 px-12 border-b item-evenly-sized">

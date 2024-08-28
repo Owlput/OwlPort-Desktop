@@ -25,7 +25,11 @@ update_relay_list();
 </script>
 <template>
   <div class="flex justify-evenly items-center pt-4">
-    <PeerSearchBar place-holder="Type Peer ID and press Enter to search" :refresh="update_relay_list" v-model="search_keyword"/>
+    <PeerSearchBar
+      place-holder="Type Peer ID and press Enter to search"
+      :refresh="update_relay_list"
+      v-model="search_keyword"
+    />
   </div>
   <ul
     class="event-list text-autowrap select-none overflow-auto px-8 py-4"

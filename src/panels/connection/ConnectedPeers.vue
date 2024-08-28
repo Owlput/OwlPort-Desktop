@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { onUnmounted, ref, computed } from "vue";
 import ConnectedPeerEntry from "./ConnectedPeerEntry.vue";
 import PeerSearchBar from "../../components/PeerSearchBar.vue";
+import {isBodylessHandler} from "../../utils"
 
 const connected_peers = ref(null);
 const search_keyword = ref("");
@@ -19,10 +20,7 @@ function update_list() {
     .then((list) => {
       connected_peers.value = list;
     })
-    .catch((e) => {
-      console.error(e);
-      connected_peers.value = undefined;
-    });
+    .catch(e=>isBodylessHandler(e)?connected_peers.value = undefined:null);
 }
 update_list();
 const interval_id = setInterval(() => update_list(), 5000);

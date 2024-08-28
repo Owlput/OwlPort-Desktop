@@ -14,9 +14,7 @@ update_listener_list();
 function listen_on() {
   invoke("plugin:owlnest-swarm|listen", {
     listenOptions: { addr: listen_addr.value },
-  }).catch((e) =>
-    dispatchEvent(new CustomEvent("swarm-listen-failed", { detail: e }))
-  );
+  });
   setTimeout(update_listener_list, 100);
 }
 </script>

@@ -18,11 +18,11 @@ either = "1"
 tauri = { version = "1.7", features = ["clipboard-write-text", "shell-open"] }
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1", features = ["sync"] }
-libp2p = { path = "../../rust-libp2p/libp2p", default-features = false }
+libp2p = { path = "../../../Owlput/rust-libp2p/libp2p", default-features = false }
 serde_json = "1"
 openssl = { version = "*" }
 openssl-sys = { version = "*", optional = true }
-owlnest = { path = "../../../drHuangMHT/OwlNest/owlnest", features = ["full"] }
+owlnest = { path = "../../OwlNest/owlnest", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 whoami = "1.5"

@@ -23,20 +23,32 @@ function toggleExpand() {
 }
 function on_disconnect() {
   if (!pending_disconnect.value) {
-    pending_disconnect.value = setTimeout(() => invoke('plugin:owlnest-swarm|disconnect_peer', {
-      peerId: props.peerId,
-    }), 2000);
+    pending_disconnect.value = setTimeout(
+      () =>
+        invoke("plugin:owlnest-swarm|disconnect_peer", {
+          peerId: props.peerId,
+        }),
+      2000
+    ); // Won't reach here when there is no backend
     return;
   }
   clearTimeout(pending_disconnect.value);
-  pending_disconnect.value = null
+  pending_disconnect.value = null;
 }
 </script>
 <template>
-  <section @click.prevent.self="toggleExpand" class="flex flex-nowrap flex-row justify-between cursor-pointer">
+  <section
+    @click.prevent.self="toggleExpand"
+    class="flex flex-nowrap flex-row justify-between cursor-pointer"
+  >
     <section>
-      <span class="material-icons text-[3rem] w-full text-center">computer</span>
-      <p class="font-mono cursor-default" @dblclick="() => writeText(props.peerId)">
+      <span class="material-icons text-[3rem] w-full text-center"
+        >computer</span
+      >
+      <p
+        class="font-mono cursor-default"
+        @dblclick="() => writeText(props.peerId)"
+      >
         {{ props.peerId.slice(0, 6) }}..{{
           props.peerId.slice(props.peerId.length - 6, props.peerId.length)
         }}
@@ -49,13 +61,12 @@ function on_disconnect() {
         </li>
       </ul>
       <section class="w-full mx-auto">
-        <button class=" bg-transparent" @click="on_disconnect
-          ">
+        <button class="bg-transparent" @click="on_disconnect">
           <img v-if="pending_disconnect" src="../../assets/unplug.svg" />
           <img v-else src="../../assets/plugged.svg" />
         </button>
       </section>
-      <section>RTT: {{ 'MOCKED' }} ms</section>
+      <section>RTT: {{ "MOCKED" }} ms</section>
     </section>
   </section>
   <section class="mx-1" v-if="show_supported_protocols">

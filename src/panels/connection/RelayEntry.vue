@@ -2,6 +2,7 @@
 import { invoke } from "@tauri-apps/api";
 import { ref, computed } from "vue";
 import { writeText } from "@tauri-apps/api/clipboard";
+
 const props = defineProps({
   peerId: String,
   latency: Number,
