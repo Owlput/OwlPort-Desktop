@@ -2,10 +2,10 @@ import { createApp } from "vue";
 import router from "./router";
 import "./style.css";
 import App from "./App.vue";
-import { isBodylessHandler } from "./utils";
 
-let app = createApp(App);
-app.config.errorHandler((e,vm,info)=>{
-    isBodylessHandler(e)
-});
-app.use(router).mount("#app");
+createApp(App).use(router).mount("#app");
+
+/*
+    Note: Errors from tauri cannot be handled using global error handler 
+    provided by vue(`app.config.errorHandler`).
+*/

@@ -1,17 +1,20 @@
-<script setup>
-const props = defineProps({
-  showDesp: Boolean,
-});
+<script setup lang="ts">
+const is_bodyless = !import.meta.env.VITE_WITH_RUST;
 </script>
 <template>
   <div class="w-fit flex flex-col bg-white shadow-md h-[100vh]">
-    <div class="mx-auto">
+    <div class="mx-auto text-center">
       <p>v0.0.0</p>
+      <p v-if="is_bodyless">Bodyless</p>
     </div>
     <button
       class="navBtn"
       @click="$router.push('/main/home')"
-      :style="$route.path.slice(0,11) === '/main/home' ? 'background-color:gainsboro;' : ''"
+      :style="
+        $route.path.slice(0, 11) === '/main/home'
+          ? 'background-color:gainsboro;'
+          : ''
+      "
     >
       <span class="material-icons m-auto">home</span>
       <p class="select-none">Home</p>
@@ -19,7 +22,11 @@ const props = defineProps({
     <button
       class="navBtn"
       @click="$router.push('/main/overview')"
-      :style="$route.path.slice(0,14) === '/main/overview' ? 'background-color:gainsboro;' : ''"
+      :style="
+        $route.path.slice(0, 14) === '/main/overview'
+          ? 'background-color:gainsboro;'
+          : ''
+      "
     >
       <span class="material-icons m-auto">dashboard</span>
       <p>Overview</p>
@@ -27,7 +34,11 @@ const props = defineProps({
     <button
       class="navBtn"
       @click="$router.push('/main/network')"
-      :style="$route.path.slice(0,13) === '/main/network' ? 'background-color:gainsboro;' : ''"
+      :style="
+        $route.path.slice(0, 13) === '/main/network'
+          ? 'background-color:gainsboro;'
+          : ''
+      "
     >
       <span class="material-icons m-auto">hub</span>
       <p class="">Network</p>
@@ -35,7 +46,11 @@ const props = defineProps({
     <button
       class="navBtn"
       @click="$router.push('/main/connections')"
-      :style="$route.path.slice(0,17) === '/main/connections' ? 'background-color:gainsboro;' : ''"
+      :style="
+        $route.path.slice(0, 17) === '/main/connections'
+          ? 'background-color:gainsboro;'
+          : ''
+      "
     >
       <span class="material-icons m-auto">lan</span>
       <p>Conns</p>
@@ -43,7 +58,11 @@ const props = defineProps({
     <button
       class="navBtn"
       @click="$router.push('/main/apps')"
-      :style="$route.path.slice(0,11) === '/main/apps' ? 'background-color:gainsboro;' : ''"
+      :style="
+        $route.path.slice(0, 11) === '/main/apps'
+          ? 'background-color:gainsboro;'
+          : ''
+      "
     >
       <span class="material-icons m-auto">apps</span>
       <p>Apps</p>
@@ -51,7 +70,11 @@ const props = defineProps({
     <button
       class="navBtn"
       @click="$router.push('/main/settings')"
-      :style="$route.path.slice(0,14) === '/main/settings' ? 'background-color:gainsboro;' : ''"
+      :style="
+        $route.path.slice(0, 14) === '/main/settings'
+          ? 'background-color:gainsboro;'
+          : ''
+      "
     >
       <span class="material-icons m-auto">settings</span>
       <p class="">Settings</p>

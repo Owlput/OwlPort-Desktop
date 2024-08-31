@@ -22,10 +22,4 @@ invoke("plugin:owlnest-swarm|get_local_peer_id")
     <p v-else-if="local_peer_id">Peer {{ local_peer_id }}</p>
     <p v-else>Fetching Peer ID from backend...</p>
   </section>
-  <!-- <button @click="() => invoke('plugin:popup-tester|emit_test_event')">
-    Test popup
-  </button>
-  <button @click="() => invoke('plugin:owlnest-messaging|init_subapp')">
-    init subwindow
-  </button> -->
 </template>

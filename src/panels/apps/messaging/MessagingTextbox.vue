@@ -1,11 +1,12 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from "vue";
-const props = defineProps({
-  send_message: Function,
-  push_history: Function,
-  clear_history: Function,
-  remote: String,
-});
+
+const props = defineProps<{
+  send_message: Function;
+  push_history: Function;
+  clear_history: Function;
+  remote: String;
+}>();
 let message = ref("");
 let send_on_enter = ref(true);
 function send() {
@@ -22,7 +23,7 @@ function send() {
     <textarea
       v-model="message"
       class="resize-none border w-full p-4"
-      style="height: calc(100% - 3.5rem);"
+      style="height: calc(100% - 3.5rem)"
       @keydown.enter.exact.prevent="
         () => {
           if (!send_on_enter) message = message + `\n`;
@@ -34,7 +35,9 @@ function send() {
         }
       "
     ></textarea>
-    <section class="flex justify-between items-center px-8 select-none h-[3rem]">
+    <section
+      class="flex justify-between items-center px-8 select-none h-[3rem]"
+    >
       <ul class="flex flex-row">
         <li
           class="hover:bg-slate-100 active:bg-slate-300 text"

@@ -3,6 +3,8 @@ import { invoke } from "@tauri-apps/api";
 import { listen } from "@tauri-apps/api/event";
 import { ref, computed, onUnmounted } from "vue";
 import { RouterView, useRouter } from "vue-router";
+import { isBodylessHandler } from "../../../utils";
+
 defineOptions({
   name: "Messaging",
 });
@@ -16,17 +18,17 @@ const filtered_chats = computed(() => {
 const peer_search = ref("");
 function handle_focus_chat(ev) {
   if (!chats.value.includes(ev?.payload))
-    invoke("plugin:owlnest-messaging|get_all_chats").then(
-      (v) => (chats.value = v)
-    );
-    router.push(`/app/messaging/${ev.payload}`)
+    invoke("plugin:owlnest-messaging|get_all_chats")
+      .then((v) => (chats.value = v))
+      .catch(isBodylessHandler);
+  router.push(`/app/messaging/${ev.payload}`);
 }
 listen("focusChat", handle_focus_chat).then((handle) => {
   focus_chat_rlisten.value = handle;
-});
-invoke("plugin:owlnest-messaging|get_all_chats").then(
-      (v) => (chats.value = v)
-    );
+}).catch(isBodylessHandler);
+invoke("plugin:owlnest-messaging|get_all_chats")
+  .then((v) => (chats.value = v))
+  .catch(isBodylessHandler);
 onUnmounted(() => {
   focus_chat_rlisten.value();
 });

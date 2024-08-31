@@ -1,22 +1,33 @@
-<script setup>
+<script setup lang="ts">
 import { writeText } from "@tauri-apps/api/clipboard";
 import { invoke } from "@tauri-apps/api/tauri";
-import { ref } from "vue";
+import { ref, Ref } from "vue";
+import { isBodylessHandler } from "../../utils";
+import * as types from "./types";
+
 const props = defineProps({
-  peerId: String,
+  peerId: {
+    type: String,
+    required: true,
+  },
 });
-const pending_disconnect = ref(null);
+const pending_disconnect: Ref<Number | null> = ref(null);
 const show_supported_protocols = ref(false);
-const peer_info = ref({});
+const peer_info: Ref<types.RsPeerInfo | null> = ref(null);
 const connection_type = ["IPv4", "TCP", "Mocked"];
 function toggleExpand() {
   if (show_supported_protocols.value === false) {
-    invoke("plugin:owlnest-swarm|get_peer_info", { peerId: props.peerId }).then(
-      (v) => {
+    invoke<types.RsPeerInfo>(
+      "plugin:owlnest-swarm|get_peer_info",
+      {
+        peerId: props.peerId,
+      }
+    )
+      .then((v) => {
         peer_info.value = v;
         show_supported_protocols.value = true;
-      }
-    );
+      })
+      .catch(isBodylessHandler);
   } else {
     show_supported_protocols.value = false;
   }
@@ -27,12 +38,12 @@ function on_disconnect() {
       () =>
         invoke("plugin:owlnest-swarm|disconnect_peer", {
           peerId: props.peerId,
-        }),
+        }).catch(isBodylessHandler),
       2000
     ); // Won't reach here when there is no backend
     return;
   }
-  clearTimeout(pending_disconnect.value);
+  clearTimeout(pending_disconnect.value.valueOf());
   pending_disconnect.value = null;
 }
 </script>
@@ -69,7 +80,7 @@ function on_disconnect() {
       <section>RTT: {{ "MOCKED" }} ms</section>
     </section>
   </section>
-  <section class="mx-1" v-if="show_supported_protocols">
+  <section class="mx-1" v-if="show_supported_protocols && peer_info">
     <p class="sm:hidden">Peer ID: {{ props.peerId }}</p>
     <p>Protocol stack: {{ peer_info.protocol_version }}</p>
     <p>Suported protocols({{ peer_info.supported_protocols.length }}):</p>
@@ -79,4 +90,5 @@ function on_disconnect() {
       </li>
     </ul>
   </section>
+  <section v-if="!peer_info">Fetching peer info from backend...</section>
 </template>

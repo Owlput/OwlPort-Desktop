@@ -1,7 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted, onUnmounted, ref, computed } from "vue";
 import { listen, emit } from "@tauri-apps/api/event";
 import DefaultPopup from "../popups/DefaultPopup.vue";
+import { isBodylessHandler } from "../utils";
 
 defineOptions({
   components: { DefaultPopup },
@@ -45,7 +46,7 @@ listen("newPopup", (popup) => {
 
   */
   add_popup(popup.payload);
-});
+}).catch(isBodylessHandler);
 </script>
 <template>
   <div

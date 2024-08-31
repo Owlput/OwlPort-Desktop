@@ -1,9 +1,9 @@
-<script setup>
+<script setup lang="ts">
 import { invoke } from "@tauri-apps/api/tauri";
-import { onUnmounted, ref, computed } from "vue";
+import { onUnmounted, ref, Ref, computed } from "vue";
 import ConnectedPeerEntry from "./ConnectedPeerEntry.vue";
 import PeerSearchBar from "../../components/PeerSearchBar.vue";
-import {isBodylessHandler} from "../../utils"
+import { isBodylessHandler } from "../../utils";
 
 const connected_peers = ref(null);
 const search_keyword = ref("");
@@ -20,7 +20,11 @@ function update_list() {
     .then((list) => {
       connected_peers.value = list;
     })
-    .catch(e=>isBodylessHandler(e)?connected_peers.value = undefined:null);
+    .catch((e) => {
+      if (isBodylessHandler(e)) {
+        connected_peers.value = undefined;
+      }
+    });
 }
 update_list();
 const interval_id = setInterval(() => update_list(), 5000);
@@ -32,7 +36,11 @@ onUnmounted(() => {
 <template>
   <div class="wrapper flex flex-col">
     <div class="flex justify-evenly items-center w-full h-8 mt-4">
-      <PeerSearchBar place-holder="Type Peer ID and press Enter to search" :refresh="update_list" v-model="search_keyword"/>
+      <PeerSearchBar
+        place-holder="Type Peer ID and press Enter to search"
+        :refresh="update_list"
+        v-model="search_keyword"
+      />
     </div>
     <ul
       class="event-list select-none overflow-auto px-8 py-4"

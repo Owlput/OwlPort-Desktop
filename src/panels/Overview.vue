@@ -1,12 +1,13 @@
-<script setup>
+<script setup lang="ts">
 import { invoke } from "@tauri-apps/api";
 import { ref, onUnmounted } from "vue";
+import { isBodylessHandler } from "../utils";
 
 const num_connected = ref(0);
 function update_display() {
   invoke("plugin:owlnest-swarm|list_connected").then(
     (result) => (num_connected.value = result.length)
-  );
+  ).catch(isBodylessHandler);
 }
 update_display();
 let interval_id = setInterval(update_display, 5000);

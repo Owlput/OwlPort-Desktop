@@ -1,21 +1,24 @@
 <script setup>
 import { invoke } from "@tauri-apps/api";
 import { ref, onUnmounted } from "vue";
+import { isBodylessHandler } from "../../utils";
 
 const mdns = ref({ discovered: 0 });
 const kad = ref({ mode: false });
 const autonat = ref({ status: "Unknown", confidence: 0 });
 const upnp = ref({ status: false, num_of_exposed: 0 });
 function update_display() {
-  invoke("plugin:owlnest-mdns|list_discovered").then(
-    (v) => (mdns.value.discovered = Object.keys(v).length)
-  );
-  invoke("plugin:owlnest-autonat|get_nat_status").then((result) => {
-    autonat.value = result;
-  });
-  invoke("plugin:owlnest-kad|get_mode").then(
-    (result) => (kad.value.mode = result)
-  );
+  invoke("plugin:owlnest-mdns|list_discovered")
+    .then((v) => (mdns.value.discovered = Object.keys(v).length))
+    .catch(isBodylessHandler);
+  invoke("plugin:owlnest-autonat|get_nat_status")
+    .then((result) => {
+      autonat.value = result;
+    })
+    .catch(isBodylessHandler);
+  invoke("plugin:owlnest-kad|get_mode")
+    .then((result) => (kad.value.mode = result))
+    .catch(isBodylessHandler);
 }
 update_display();
 let interval_id = setInterval(update_display, 5000);

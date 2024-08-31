@@ -1,13 +1,15 @@
-<script setup>
-import { onUnmounted, ref, nextTick } from "vue";
+<script setup lang="ts">
+import { onUnmounted, ref,Ref, nextTick } from "vue";
 import { listen } from "@tauri-apps/api/event";
+import { isBodylessHandler } from "../../utils";
+
 defineOptions({ name: "DialEventListener" });
 
 let dial_events = ref([]);
 let listener_handle = ref(() => {});
 
 addEventListener("swarm-dial-failed", handleFailedDial);
-listen("swarm-emit", (ev) => {
+listen<Event>("swarm-emit", (ev) => {
   dial_events.value.push(ev.payload);
   if (dial_events.value.length > 25) {
     dial_events.value.splice(0, 1);
@@ -16,7 +18,9 @@ listen("swarm-emit", (ev) => {
     let element = document.getElementById("dial-event-listener");
     element?.scrollTo(0, element.scrollHeight);
   });
-}).then((handle) => (listener_handle.value = handle));
+})
+  .then((handle) => (listener_handle.value = handle))
+  .catch(isBodylessHandler);
 
 onUnmounted(() => {
   listener_handle.value();

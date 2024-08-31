@@ -1,27 +1,36 @@
-<script setup>
+<script setup lang="ts">
 import { invoke } from "@tauri-apps/api";
 import { listen } from "@tauri-apps/api/event";
-import { ref, onUnmounted } from "vue";
+import { FileDropEvent } from "@tauri-apps/api/window";
+import { ref, Ref, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import RecvEntry from "./RecvEntry.vue";
 import SendEntry from "./SendEntry.vue";
+import { isBodylessHandler } from "../../../utils.js";
+import { RsSendInfo, RsRecvInfo, PendingSend, PendingRecv } from "./types.ts";
+
 const route = useRoute();
-const peer_to_send = ref(route.query.remote ? route.query.remote : "");
+const peer_to_send: Ref<String> = ref(
+  route.query.remote ? (route.query.remote as string) : ""
+);
 const file_path = ref("");
-const pending_send = ref(new Map());
-const pending_recv = ref(new Map());
+const pending_send = ref(new Map<Number, PendingSend>());
+const pending_recv = ref(new Map<Number, PendingRecv>());
 const file_drop_listener = ref(() => {});
 const incoming_file_rlisten = ref(() => {});
-listen("tauri://file-drop", (ev) => {
-  handle_drop(ev);
-}).then((handle) => (file_drop_listener.value = handle));
-listen("owlnest-blob-transfer-emit", (ev) => {
+
+listen<FileDropEvent>("tauri://file-drop", (ev) => {
+  handle_drop(ev.payload);
+})
+  .then((handle) => (file_drop_listener.value = handle))
+  .catch(isBodylessHandler);
+listen("owlnest-blob-transfer-emit", (ev: any) => {
   if (ev.payload?.IncomingFile) {
     pending_recv.value.set(ev.payload.IncomingFile.local_recv_id, {
-      from: ev.payload.IncomingFile.from,
-      fileName: ev.payload.IncomingFile.file_name,
-      recvId: ev.payload.IncomingFile.local_recv_id,
-      bytesTotal: ev.payload.IncomingFile.bytes_total,
+      source_peer: ev.payload.IncomingFile.from,
+      file_name: ev.payload.IncomingFile.file_name,
+      recv_id: ev.payload.IncomingFile.local_recv_id,
+      bytes_total: ev.payload.IncomingFile.bytes_total,
     });
     return;
   }
@@ -37,21 +46,28 @@ listen("owlnest-blob-transfer-emit", (ev) => {
     }
     return;
   }
-}).then((handle) => (incoming_file_rlisten.value = handle));
-invoke("plugin:owlnest-blob-transfer|list_pending_send").then((v) => {
-  v.forEach((item) => {
+})
+  .then((handle) => (incoming_file_rlisten.value = handle))
+  .catch(isBodylessHandler);
+
+invoke("plugin:owlnest-blob-transfer|list_pending_send").then((v: any) => {
+  v.forEach((item: RsSendInfo) => {
     pending_send.value.set(item.local_send_id, {
-      filePath: item.file_path,
-      sendId: item.local_send_id,
+      file_path: item.file_path,
+      send_id: item.local_send_id,
+      destination: item.remote,
     });
   });
 });
-invoke("plugin:owlnest-blob-transfer|list_pending_recv").then((v) => {
+invoke<Array<RsRecvInfo>>(
+  "plugin:owlnest-blob-transfer|list_pending_recv"
+).then((v) => {
   for (let item of v) {
     pending_recv.value.set(item.local_recv_id, {
-      fileName: item.file_name,
-      recvId: item.local_recv_id,
-      bytesTotal: item.bytes_total,
+      file_name: item.file_name,
+      recv_id: item.local_recv_id,
+      bytes_total: item.bytes_total,
+      source_peer: item.remote,
     });
   }
 });
@@ -59,13 +75,14 @@ function send() {
   if (!(peer_to_send.value && file_path.value)) {
     return;
   }
-  invoke("plugin:owlnest-blob-transfer|send", {
+  invoke<Number>("plugin:owlnest-blob-transfer|send", {
     peer: peer_to_send.value,
     filePath: file_path.value,
   }).then((local_send_id) => {
     pending_send.value.set(local_send_id, {
-      filePath: file_path,
-      sendId: local_send_id,
+      file_path: file_path.value,
+      send_id: local_send_id,
+      destination: peer_to_send.value,
     });
   });
 }
@@ -73,7 +90,7 @@ onUnmounted(() => {
   file_drop_listener.value();
   incoming_file_rlisten.value();
 });
-function handle_drop(ev) {
+function handle_drop(ev: any) {
   file_path.value = ev.payload[0].replaceAll("\\", "/");
 }
 </script>
@@ -99,8 +116,8 @@ function handle_drop(ev) {
           class="mx-2 mt-2 border-gray-300 rounded-md shadow-md"
         >
           <SendEntry
-            :file-path="item.filePath"
-            :send-id="item.sendId"
+            :file-path="item.file_path"
+            :send-id="item.send_id"
           ></SendEntry>
         </li>
       </ul>
@@ -109,11 +126,14 @@ function handle_drop(ev) {
     <section>
       <p>Pending recv</p>
       <ul class="m-2 p-2 overflow-auto" v-if="pending_recv.size > 0">
-        <li v-for="item in pending_recv.values()" class="mx-2 mt-2 rounded-md shadow-md">
+        <li
+          v-for="item in pending_recv.values()"
+          class="mx-2 mt-2 rounded-md shadow-md"
+        >
           <RecvEntry
-            :file-name="item.fileName"
-            :recv-id="item.recvId"
-            :bytes-total="item.bytesTotal"
+            :file-name="item!.file_name"
+            :recv-id="item!.recv_id"
+            :bytes-total="item!.bytes_total"
           ></RecvEntry>
         </li>
       </ul>

@@ -1,21 +1,20 @@
-<script setup>
+<script setup lang="ts">
 import PopUpHandler from "./components/PopUpHandler.vue";
 import SideBar from "./components/SideBar.vue";
 import { useRouter } from "vue-router";
 const router = useRouter();
-document.addEventListener("keyup",(ev)=>{
-  if ( !ev.isTrusted || ev.isComposing){
+document.addEventListener("keyup", (ev: KeyboardEvent) => {
+  if (!ev.isTrusted || ev.isComposing) {
     return;
   }
-  if (ev.key == "Escape"){
-    router.back()
+  if (ev.key == "Escape") {
+    router.back();
   }
-})
-
+});
 </script>
 <template>
   <div id="main-grid">
-    <section class="w-[5rem]" v-if="$route.path.split(0, 3) != '/app'">
+    <section class="w-[5rem]" v-if="$route.path.slice(0, 3) != '/app'">
       <SideBar></SideBar>
     </section>
     <div>

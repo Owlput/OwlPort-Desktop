@@ -1,19 +1,23 @@
-<script setup>
+<script setup lang="ts">
 import { invoke } from "@tauri-apps/api";
-import { ref, onUnmounted } from "vue";
+import { ref, Ref, onUnmounted } from "vue";
+import { isBodylessHandler } from "../../utils";
+
 let expand = ref(false);
-let connected_peers = ref({});
+let connected_peers: Ref<Array<String>> = ref([]);
 
 function toggleExpand() {
   expand.value = !expand.value;
 }
 function update_list() {
-  invoke("plugin:owlnest-messaging|list_connected").then(
-    (peers) => (connected_peers.value = peers)
-  );
+  invoke<Array<String>>("plugin:owlnest-messaging|list_connected")
+    .then((peers) => (connected_peers.value = peers))
+    .catch(isBodylessHandler);
 }
-function spawn_window(peer) {
-  invoke("plugin:owlnest-messaging|spawn_window", { peer });
+function spawn_window(peer: String | null = null) {
+  invoke("plugin:owlnest-messaging|spawn_window", { peer }).catch(
+    isBodylessHandler
+  );
 }
 let interval_id = setInterval(update_list, 5000);
 onUnmounted(() => {
@@ -26,7 +30,7 @@ update_list();
     <section
       class="flex flex-row justify-between items-center border px-4 py-2"
     >
-      <p class="hover:cursor-pointer w-[20%]" @click="() => spawn_window(null)">
+      <p class="hover:cursor-pointer w-[20%]" @click="() => spawn_window()">
         Messaging
       </p>
       <p>Number of reachable peers: {{ connected_peers.length }}</p>

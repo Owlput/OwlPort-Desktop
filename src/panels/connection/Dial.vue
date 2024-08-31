@@ -1,8 +1,9 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
 import DialEventListener from "./DialEventListener.vue";
 import { useRoute } from "vue-router";
+import { isBodylessHandler } from "../../utils";
 
 let route = useRoute();
 defineOptions({
@@ -15,9 +16,7 @@ function dial() {
   }
   invoke("plugin:owlnest-swarm|dial", {
     dialOptions: { address: peer_to_dial.value },
-  }).catch((e) =>
-    dispatchEvent(new CustomEvent("swarm-dial-failed", { detail: e }))
-  );
+  }).catch(isBodylessHandler);
 }
 </script>
 

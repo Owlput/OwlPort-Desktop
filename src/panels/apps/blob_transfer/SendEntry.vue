@@ -1,15 +1,16 @@
-<script setup>
-import { ref, onUnmounted } from "vue";
-import { listen } from "@tauri-apps/api/event";
+<script setup lang="ts">
+import { ref, Ref, onUnmounted } from "vue";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api";
+import { isBodylessHandler } from "../../../utils";
 
-const props = defineProps({
-  filePath: String,
-  sendId: Number,
-});
-const progress = ref(null);
-const progress_rlisten = ref(null);
-listen("owlnest-blob-emit", (ev) => {
+const props = defineProps<{
+  filePath: String;
+  sendId: Number;
+}>();
+const progress: Ref<Number | null> = ref(null);
+const progress_rlisten: Ref<UnlistenFn | null> = ref(null);
+listen("owlnest-blob-emit", (ev: any) => {
   if (ev.payload?.SendProgressed) {
     progress.value =
       ev.payload.SendProgressed.bytes_sent /
@@ -17,9 +18,11 @@ listen("owlnest-blob-emit", (ev) => {
   }
 }).then((handle) => {
   progress_rlisten.value = handle;
-});
+}).catch(isBodylessHandler);
 onUnmounted(() => {
-  progress_rlisten.value();
+  if (progress_rlisten.value) {
+    progress_rlisten.value!();
+  }
 });
 </script>
 

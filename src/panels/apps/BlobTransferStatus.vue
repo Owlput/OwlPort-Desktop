@@ -1,21 +1,25 @@
-<script setup>
+<script setup lang="ts">
 import { invoke } from "@tauri-apps/api";
 import { onUnmounted, ref } from "vue";
+import { isBodylessHandler } from "../../utils";
+
 let expand = ref(false);
 let connected_peers = ref([]);
-invoke("plugin:owlnest-blob-transfer|list_connected").then(
-  (peers) => (connected_peers.value = peers)
-);
+invoke<any>("plugin:owlnest-blob-transfer|list_connected")
+  .then((peers) => (connected_peers.value = peers))
+  .catch(isBodylessHandler);
 function toggleExpand() {
   expand.value = !expand.value;
 }
-function spawn_window(peer) {
-  invoke("plugin:owlnest-blob-transfer|spawn_window", { peer });
+function spawn_window(peer:String) {
+  invoke("plugin:owlnest-blob-transfer|spawn_window", { peer }).catch(
+    isBodylessHandler
+  );
 }
 function update_list() {
-  invoke("plugin:owlnest-blob-transfer|list_connected").then(
-    (peers) => (connected_peers.value = peers)
-  );
+  invoke<any>("plugin:owlnest-blob-transfer|list_connected")
+    .then((peers) => (connected_peers.value = peers))
+    .catch(isBodylessHandler);
 }
 const interval_id = setInterval(update_list, 5000);
 onUnmounted(() => {

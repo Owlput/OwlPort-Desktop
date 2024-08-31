@@ -1,32 +1,35 @@
-<script setup>
-import { ref, onUnmounted } from "vue";
+<script setup lang="ts">
+import { ref, onUnmounted, Ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api";
+import { isBodylessHandler } from "../../../utils.js";
 
-const props = defineProps({
-  fileName: String,
-  recvId: Number,
-  bytesTotal: Number,
-});
+const props = defineProps<{
+  fileName: String;
+  recvId: Number;
+  bytesTotal: Number;
+}>();
 const accepted = ref(false);
-const progress = ref(null);
-const recv_progress_rlisten = ref(null);
-listen("owlnest-blob-transfer-emit", (ev) => {
+const progress: Ref<Number | null> = ref(null);
+const recv_progress_rlisten: Ref<Function | null> = ref(null);
+listen("owlnest-blob-transfer-emit", (ev: any) => {
   if (ev.payload?.RecvProgressed) {
     console.log(ev.payload.RecvProgressed);
     progress.value =
-      (ev.payload.RecvProgressed.bytes_received / props.bytesTotal) * 100;
+      (ev.payload.RecvProgressed.bytes_received / props.bytesTotal.valueOf()) * 100;
   }
 }).then((handle) => {
   recv_progress_rlisten.value = handle;
-});
+}).catch(isBodylessHandler);
 onUnmounted(() => {
-  recv_progress_rlisten.value();
+  if (recv_progress_rlisten.value) {
+    recv_progress_rlisten.value!();
+  }
 });
 </script>
 <template>
   <p>{{ props.fileName }}</p>
-  <p>{{ (props.bytesTotal / 1024 / 1024).toFixed(2) }}MB</p>
+  <p>{{ (props.bytesTotal.valueOf() / 1024 / 1024).toFixed(2) }}MB</p>
   <p v-if="progress">{{ progress }}%</p>
   <button
     :disabled="accepted"

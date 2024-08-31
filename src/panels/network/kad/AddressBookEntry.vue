@@ -1,11 +1,11 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from "vue";
 import { writeText } from "@tauri-apps/api/clipboard";
 
-const props = defineProps({
-  peerId: String,
-  addresses: Array,
-});
+const props = defineProps<{
+  peerId: String;
+  addresses: Array;
+}>();
 
 const show_addresses = ref(false);
 </script>

@@ -1,20 +1,23 @@
-<script setup>
-import { ref, computed } from "vue";
+<script setup lang="ts">
+import { ref, Ref, computed } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
 import RelayEntry from "./RelayEntry.vue";
 import PeerSearchBar from "../../components/PeerSearchBar.vue";
+import { isBodylessHandler } from "../../utils";
 
 const relay_list = ref(null);
 const search_keyword = ref("");
 
 function update_relay_list() {
-  invoke("plugin:owlnest-relay|list_relays").then((v) => {
-    v.sort((a, b) => {
-      if (a[1] > 0) return a[1] - b[1];
-      else return 1;
-    });
-    relay_list.value = v;
-  });
+  invoke("plugin:owlnest-relay|list_relays")
+    .then((v) => {
+      v.sort((a, b) => {
+        if (a[1] > 0) return a[1] - b[1];
+        else return 1;
+      });
+      relay_list.value = v;
+    })
+    .catch(isBodylessHandler);
 }
 let filtered_list = computed(() => {
   if (search_keyword.value !== "")

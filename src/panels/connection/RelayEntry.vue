@@ -1,12 +1,13 @@
-<script setup>
+<script setup lang="ts">
 import { invoke } from "@tauri-apps/api";
-import { ref, computed } from "vue";
+import { ref, Ref, computed } from "vue";
 import { writeText } from "@tauri-apps/api/clipboard";
+import { isBodylessHandler } from "../../utils";
 
-const props = defineProps({
-  peerId: String,
-  latency: Number,
-});
+const props = defineProps<{
+  peerId: String;
+  latency: Number;
+}>();
 const relay_info = ref({});
 const show_relay_info = ref(false);
 const advertise_throttle = ref(false);
@@ -36,7 +37,7 @@ function toggle_relay_info() {
             show_relay_info.value = true;
           });
       })
-      .catch((_) => {});
+      .catch(isBodylessHandler);
   } else {
     show_relay_info.value = false;
     relay_info.value = false;
@@ -47,13 +48,13 @@ function listen_on_relay() {
     listenOptions: {
       addr: `${relay_info.value.address[0]}/p2p/${props.peerId}/p2p-circuit`,
     },
-  }).catch((e) => console.log(e));
+  }).catch(isBodylessHandler);
 }
 
 function dial_relayed(peer) {
   invoke("plugin:owlnest-swarm|dial", {
     dialOptions: { address: `/p2p/${props.peerId}/p2p-circuit/p2p/${peer}` },
-  });
+  }).catch(isBodylessHandler);
 }
 
 function toggle_advertise() {
@@ -61,23 +62,22 @@ function toggle_advertise() {
   invoke("plugin:owlnest-advertise|set_remote_advertisement", {
     remote: props.peerId,
     advertisementState: !advertised.value,
-  }).then(() => {
-    setTimeout(
-      () =>
-        invoke("plugin:owlnest-advertise|query_advertised", {
-          peerId: props.peerId,
-        })
-          .then((v) => {
-            console.log(v);
-            relay_info.value.advertised = v;
+  })
+    .then(() => {
+      setTimeout(
+        () =>
+          invoke("plugin:owlnest-advertise|query_advertised", {
+            peerId: props.peerId,
           })
-          .catch((e) => {
-            console.log(e);
-          })
-          .finally(() => (advertise_throttle.value = false)),
-      100
-    );
-  });
+            .then((v) => {
+              console.log(v);
+              relay_info.value.advertised = v;
+            })
+            .finally(() => (advertise_throttle.value = false)),
+        100
+      );
+    })
+    .catch(isBodylessHandler);
 }
 </script>
 <template>
@@ -87,7 +87,7 @@ function toggle_advertise() {
   >
     <p
       class="select-none font-mono cursor-default"
-      @dblclick.prevent="writeText(props.peerId)"
+      @dblclick.prevent="writeText(props.peerId).catch(isBodylessHandler)"
     >
       {{ props.peerId }}
     </p>

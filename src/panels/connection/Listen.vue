@@ -1,20 +1,23 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
 import { writeText } from "@tauri-apps/api/clipboard";
+import { isBodylessHandler } from "../../utils";
 
 const listen_addr = ref("/ip4/0.0.0.0/tcp/0");
 const active_listeners = ref([]);
 function update_listener_list() {
-  invoke("plugin:owlnest-swarm|list_listeners").then((result) => {
-    active_listeners.value = result;
-  });
+  invoke("plugin:owlnest-swarm|list_listeners")
+    .then((result) => {
+      active_listeners.value = result;
+    })
+    .catch(isBodylessHandler);
 }
 update_listener_list();
 function listen_on() {
   invoke("plugin:owlnest-swarm|listen", {
     listenOptions: { addr: listen_addr.value },
-  });
+  }).catch(isBodylessHandler);
   setTimeout(update_listener_list, 100);
 }
 </script>

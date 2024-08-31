@@ -1,16 +1,17 @@
-<script setup>
+<script setup lang="ts">
 import { invoke } from "@tauri-apps/api";
 import { ref } from "vue";
 import { useRoute } from "vue-router";
+import { isBodylessHandler } from "../../../utils";
 
 const route = useRoute();
 const peer_to_query = ref(route.query?.query ? route.query.query : "");
 const events = ref([]);
 
 function query() {
-  invoke("plugin:owlnest-kad|lookup", { peerId: peer_to_query.value }).then(
-    (result) => events.value.push(ev)
-  );
+  invoke("plugin:owlnest-kad|lookup", { peerId: peer_to_query.value })
+    .then((result) => events.value.push(ev))
+    .catch(isBodylessHandler);
 }
 </script>
 

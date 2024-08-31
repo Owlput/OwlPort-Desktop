@@ -1,11 +1,7 @@
-<script setup>
-import { onUnmounted } from "vue";
+<script setup lang="ts">
 import MessagingStatus from "./MessagingStatus.vue";
 import BlobTransferStatus from "./BlobTransferStatus.vue";
-import GenericAppStatus from "./GenericAppStatus.vue"
-onUnmounted(() => {
-  console.log("ProtocolOverview destroyed");
-});
+import GenericAppStatus from "./GenericAppStatus.vue";
 </script>
 
 <template>
@@ -17,7 +13,11 @@ onUnmounted(() => {
       <BlobTransferStatus />
     </li>
     <li class="p-2">
-      <GenericAppStatus :app-name="'Gossip-Sub Messaging'" :window-entrypoint="'plugin:libp2p-gossipsub|spawn_window'"/>
+      <GenericAppStatus
+        :app-name="'Gossip-Sub Messaging'"
+        :window-entrypoint="'plugin:libp2p-gossipsub|spawn_window'"
+        :alternative-path="'/app/gossipsub'"
+      />
     </li>
   </ul>
 </template>

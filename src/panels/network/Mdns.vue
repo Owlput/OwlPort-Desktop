@@ -1,11 +1,14 @@
 <script setup>
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api";
+import { isBodylessHandler } from "../../utils";
 
 let discovered_nodes = ref({});
-invoke("plugin:owlnest-mdns|list_discovered").then((v) => {
-  discovered_nodes.value = v;
-});
+invoke("plugin:owlnest-mdns|list_discovered")
+  .then((v) => {
+    discovered_nodes.value = v;
+  })
+  .catch(isBodylessHandler);
 </script>
 
 <template>

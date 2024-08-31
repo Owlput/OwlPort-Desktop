@@ -1,12 +1,12 @@
-<script setup>
-import { ref, onActivated, onDeactivated, computed, onMounted } from "vue";
-const props = defineProps({
-  history: Array,
-  remote: String,
-  local: String,
-});
+<script setup lang="ts">
+import { ref, onActivated, onDeactivated, computed } from "vue";
+const props = defineProps<{
+  history: Array<any>;
+  remote: String;
+  local: String;
+}>();
 let show_scroll_bottom = ref(false);
-defineEmits(["update:history"]);
+const emit = defineEmits(["update:history"]);
 
 const history = computed({
   get() {
@@ -22,10 +22,14 @@ onDeactivated(() => {
 });
 onActivated(() => {
   addEventListener("wheel", show_scroll_to_bottom);
-  scroll_to_bottom()
+  scroll_to_bottom();
 });
-function show_scroll_to_bottom(ev) {
+function show_scroll_to_bottom(_ev: any) {
   let element = document.getElementById(`chat-history`);
+  if (!element) {
+    console.error("Internal state error: no 'chat-history' to select");
+    return;
+  }
   if (element.scrollHeight - element.scrollTop - 350 < 200) {
     show_scroll_bottom.value = false;
   } else {
@@ -38,6 +42,10 @@ function scroll_to_bottom() {
     latest.scrollIntoView();
   } else {
     let wrapper = document.getElementById(`chat-history`);
+    if (!wrapper) {
+      console.error("Internal state error: no 'chat-history' to select");
+      return;
+    }
     wrapper.scroll(0, wrapper.scrollHeight);
   }
   show_scroll_bottom.value = false;
@@ -46,7 +54,10 @@ function scroll_to_bottom() {
 
 <template>
   <section class="w-full h-full relative">
-    <ul class="flex flex-col h-full px-4 py-2 overflow-auto gutter" id="chat-history">
+    <ul
+      class="flex flex-col h-full px-4 py-2 overflow-auto gutter"
+      id="chat-history"
+    >
       <template v-for="message in history">
         <li
           v-if="message.from === props.remote"

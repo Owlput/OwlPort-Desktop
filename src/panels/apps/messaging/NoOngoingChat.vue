@@ -1,10 +1,16 @@
-<script setup>
+<script setup lang="ts">
 import { invoke } from "@tauri-apps/api";
-import { ref } from "vue";
-let connected_peers = ref({});
-invoke("plugin:owlnest-messaging|list_connected").then(
-  (peers) => (connected_peers.value = peers)
-);
+import { ref, Ref } from "vue";
+import { isBodylessHandler } from "../../../utils";
+import {useRouter} from "vue-router"
+
+const router = useRouter();
+
+let connected_peers: Ref<Array<String>> = ref([]);
+invoke<Array<String>>("plugin:owlnest-messaging|list_connected")
+  .then((peers) => (connected_peers.value = peers))
+  .catch(isBodylessHandler);
+
 </script>
 <template>
   <section class="text-center">
@@ -17,7 +23,7 @@ invoke("plugin:owlnest-messaging|list_connected").then(
       <li
         v-for="peer in connected_peers"
         class="p-2"
-        @click="() => $router.push(`/protocols/messaging/${peer}`)"
+        @click="() => router.push(`/app/messaging/${peer}`)"
       >
         {{ peer }}
       </li>

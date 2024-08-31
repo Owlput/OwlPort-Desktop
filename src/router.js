@@ -1,5 +1,6 @@
 import settingsRoutes from "./panels/settings/routes";
-import messagingApp from "./panels/protocols/messaging/routes";
+import messagingApp from "./panels/apps/messaging/routes";
+import gossipsubApp from "./panels/apps/gossipsub/routes";
 import connectionsRoutes from "./panels/connection/routes";
 import networkRoutes from "./panels/network/routes";
 import { createRouter, createWebHashHistory } from "vue-router";
@@ -14,7 +15,7 @@ const routes = [
       networkRoutes,
       {
         path: "apps",
-        component: () => import("./panels/protocols/ProtocolOverview.vue"),
+        component: () => import("./panels/apps/ProtocolOverview.vue"),
       },
       {
         path: "overview",
@@ -33,9 +34,9 @@ const routes = [
       messagingApp,
       {
         path: "blob-transfer",
-        component: () =>
-          import("./panels/protocols/blob_transfer/BlobTransfer.vue"),
+        component: () => import("./panels/apps/blob_transfer/BlobTransfer.vue"),
       },
+      gossipsubApp,
     ],
   },
   {

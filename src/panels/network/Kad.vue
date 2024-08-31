@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { RouterView } from "vue-router";
 </script>
 <template>
@@ -11,7 +11,9 @@ import { RouterView } from "vue-router";
     </li>
     <li
       @click="() => $router.push('/main/network/kad/query')"
-      :class="$route.path.slice(0,23) == '/main/network/kad/query' ? 'selected' : ''"
+      :class="
+        $route.path.slice(0, 23) == '/main/network/kad/query' ? 'selected' : ''
+      "
     >
       <p>Query</p>
     </li>
@@ -22,7 +24,7 @@ import { RouterView } from "vue-router";
       <p>Bootstrap</p>
     </li>
   </ul>
-  <section style="height: calc(100vh - 2.5rem);" class="overflow-auto">
+  <section style="height: calc(100vh - 2.5rem)" class="overflow-auto">
     <RouterView v-slot="{ Component }">
       <KeepAlive>
         <component :is="Component" />

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { invoke } from "@tauri-apps/api";
 import KadEventListener from "./KadEventListener.vue";
 
