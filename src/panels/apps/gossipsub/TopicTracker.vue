@@ -33,8 +33,8 @@ function send_message() {
 </script>
 <template>
   <div class="w-[100vw]">
-    <SearchBar v-model="topic_to_track" place-holder="Type the topic to track here, or start with# for topic hash"
-      :refresh="update_topic_history"></SearchBar>
+    <SearchBar v-model="topic_to_track" place-holder="Type the topic or hash(start with #) to track here"
+      :refresh="update_topic_history" @search-submit="update_topic_history"></SearchBar>
     <ul style="height: calc(100vh - 15.5rem);" class="message-list">
       <li v-for="msg in message_history" class="rounded-md">
         <p>From: {{ msg.source }}</p>

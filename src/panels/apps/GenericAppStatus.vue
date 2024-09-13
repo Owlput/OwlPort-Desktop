@@ -22,13 +22,14 @@ function spawn_or_redirect() {
         "Alternative path not configured when navigating in bodyless mode."
       );
   }
-  invoke(props.windowEntrypoint).catch((e:Error)=>console.error(e.message));
+  invoke(props.windowEntrypoint).catch((e: Error) => console.error(e.message));
 }
 </script>
 
 <template>
-  <section class="flex flex-row justify-between items-center border px-4 py-2">
-    <p class="hover:cursor-pointer" @click="spawn_or_redirect">
+  <section class="flex flex-row justify-between items-center border px-4 py-2 hover:cursor-pointer"
+    @click="spawn_or_redirect">
+    <p class="hover:cursor-pointer">
       {{ props.appName }}
     </p>
     <span class="material-icons"> chevron_right </span>

@@ -11,7 +11,7 @@ const is_bodyless = !import.meta.env.VITE_WITH_RUST;
         ? 'background-color:gainsboro;'
         : ''
       ">
-      <span class="material-icons m-auto">home</span>
+      <span class="material-icons icon-center">home</span>
       <p class="select-none">Home</p>
     </button>
     <button class="navBtn" @click="$router.push('/main/overview')" :style="$route.path.slice(0, 14) === '/main/overview'

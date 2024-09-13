@@ -28,20 +28,20 @@ onUnmounted(() => {
 </script>
 <template>
   <main class="card-wrapper">
-    <section class="shadow-md hover:shadow-lg relative w-40" @click="$router.push('/main/network/mdns')">
+    <section class="relative w-40" @click="$router.push('/main/network/mdns')">
       <p>mDNS</p>
       <div class="absolute bottom-0 w-full">
         <p>Discovered:</p>
         <p class="text-[3rem] p-4">{{ mdns.discovered }}</p>
       </div>
     </section>
-    <section class="shadow-md hover:shadow-lg relative" @click="$router.push('/main/network/kad')">
+    <section @click="$router.push('/main/network/kad')">
       <p class="text-xxl">Kad</p>
       <div class="w-full">
         <p>Mode: {{ kad.mode ? "Server" : "Client" }}</p>
       </div>
     </section>
-    <section class="shadow-md hover:shadow-lg relative" @click="$router.push('/main/network/autonat')">
+    <section class="relative" @click="$router.push('/main/network/autonat')">
       <p>AutoNat</p>
       <div class="absolute w-full bottom-0">
         <p>State: {{ autonat.status }}</p>
@@ -49,7 +49,7 @@ onUnmounted(() => {
         <p class="text-[3rem] p-4">{{ autonat.confidence }}</p>
       </div>
     </section>
-    <section class="shadow-md hover:shadow-lg" @click="$router.push('/main/network/upnp')">
+    <section @click="$router.push('/main/network/upnp')">
       <p>UPnP</p>
       <div>
         <p>Status: {{ upnp.status ? "Available" : "Private" }}</p>

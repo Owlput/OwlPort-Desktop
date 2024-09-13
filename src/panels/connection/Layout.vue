@@ -4,10 +4,18 @@ import Tab from '../../components/tab/Tab.vue';
 
 <template>
   <ul class="tab-container">
-    <Tab path="/main/connections/dial"><p class="p-[0.375rem]">Dial</p></Tab>
-    <Tab path="/main/connections/listen"><p class="p-[0.375rem]">Listen</p></Tab>
-    <Tab path="/main/connections/connected"><p class="p-[0.375rem]">Connected</p></Tab>
-    <Tab path="/main/connections/relays"><p class="p-[0.375rem]">Relays</p></Tab>
+    <Tab path="/main/connections/dial">
+      <p>Dial</p>
+    </Tab>
+    <Tab path="/main/connections/listen">
+      <p>Listen</p>
+    </Tab>
+    <Tab path="/main/connections/connected">
+      <p>Connected</p>
+    </Tab>
+    <Tab path="/main/connections/relays">
+      <p>Relays</p>
+    </Tab>
   </ul>
   <div style="height: calc(100vh - 2.5rem); width: calc(100vw - 5rem);">
     <RouterView v-slot="{ Component }">

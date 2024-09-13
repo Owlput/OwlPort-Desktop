@@ -26,9 +26,9 @@ refresh()
 <template>
     <SearchBar v-model="search_text" :place-holder="props.placeHolder" :refresh="refresh" />
     <ul>
-        <li v-for="item in displayed_items">
+        <template v-for="item in displayed_items">
             <slot :item="item"></slot>
-        </li>
+        </template>
     </ul>
 
 </template>
