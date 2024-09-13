@@ -13,11 +13,11 @@ const props = defineProps({
 });
 const pending_disconnect: Ref<Number | null> = ref(null);
 const show_supported_protocols = ref(false);
-const peer_info: Ref<types.RsPeerInfo | null> = ref(null);
+const peer_info: Ref<types.PeerInfo | null> = ref(null);
 const connection_type = ["IPv4", "TCP", "Mocked"];
 function toggleExpand() {
   if (show_supported_protocols.value === false) {
-    invoke<types.RsPeerInfo>(
+    invoke<types.PeerInfo>(
       "plugin:owlnest-swarm|get_peer_info",
       {
         peerId: props.peerId,

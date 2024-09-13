@@ -23,6 +23,7 @@ fn main() -> anyhow::Result<()> {
         .plugin(plugins::owlnest::upnp::init(peer_manager.clone()))
         .plugin(plugins::owlnest::relay::init(peer_manager.clone()))
         .plugin(plugins::owlnest::advertise::init())
+        .plugin(plugins::owlnest::gossipsub::init(peer_manager.clone()))
         .plugin(plugins::popup_test::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

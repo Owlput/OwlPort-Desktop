@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { onUnmounted, ref,Ref, nextTick } from "vue";
+import { onUnmounted, ref, Ref, nextTick } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { isBodylessHandler } from "../../utils";
+import { SwarmEmit } from "./types";
 
 defineOptions({ name: "DialEventListener" });
 
-let dial_events = ref([]);
-let listener_handle = ref(() => {});
+let dial_events: Ref<Array<SwarmEmit>> = ref([]);
+let listener_handle = ref(() => { });
 
-addEventListener("swarm-dial-failed", handleFailedDial);
-listen<Event>("swarm-emit", (ev) => {
+listen<SwarmEmit>("swarm-emit", (ev) => {
   dial_events.value.push(ev.payload);
   if (dial_events.value.length > 25) {
     dial_events.value.splice(0, 1);
@@ -24,19 +24,11 @@ listen<Event>("swarm-emit", (ev) => {
 
 onUnmounted(() => {
   listener_handle.value();
-  removeEventListener("swarm-listen-failed", handleFailedDial);
 });
 
-function handleFailedDial(ev) {
-  dial_events.value.push({ dialFailed: { reason: ev.detail } });
-}
 </script>
 <template>
-  <ul
-    class="event-list text-autowrap pb-2 px-4"
-    style="height: calc(100% - 2.75rem)"
-    id="dial-event-listener"
-  >
+  <ul class="event-list text-autowrap pb-2 px-4" style="height: calc(100% - 2.75rem)" id="dial-event-listener">
     <template v-for="event in dial_events">
       <li v-if="event.ConnectionEstablished" class="bg-green-300">
         <p>
@@ -65,9 +57,6 @@ function handleFailedDial(ev) {
             event.Dialing.maybe_peer_id ? event.Dialing.maybe_peer_id : "None"
           }}
         </p>
-      </li>
-      <li v-else-if="event.dialFailed" class="bg-red-300">
-        <p>{{ event.dialFailed.reason }}</p>
       </li>
       <li v-else-if="event.OutgoingConnectionError" class="bg-red-300">
         <p>

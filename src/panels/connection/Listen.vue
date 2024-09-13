@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { Ref, ref } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
 import { writeText } from "@tauri-apps/api/clipboard";
 import { isBodylessHandler } from "../../utils";
 
 const listen_addr = ref("/ip4/0.0.0.0/tcp/0");
-const active_listeners = ref([]);
+const active_listeners:Ref<Array<String>> = ref([]);
 function update_listener_list() {
-  invoke("plugin:owlnest-swarm|list_listeners")
+  invoke<Array<String>>("plugin:owlnest-swarm|list_listeners")
     .then((result) => {
       active_listeners.value = result;
     })
@@ -52,7 +52,7 @@ function listen_on() {
       <li
         v-for="addr in active_listeners"
         class="my-1 shadow-md rounded-sm w-full p-2 bg-green-100 text-autowrap"
-        @dblclick="writeText(addr)"
+        @dblclick="writeText(addr.valueOf())"
       >
         <p>{{ addr }}</p>
       </li>

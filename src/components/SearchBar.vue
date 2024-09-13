@@ -1,18 +1,17 @@
 <script setup lang="ts">
 const searchText = defineModel();
-const props = defineProps<{
-  refresh: Function;
-  placeHolder: String;
-}>();
+const props = defineProps(
+  {
+    refresh: Function,
+    placeHolder: String,
+  }
+);
 </script>
 <template>
-  <section class="w-full">
-    <input
-      class="h-8 px-4 w-max m-2"
-      :placeholder="props.placeHolder.valueOf()"
-      v-model.lazy="searchText"
-    />
-    <button class="text-center aspect-square h-12 m-2" @click="props.refresh">
+  <section class="w-full p-2">
+    <input class="h-12 p-2" style="width: calc(100% - 3.5rem);" :placeholder="props.placeHolder?.valueOf()"
+      v-model.lazy="searchText" />
+    <button v-if="typeof props.refresh !== undefined" class="text-center aspect-square h-12 float-right" @click="() => props.refresh!()">
       <span class="material-icons text-3xl">refresh</span>
     </button>
   </section>

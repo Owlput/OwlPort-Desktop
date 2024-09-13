@@ -29,6 +29,7 @@ whoami = "1.5"
 regex = "1.10"
 toml = "*"
 anyhow = "*"
+dashmap = "6"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
@@ -37,4 +38,5 @@ custom-protocol = ["tauri/custom-protocol"]
 debug = []
 vendored_openssl = ["openssl/vendored"]
 linked_openssl = ["dep:openssl-sys"]
-default = ["linked_openssl"]
+default = ["linked_openssl", "volatile"]
+volatile = []

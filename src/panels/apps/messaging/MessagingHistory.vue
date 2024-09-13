@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, onActivated, onDeactivated, computed } from "vue";
-const props = defineProps<{
-  history: Array<any>;
-  remote: String;
-  local: String;
-}>();
+import { Message } from "./types";
+const props = defineProps(
+  {
+    history: Array<Message>,
+    remote: { type: String, required: true },
+    local: { type: String, required: true }
+  }
+);
 let show_scroll_bottom = ref(false);
 const emit = defineEmits(["update:history"]);
 
@@ -54,30 +57,18 @@ function scroll_to_bottom() {
 
 <template>
   <section class="w-full h-full relative">
-    <ul
-      class="flex flex-col h-full px-4 py-2 overflow-auto gutter"
-      id="chat-history"
-    >
+    <ul class="flex flex-col h-full px-4 py-2 overflow-auto gutter" id="chat-history">
       <template v-for="message in history">
-        <li
-          v-if="message.from === props.remote"
-          class="message-box bg-gray-300 self-start whitespace-pre-wrap"
-        >
+        <li v-if="message.from === props.remote" class="message-box bg-gray-300 self-start whitespace-pre-wrap">
           {{ message.msg }}
         </li>
-        <li
-          v-else
-          class="message-box bg-green-300 self-end whitespace-pre-wrap"
-        >
+        <li v-else class="message-box bg-green-300 self-end whitespace-pre-wrap">
           {{ message.msg }}
         </li>
       </template>
     </ul>
-    <button
-      v-if="show_scroll_bottom"
-      class="absolute bottom-0 right-4 bg-transparent shadow-none border-none"
-      @click="scroll_to_bottom"
-    >
+    <button v-if="show_scroll_bottom" class="absolute bottom-0 right-4 bg-transparent shadow-none border-none"
+      @click="scroll_to_bottom">
       <span class="material-icons"> arrow_downward </span>
     </button>
   </section>
@@ -86,7 +77,7 @@ function scroll_to_bottom() {
 .message-box {
   padding: 0.25rem;
   border-radius: 0.25rem;
-  border: 1px solid black;
+  border: 1px solid rgb(175, 175, 175);
   width: max-content;
   max-width: 65%;
   min-height: 2rem;

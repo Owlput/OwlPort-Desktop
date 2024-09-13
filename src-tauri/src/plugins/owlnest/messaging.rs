@@ -1,21 +1,33 @@
-use std::{num::NonZeroU32, str::FromStr};
-
 use super::*;
+use dashmap::DashMap;
 use owlnest::net::p2p::protocols::messaging::*;
+use std::num::NonZeroU32;
 use tracing::{info, warn};
 
 #[derive(Clone)]
 struct State {
     pub manager: swarm::Manager,
-    pub message_history_store: Arc<RwLock<HashMap<PeerId, Vec<Message>>>>,
+    pub message_store: Arc<DashMap<PeerId, Vec<Message>>>,
 }
 impl State {
-    pub async fn push_history(&self, peer: &PeerId, msg: Message) {
-        let mut history = self.message_history_store.write().await;
-        if let Some(v) = history.get_mut(peer) {
-            v.push(msg);
+    pub fn push_history(&self, peer: &PeerId, msg: Message) {
+        if let Some(mut v) = self.message_store.get_mut(peer) {
+            v.value_mut().push(msg);
         } else {
-            history.insert(*peer, vec![msg]);
+            self.message_store.insert(*peer, vec![msg]);
+        }
+    }
+    pub fn clear_chat_history(&self, peer_id: Option<PeerId>) {
+        if let Some(peer) = peer_id {
+            if let Some(mut entry) = self.message_store.get_mut(&peer) {
+                entry.value_mut().clear();
+                entry.value_mut().shrink_to_fit();
+            }
+        } else {
+            for mut entry in self.message_store.iter_mut() {
+                entry.value_mut().clear();
+                entry.value_mut().shrink_to_fit();
+            }
         }
     }
 }
@@ -23,7 +35,7 @@ impl State {
 pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
     let state = State {
         manager: manager.clone(),
-        message_history_store: Default::default(),
+        message_store: Default::default(),
     };
     Builder::new("owlnest-messaging")
         .setup(move |app| {
@@ -43,7 +55,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                                 ) {
                                     warn!("{:?}", e)
                                 };
-                                state.push_history(from, msg.clone()).await;
+                                state.push_history(from, msg.clone());
                             }
                             _ => {}
                         }
@@ -115,7 +127,7 @@ async fn send_msg(
         .await
     {
         Ok(_dur) => {
-            state.push_history(&peer_id, message).await;
+            state.push_history(&peer_id, message);
             Ok(())
         }
         Err(e) => Err(format!("Failed to send message to {}: {}", peer_id, e)),
@@ -125,43 +137,25 @@ async fn send_msg(
 #[tauri::command]
 async fn get_chat_history(
     state: tauri::State<'_, State>,
-    peer_id: String,
+    peer_id: PeerId,
 ) -> Result<Vec<Message>, String> {
-    let peer_id = PeerId::from_str(&peer_id).map_err(|e| e.to_string())?;
-    match state.message_history_store.read().await.get(&peer_id) {
-        Some(v) => Ok(v.clone()),
+    match state.message_store.get(&peer_id) {
+        Some(v) => Ok(v.value().clone()),
         None => Err("NotFound".into()),
     }
 }
 
 #[tauri::command]
 async fn get_all_chats(state: tauri::State<'_, State>) -> Result<Vec<PeerId>, String> {
-    Ok(state
-        .message_history_store
-        .read()
-        .await
-        .keys()
-        .copied()
-        .collect())
+    Ok(state.message_store.iter().map(|kv| *kv.key()).collect())
 }
 
 #[tauri::command]
 async fn clear_chat_history(
     state: tauri::State<'_, State>,
-    peer_id: Option<String>,
+    peer_id: Option<PeerId>,
 ) -> Result<(), String> {
-    if peer_id.is_some() {
-        let peer_id = PeerId::from_str(&peer_id.unwrap()).map_err(|e| e.to_string())?;
-        if let Some(v) = state.message_history_store.write().await.get_mut(&peer_id) {
-            v.clear();
-            v.shrink_to_fit();
-        }
-    } else {
-        for (_, value) in state.message_history_store.write().await.iter_mut() {
-            value.clear();
-            value.shrink_to_fit();
-        }
-    }
+    state.clear_chat_history(peer_id);
     Ok(())
 }
 
@@ -178,7 +172,7 @@ async fn spawn_window<R: Runtime>(
     peer: Option<PeerId>,
 ) -> Result<(), String> {
     if let Some(peer) = peer {
-        let mut store = state.message_history_store.write().await;
+        let store = &state.message_store;
         if let None = store.get(&peer) {
             store.insert(peer, Vec::new());
         }

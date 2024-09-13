@@ -5,15 +5,13 @@ import DialEventListener from "./DialEventListener.vue";
 import { useRoute } from "vue-router";
 import { isBodylessHandler } from "../../utils";
 
-let route = useRoute();
+const route = useRoute();
 defineOptions({
   name: "Dial",
 });
-let peer_to_dial = ref(route.query?.dial ? route.query.dial : "");
+const peer_to_dial = ref(route.query?.dial ? route.query.dial : "");
 function dial() {
-  if (!peer_to_dial.value) {
-    return;
-  }
+  if (!peer_to_dial.value) return;
   invoke("plugin:owlnest-swarm|dial", {
     dialOptions: { address: peer_to_dial.value },
   }).catch(isBodylessHandler);
@@ -24,11 +22,7 @@ function dial() {
   <section class="px-8 py-4 border-b">
     <p class="text-left w-full px-4 text-lg">Dial a peer</p>
     <div class="single-input">
-      <input
-        class="text-xl"
-        v-model="peer_to_dial"
-        @keypress.enter.exact.prevent="() => dial()"
-      />
+      <input class="text-xl" v-model="peer_to_dial" @keypress.enter.exact.prevent="() => dial()" />
       <button @click="dial">Dial</button>
     </div>
   </section>

@@ -2,19 +2,19 @@
 import { ref } from "vue";
 import { writeText } from "@tauri-apps/api/clipboard";
 
-const props = defineProps<{
-  peerId: String;
-  addresses: Array;
-}>();
+const props = defineProps(
+  {
+    peerId: { type: String, required: true },
+    addresses: { type: Array<String>, required: true }
+  }
+);
 
 const show_addresses = ref(false);
 </script>
 <template>
-  <div
-    class="flex justify-between flex-nowrap border px-2 cursor-pointer"
-    @click.prevent.self="() => (show_addresses = !show_addresses)"
-  >
-    <p class="select-none cursor-default" @dblclick="writeText(props.peerId)">
+  <div class="flex justify-between flex-nowrap border px-2 cursor-pointer"
+    @click.prevent.self="() => (show_addresses = !show_addresses)">
+    <p class="select-none cursor-default" @dblclick="writeText(props.peerId.valueOf())">
       {{ props.peerId }}
     </p>
   </div>
@@ -29,7 +29,7 @@ const show_addresses = ref(false);
         No listenable address(Addresses not public)
       </li>
       <li v-for="addr in props.addresses" class="my-0 w-full">
-        <p @dblclick="writeText(addr)" class="text-autowrap">
+        <p @dblclick="writeText(addr.valueOf())" class="text-autowrap">
           {{ addr }}
         </p>
       </li>
