@@ -1,53 +1,19 @@
 use super::*;
-use dashmap::DashMap;
 use owlnest::net::p2p::protocols::messaging::*;
 use std::num::NonZeroU32;
 use tracing::{info, warn};
 
-#[derive(Clone)]
-struct State {
-    pub manager: swarm::Manager,
-    pub message_store: Arc<DashMap<PeerId, Vec<Message>>>,
-}
-impl State {
-    pub fn push_history(&self, peer: &PeerId, msg: Message) {
-        if let Some(mut v) = self.message_store.get_mut(peer) {
-            v.value_mut().push(msg);
-        } else {
-            self.message_store.insert(*peer, vec![msg]);
-        }
-    }
-    pub fn clear_chat_history(&self, peer_id: Option<PeerId>) {
-        if let Some(peer) = peer_id {
-            if let Some(mut entry) = self.message_store.get_mut(&peer) {
-                entry.value_mut().clear();
-                entry.value_mut().shrink_to_fit();
-            }
-        } else {
-            for mut entry in self.message_store.iter_mut() {
-                entry.value_mut().clear();
-                entry.value_mut().shrink_to_fit();
-            }
-        }
-    }
-}
-
 pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
-    let state = State {
-        manager: manager.clone(),
-        message_store: Default::default(),
-    };
     Builder::new("owlnest-messaging")
         .setup(move |app| {
             let app_handle = app.clone();
-            let state_clone = state.clone();
             async_runtime::spawn(async move {
                 let mut listener = manager.event_subscriber().subscribe();
                 while let Ok(ev) = listener.recv().await {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Messaging(ev)) = ev.as_ref()
                     {
                         match ev {
-                            OutEvent::IncomingMessage { from, msg } => {
+                            OutEvent::IncomingMessage { .. } => {
                                 if let Err(e) = app_handle.emit_to::<MessagingEmit>(
                                     "Messaging",
                                     "owlnest-messaging-emit",
@@ -55,7 +21,6 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                                 ) {
                                     warn!("{:?}", e)
                                 };
-                                state.push_history(from, msg.clone());
                             }
                             _ => {}
                         }
@@ -92,7 +57,6 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                     }
                 }
             });
-            app.manage(state_clone);
             Ok(())
         })
         .invoke_handler(generate_handler![
@@ -108,7 +72,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
 
 #[tauri::command]
 async fn send_msg(
-    state: tauri::State<'_, State>,
+    manager: tauri::State<'_, swarm::Manager>,
     target: String,
     msg: String,
 ) -> Result<(), String> {
@@ -119,7 +83,6 @@ async fn send_msg(
             return Err("Invalid PeerId".into());
         }
     };
-    let manager = &state.manager;
     let message = Message::new(manager.identity().get_peer_id(), peer_id, msg);
     match manager
         .messaging()
@@ -127,7 +90,10 @@ async fn send_msg(
         .await
     {
         Ok(_dur) => {
-            state.push_history(&peer_id, message);
+            manager
+                .messaging()
+                .message_store
+                .push_message(&peer_id, message);
             Ok(())
         }
         Err(e) => Err(format!("Failed to send message to {}: {}", peer_id, e)),
@@ -136,45 +102,48 @@ async fn send_msg(
 
 #[tauri::command]
 async fn get_chat_history(
-    state: tauri::State<'_, State>,
+    manager: tauri::State<'_, swarm::Manager>,
     peer_id: PeerId,
-) -> Result<Vec<Message>, String> {
-    match state.message_store.get(&peer_id) {
-        Some(v) => Ok(v.value().clone()),
+) -> Result<Box<[Message]>, String> {
+    match manager.messaging().message_store.get_messages(&peer_id) {
+        Some(v) => Ok(v),
         None => Err("NotFound".into()),
     }
 }
 
 #[tauri::command]
-async fn get_all_chats(state: tauri::State<'_, State>) -> Result<Vec<PeerId>, String> {
-    Ok(state.message_store.iter().map(|kv| *kv.key()).collect())
+async fn get_all_chats(manager: tauri::State<'_, swarm::Manager>) -> Result<Box<[PeerId]>, String> {
+    Ok(manager.messaging().message_store.list_all_peers())
 }
 
 #[tauri::command]
 async fn clear_chat_history(
-    state: tauri::State<'_, State>,
+    manager: tauri::State<'_, swarm::Manager>,
     peer_id: Option<PeerId>,
 ) -> Result<(), String> {
-    state.clear_chat_history(peer_id);
+    manager
+        .messaging()
+        .message_store
+        .clear_message(peer_id.as_ref());
     Ok(())
 }
 
 #[tauri::command]
-async fn list_connected(state: tauri::State<'_, State>) -> Result<Box<[PeerId]>, ()> {
-    Ok(state.manager.messaging().list_connected().await)
+async fn list_connected(manager: tauri::State<'_, swarm::Manager>) -> Result<Box<[PeerId]>, ()> {
+    Ok(manager.messaging().list_connected().await)
 }
 
 #[allow(unused)]
 #[tauri::command]
 async fn spawn_window<R: Runtime>(
     app: tauri::AppHandle<R>,
-    state: tauri::State<'_, State>,
+    manager: tauri::State<'_, swarm::Manager>,
     peer: Option<PeerId>,
 ) -> Result<(), String> {
     if let Some(peer) = peer {
-        let store = &state.message_store;
-        if let None = store.get(&peer) {
-            store.insert(peer, Vec::new());
+        let store = &manager.messaging().message_store;
+        if let None = store.get_messages(&peer) {
+            store.insert_empty_record(&peer);
         }
     }
     if let Some(window) = app.get_window("Messaging") {

@@ -2,39 +2,10 @@ use super::*;
 use owlnest::net::p2p::protocols::gossipsub::*;
 use tracing::warn;
 
-type TopicStore = Box<dyn store::TopicStore + Send + Sync>;
-type MessageStore = Box<dyn store::MessageStore + Send + Sync>;
-
-#[derive(Clone)]
-struct State {
-    pub manager: swarm::Manager,
-    pub topic_store: Arc<TopicStore>,
-    pub message_store: Arc<MessageStore>,
-}
-impl State {
-    pub fn push_history(&self, msg: Message) {
-        let _ = self.message_store.insert_message(msg);
-    }
-    pub fn on_new_participant(&self, peer_id: &PeerId, topic: &TopicHash) {
-        self.topic_store.join_topic(peer_id, topic);
-    }
-    pub fn on_participant_left(&self, peer_id: &PeerId, topic: &TopicHash) {
-        self.topic_store.leave_topic(peer_id, topic);
-    }
-}
-
 pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
-    let state = State {
-        manager: manager.clone(),
-        #[cfg(feature = "volatile")]
-        message_store: Arc::new(Box::new(store::MemMessageStore::default())),
-        #[cfg(feature = "volatile")]
-        topic_store: Arc::new(Box::new(store::MemTopicStore::default())),
-    };
     Builder::new("libp2p-gossipsub")
         .setup(move |app| {
             let app_handle = app.clone();
-            let state_clone = state.clone();
             async_runtime::spawn(async move {
                 let mut listener = manager.event_subscriber().subscribe();
                 while let Ok(ev) = listener.recv().await {
@@ -50,13 +21,16 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                                 ) {
                                     warn!("{:?}", e)
                                 };
-                                state.push_history(message.clone());
+                                let _ = manager
+                                    .gossipsub()
+                                    .message_store
+                                    .insert_message(message.clone());
                             }
                             Subscribed { peer_id, topic } => {
-                                state.on_new_participant(peer_id, topic)
+                                manager.gossipsub().topic_store.join_topic(peer_id, topic);
                             }
                             Unsubscribed { peer_id, topic } => {
-                                state.on_participant_left(peer_id, topic)
+                                manager.gossipsub().topic_store.leave_topic(peer_id, topic);
                             }
                             _ => {}
                         }
@@ -64,7 +38,6 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                     }
                 }
             });
-            app.manage(state_clone);
             Ok(())
         })
         .invoke_handler(generate_handler![
@@ -79,7 +52,8 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
             mesh_peers,
             insert_topic_hash_map,
             try_map_topic_hash,
-            try_map_string_to_hash
+            try_map_string_to_hash,
+            clear_message,
         ])
         .build()
 }
@@ -87,14 +61,13 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
 /// Publish the message. Text messages will be transformed into bytes.
 #[tauri::command]
 async fn publish_message(
-    state: tauri::State<'_, State>,
+    state: tauri::State<'_, swarm::Manager>,
     topic: ReadableTopic,
     message: String,
 ) -> Result<(), String> {
-    let manager = &state.manager;
+    let handle = state.gossipsub();
     let topic_hash: TopicHash = topic.get_hash().into();
-    match manager
-        .gossipsub()
+    match handle
         .publish_message(
             topic_hash.clone(),
             message.clone().into_bytes().into_boxed_slice(),
@@ -102,8 +75,8 @@ async fn publish_message(
         .await
     {
         Ok(_id) => {
-            let _ = state.push_history(Message {
-                source: Some(manager.identity().get_peer_id()),
+            let _ = handle.message_store.insert_message(Message {
+                source: Some(state.identity().get_peer_id()),
                 data: message.into_bytes(),
                 sequence_number: None,
                 topic: topic.get_hash().into(),
@@ -120,10 +93,14 @@ async fn publish_message(
 /// List all messages received about the given topic, including message from self.
 #[tauri::command]
 async fn get_message_history(
-    state: tauri::State<'_, State>,
+    state: tauri::State<'_, swarm::Manager>,
     topic: ReadableTopic,
 ) -> Result<Option<Box<[serde_types::Message]>>, String> {
-    match state.message_store.get_messages(&topic.get_hash().into()) {
+    match state
+        .gossipsub()
+        .message_store
+        .get_messages(&topic.get_hash().into())
+    {
         Some(list) => Ok(Some(
             list.to_vec().into_iter().map(|msg| msg.into()).collect(),
         )),
@@ -133,8 +110,11 @@ async fn get_message_history(
 
 /// List all topics, whether readable or not.
 #[tauri::command]
-async fn get_all_topics(state: tauri::State<'_, State>) -> Result<Box<[ReadableTopic]>, String> {
+async fn get_all_topics(
+    state: tauri::State<'_, swarm::Manager>,
+) -> Result<Box<[ReadableTopic]>, String> {
     Ok(state
+        .gossipsub()
         .topic_store
         .readable_topics()
         .to_vec()
@@ -145,6 +125,7 @@ async fn get_all_topics(state: tauri::State<'_, State>) -> Result<Box<[ReadableT
         })
         .chain(
             state
+                .gossipsub()
                 .topic_store
                 .hash_topics()
                 .to_vec()
@@ -157,10 +138,14 @@ async fn get_all_topics(state: tauri::State<'_, State>) -> Result<Box<[ReadableT
 /// List all participants of the given topic in peer ID.
 #[tauri::command]
 async fn list_participants(
-    state: tauri::State<'_, State>,
+    state: tauri::State<'_, swarm::Manager>,
     topic: ReadableTopic,
 ) -> Result<Option<Box<[PeerId]>>, String> {
-    match state.topic_store.participants(&topic.get_hash().into()) {
+    match state
+        .gossipsub()
+        .topic_store
+        .participants(&topic.get_hash().into())
+    {
         Some(list) => Ok(Some(
             list.to_vec().into_iter().map(|msg| msg.into()).collect(),
         )),
@@ -170,20 +155,26 @@ async fn list_participants(
 
 /// Subscribe to
 #[tauri::command]
-async fn subscribe(state: tauri::State<'_, State>, topic: ReadableTopic) -> Result<bool, String> {
+async fn subscribe(
+    state: tauri::State<'_, swarm::Manager>,
+    topic: ReadableTopic,
+) -> Result<bool, String> {
     if topic.get_string().is_none() {
         return Err("Cannot subscribe without topic string.".into());
     }
     let topic_string = topic.get_string().unwrap();
-    state.topic_store.insert_string(topic_string.clone());
+    state
+        .gossipsub()
+        .topic_store
+        .insert_string(topic_string.clone());
     let result = state
-        .manager
         .gossipsub()
         .subscribe_topic(topic_string)
         .await
         .map_err(|e| e.to_string());
     if let Ok(true) = result {
         state
+            .gossipsub()
             .topic_store
             .subscribe_topic(topic_string.clone().into());
     }
@@ -191,16 +182,19 @@ async fn subscribe(state: tauri::State<'_, State>, topic: ReadableTopic) -> Resu
 }
 
 #[tauri::command]
-async fn unsubscribe(state: tauri::State<'_, State>, topic: ReadableTopic) -> Result<bool, String> {
+async fn unsubscribe(
+    state: tauri::State<'_, swarm::Manager>,
+    topic: ReadableTopic,
+) -> Result<bool, String> {
     if let Some(topic_string) = topic.get_string() {
         let result = state
-            .manager
             .gossipsub()
             .unsubscribe_topic(topic_string)
             .await
             .map_err(|e| e.to_string());
         if let Ok(true) = result {
             state
+                .gossipsub()
                 .topic_store
                 .unsubscribe_topic(&Sha256Topic::new(topic_string).hash());
         }
@@ -210,8 +204,10 @@ async fn unsubscribe(state: tauri::State<'_, State>, topic: ReadableTopic) -> Re
 }
 
 #[tauri::command]
-async fn subscribed_topics(state: tauri::State<'_, State>) -> Result<Box<[ReadableTopic]>, String> {
-    Ok(state.topic_store.subscribed_topics())
+async fn subscribed_topics(
+    state: tauri::State<'_, swarm::Manager>,
+) -> Result<Box<[ReadableTopic]>, String> {
+    Ok(state.gossipsub().topic_store.subscribed_topics())
 }
 
 #[tauri::command]
@@ -227,27 +223,39 @@ async fn mesh_peers(
 
 #[tauri::command]
 async fn insert_topic_hash_map(
-    state: tauri::State<'_, State>,
+    state: tauri::State<'_, swarm::Manager>,
     topic: ReadableTopic,
 ) -> Result<(), String> {
     if let Some(topic_string) = topic.get_string() {
-        return Ok(state.topic_store.insert_string(topic_string.clone()));
+        return Ok(state
+            .gossipsub()
+            .topic_store
+            .insert_string(topic_string.clone()));
     }
     Err("Cannot insert record without topic string.".into())
 }
 
 #[tauri::command]
+async fn clear_message(
+    state: tauri::State<'_, swarm::Manager>,
+    topic: Option<ReadableTopic>,
+) -> Result<(), String> {
+    state
+        .gossipsub()
+        .message_store
+        .clear_message(topic.map(|topic| topic.get_hash().into()).as_ref());
+    Ok(())
+}
+
+#[tauri::command]
 async fn try_map_topic_hash(
-    state: tauri::State<'_, State>,
+    state: tauri::State<'_, swarm::Manager>,
     topic: serde_types::TopicHash,
 ) -> Result<Option<String>, String> {
-    Ok(state.topic_store.try_map(&topic.into()))
+    Ok(state.gossipsub().topic_store.try_map(&topic.into()))
 }
 #[tauri::command]
-async fn try_map_string_to_hash(
-    state: tauri::State<'_, State>,
-    topic: String,
-) -> Result<serde_types::TopicHash, String> {
+async fn try_map_string_to_hash(topic: String) -> Result<serde_types::TopicHash, String> {
     Ok(Sha256Topic::new(topic).hash().into())
 }
 
@@ -255,7 +263,7 @@ async fn try_map_string_to_hash(
 #[tauri::command]
 async fn spawn_window<R: Runtime>(
     app: tauri::AppHandle<R>,
-    state: tauri::State<'_, State>,
+    state: tauri::State<'_, swarm::Manager>,
     peer: Option<PeerId>,
 ) -> Result<(), String> {
     if let Some(window) = app.get_window("GossipSub") {
@@ -275,66 +283,12 @@ async fn spawn_window<R: Runtime>(
     Ok(())
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ReadableTopic {
-    HashOnly(serde_types::TopicHash),
-    StringOnly(String),
-    Both {
-        hash: serde_types::TopicHash,
-        string: String,
-    },
-}
-impl ReadableTopic {
-    pub fn get_hash(&self) -> serde_types::TopicHash {
-        match self {
-            ReadableTopic::HashOnly(hash) => hash.clone(),
-            ReadableTopic::StringOnly(string) => Sha256Topic::new(string).hash().into(),
-            ReadableTopic::Both { hash, .. } => hash.clone(),
-        }
-    }
-    pub fn get_string(&self) -> Option<&String> {
-        match self {
-            ReadableTopic::HashOnly(_) => None,
-            ReadableTopic::StringOnly(string) => Some(string),
-            ReadableTopic::Both { string, .. } => Some(string),
-        }
-    }
-}
-impl From<String> for ReadableTopic {
-    fn from(value: String) -> Self {
-        let topic = Sha256Topic::new(value.clone());
-        Self::Both {
-            hash: topic.hash().into(),
-            string: value,
-        }
-    }
-}
-impl From<&str> for ReadableTopic {
-    fn from(value: &str) -> Self {
-        let topic = Sha256Topic::new(value);
-        Self::Both {
-            hash: topic.hash().into(),
-            string: value.to_owned(),
-        }
-    }
-}
-impl From<TopicHash> for ReadableTopic {
-    fn from(value: TopicHash) -> Self {
-        Self::HashOnly(value.into())
-    }
-}
-impl From<serde_types::TopicHash> for ReadableTopic {
-    fn from(value: serde_types::TopicHash) -> Self {
-        Self::HashOnly(value)
-    }
-}
-
 mod serde_types {
-    use std::convert::Infallible;
-
+    pub use gossipsub::serde_types::TopicHash;
     use libp2p::{gossipsub::MessageId, PeerId};
     use owlnest::net::p2p::protocols::gossipsub;
-    use serde::{Deserialize, Serialize};
+    use serde::Serialize;
+    use std::convert::Infallible;
 
     /// The message sent to the user after a [`RawMessage`] has been transformed by a
     /// [`crate::DataTransform`].
@@ -428,206 +382,6 @@ mod serde_types {
             };
 
             Ok(ev)
-        }
-    }
-    #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
-    pub struct TopicHash {
-        /// The topic hash. Stored as a string to align with the protobuf API.
-        hash: String,
-    }
-    impl TopicHash {
-        pub fn from_raw(hash: impl Into<String>) -> TopicHash {
-            TopicHash { hash: hash.into() }
-        }
-
-        pub fn into_string(self) -> String {
-            self.hash
-        }
-
-        pub fn as_str(&self) -> &str {
-            &self.hash
-        }
-    }
-    impl From<gossipsub::TopicHash> for TopicHash {
-        fn from(value: gossipsub::TopicHash) -> Self {
-            Self {
-                hash: value.into_string(),
-            }
-        }
-    }
-    impl From<TopicHash> for gossipsub::TopicHash {
-        fn from(value: TopicHash) -> Self {
-            gossipsub::TopicHash::from_raw(value.hash)
-        }
-    }
-}
-
-pub mod store {
-    use dashmap::{DashMap, DashSet};
-    use libp2p::{
-        gossipsub::{Sha256Topic, Message, TopicHash},
-        PeerId,
-    };
-    use owlnest::net::p2p::protocols::gossipsub;
-
-    use super::ReadableTopic;
-
-    pub trait TopicStore {
-        fn insert_string(&self, topic_string: String);
-        fn insert_hash(&self, topic_hash: TopicHash) -> bool;
-        fn try_map(&self, topic_hash: &TopicHash) -> Option<String>;
-        fn participants(&self, topic_hash: &TopicHash) -> Option<Box<[PeerId]>>;
-        fn join_topic(&self, peer: &PeerId, topic_hash: &TopicHash) -> bool;
-        fn leave_topic(&self, peer: &PeerId, topic_hash: &TopicHash) -> bool;
-        fn subscribe_topic(&self, topic: ReadableTopic) -> bool;
-        fn unsubscribe_topic(&self, topic: &TopicHash) -> bool;
-        fn hash_topics(&self) -> Box<[TopicHash]>;
-        fn readable_topics(&self) -> Box<[(TopicHash, String)]>;
-        fn subscribed_topics(&self) -> Box<[ReadableTopic]>;
-    }
-    pub trait MessageStore {
-        fn get_messages(&self, topic_hash: &TopicHash) -> Option<Box<[Message]>>;
-        fn insert_message(&self, message: Message) -> Result<(), ()>;
-    }
-
-    #[derive(Debug, Default)]
-    pub struct MemTopicStore {
-        populated: DashMap<TopicHash, (String, DashSet<PeerId>)>,
-        vacant: DashMap<TopicHash, DashSet<PeerId>>,
-        subscribed: DashSet<TopicHash>,
-    }
-    impl TopicStore for MemTopicStore {
-        fn insert_string(&self, topic_string: String) {
-            let hash = Sha256Topic::new(topic_string.clone()).hash();
-            if let Some((_, list)) = self.vacant.remove(&hash) {
-                self.populated.insert(hash, (topic_string, list));
-                return; // move the entry from vacant to populated if present.
-            };
-            if self.populated.get_mut(&hash).is_none() {
-                // Only insert when not present.
-                self.populated
-                    .insert(hash, (topic_string, Default::default()));
-            }
-        }
-        /// Returns true when the topic is not present anywhere(false when already present or readable).
-        fn insert_hash(&self, topic_hash: TopicHash) -> bool {
-            if self.populated.get(&topic_hash).is_some() {
-                return false; // The topic is present
-            }
-            if self.vacant.get(&topic_hash).is_some() {
-                return false; // The topic is present
-            }
-            self.vacant.insert(topic_hash.clone(), DashSet::default());
-            true // The topic was not presnet
-        }
-        fn try_map(&self, topic_hash: &TopicHash) -> Option<String> {
-            self.populated
-                .get(topic_hash)
-                .map(|entry| entry.value().0.clone())
-        }
-        fn readable_topics(&self) -> Box<[(TopicHash, String)]> {
-            self.populated
-                .iter()
-                .map(|entry| (entry.key().clone(), entry.value().0.clone()))
-                .collect()
-        }
-        fn hash_topics(&self) -> Box<[TopicHash]> {
-            self.vacant
-                .iter()
-                .map(|entry| entry.key().clone())
-                .collect()
-        }
-        fn participants(&self, topic_hash: &TopicHash) -> Option<Box<[PeerId]>> {
-            self.populated
-                .get(topic_hash)
-                .map(|entry| entry.value().1.iter().map(|entry| *entry.key()).collect())
-                .or(self
-                    .vacant
-                    .get(topic_hash)
-                    .map(|entry| entry.value().iter().map(|entry| *entry.key()).collect()))
-        }
-        fn join_topic(&self, peer: &PeerId, topic_hash: &TopicHash) -> bool {
-            self.insert_hash(topic_hash.clone());
-            if let Some(mut entry) = self.vacant.get_mut(topic_hash) {
-                return entry.value_mut().insert(*peer);
-            }
-            if let Some(mut entry) = self.populated.get_mut(topic_hash) {
-                return entry.value_mut().1.insert(*peer);
-            }
-            unreachable!()
-        }
-        fn leave_topic(&self, peer: &PeerId, topic_hash: &TopicHash) -> bool {
-            if let Some(mut entry) = self.vacant.get_mut(topic_hash) {
-                return entry.value_mut().remove(peer).is_some();
-            }
-            if let Some(mut entry) = self.populated.get_mut(topic_hash) {
-                return entry.value_mut().1.remove(peer).is_some();
-            }
-            false
-        }
-        /// Returns `true` when we have not subscribed before.  
-        /// This will add to existing store if not presnet.
-        fn subscribe_topic(&self, topic: ReadableTopic) -> bool {
-            let hash: gossipsub::TopicHash = topic.get_hash().into();
-            let is_subscribed = self.subscribed.insert(hash.clone());
-            if let ReadableTopic::HashOnly(_) = topic {
-                if self.vacant.get(&hash).is_none() {
-                    // insert if not present
-                    self.vacant.insert(hash, Default::default());
-                }
-                return is_subscribed;
-            }
-            if self.populated.get(&hash).is_none() {
-                // insert if not present
-                self.populated.insert(
-                    hash,
-                    (topic.get_string().unwrap().to_owned(), Default::default()),
-                );
-            }
-            is_subscribed
-        }
-        fn unsubscribe_topic(&self, topic_hash: &TopicHash) -> bool {
-            self.subscribed.remove(&topic_hash).is_some()
-        }
-        fn subscribed_topics(&self) -> Box<[ReadableTopic]> {
-            self.subscribed
-                .iter()
-                .map(|entry| {
-                    let hash = entry.key().clone();
-                    if let Some(string) = self
-                        .populated
-                        .get(&hash)
-                        .map(|entry| entry.value().0.clone())
-                    {
-                        return ReadableTopic::Both {
-                            hash: hash.into(),
-                            string,
-                        };
-                    };
-                    ReadableTopic::HashOnly(hash.into())
-                })
-                .collect()
-        }
-    }
-    #[derive(Debug, Clone, Default)]
-    pub struct MemMessageStore {
-        inner: DashMap<TopicHash, Vec<super::Message>>,
-    }
-    impl MessageStore for MemMessageStore {
-        fn get_messages(&self, topic_hash: &TopicHash) -> Option<Box<[Message]>> {
-            self.inner
-                .get(topic_hash)
-                .map(|entry| entry.value().clone().into_boxed_slice())
-        }
-
-        fn insert_message(&self, message: Message) -> Result<(), ()> {
-            match self.inner.get_mut(&message.topic) {
-                Some(mut entry) => entry.value_mut().push(message),
-                None => {
-                    self.inner.insert(message.topic.clone(), vec![message]);
-                }
-            }
-            Ok(())
         }
     }
 }
