@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, Ref } from 'vue';
 import { ReadableTopic, TopicInfo } from './types';
-import { invoke } from '@tauri-apps/api';
+import { invoke } from '@tauri-apps/api/core';
 import { isBodylessHandler } from '../../../utils';
-import { writeText } from '@tauri-apps/api/clipboard';
+import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import ToolTip from '../../../components/ToolTip.vue';
 
 const props = defineProps({
@@ -25,23 +25,21 @@ function unsubscribe() {
 }
 </script>
 <template>
-    <section v-if="props.topic" class="flex justify-between">
-        <div class=" flex-grow">
-            <section v-if="!props.topic.StringOnly" class="flex justify-between items-center">
-                <p>Hash: {{ props.topic.get_hash()! }}</p>
-                <button class="aspect-square w-fit" @click="() => writeText(props.topic.get_hash()!.valueOf())"><span
-                        class="material-icons icon-center">content_copy</span></button>
-            </section>
-            <section v-if="!props.topic.HashOnly" class="flex justify-between items-center">
-                <p class="">String repr: {{ props.topic.get_string()! }}</p>
-                <button class="aspect-square w-fit" @click="writeText(props.topic.get_string()!.valueOf())"><span
-                        class="material-icons icon-center">content_copy</span></button>
-            </section>
-        </div>
+    <section v-if="props.topic" class="border p-1">
+        <section v-if="!props.topic.StringOnly" class="flex justify-between items-center">
+            <p class="text-autowrap">Hash: {{ props.topic.get_hash()!.valueOf() }}</p>
+            <button class="aspect-square w-fit" @click="() => writeText(props.topic.get_hash()!.valueOf())"><span
+                    class="material-icons icon-center">content_copy</span></button>
+        </section>
+        <section v-if="!props.topic.HashOnly" class="flex justify-between items-center">
+            <p class="text-autowrap">String repr: {{ props.topic.get_string()! }}</p>
+            <button class="aspect-square w-fit" @click="writeText(props.topic.get_string()!.valueOf())"><span
+                    class="material-icons icon-center">content_copy</span></button>
+        </section>
+
         <ToolTip v-if="props.unsub" help-text="unsubscribe"> <button class="w-8 py-2 px-1 ml-1" @click="unsubscribe">
                 <span class="material-icons text-2xl text-center align-baseline">speaker_notes_offf</span>
             </button></ToolTip>
-
     </section>
     <section v-else>
         <p>Loading topic info...</p>

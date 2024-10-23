@@ -6,3 +6,7 @@ export class KadEmit{
     } = undefined;
 }
 
+export interface PeerStub{
+    peer_id:String,
+    addresses: Array<String>
+}

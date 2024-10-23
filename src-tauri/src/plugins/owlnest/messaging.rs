@@ -133,7 +133,6 @@ async fn list_connected(manager: tauri::State<'_, swarm::Manager>) -> Result<Box
     Ok(manager.messaging().list_connected().await)
 }
 
-#[allow(unused)]
 #[tauri::command]
 async fn spawn_window<R: Runtime>(
     app: tauri::AppHandle<R>,
@@ -147,7 +146,7 @@ async fn spawn_window<R: Runtime>(
         }
     }
     if let Some(window) = app.get_window("Messaging") {
-        window.emit("focusChat", peer);
+        let _ = window.emit("focusChat", peer);
         let _ = window.set_focus();
         return Ok(());
     }

@@ -5,8 +5,8 @@ import Tab from "../../components/tab/Tab.vue";
 <template>
   <ul class="tab-container">
     <Tab path="/main/network/kad/peers">Peers</Tab>
-    <Tab path="'/main/network/kad/query'">Query</Tab>
-    <Tab path="/main/network/kad/bootstrap"></Tab>
+    <Tab path="/main/network/kad/query">Query</Tab>
+    <Tab path="/main/network/kad/bootstrap">Bootstrap</Tab>
   </ul>
   <section style="height: calc(100vh - 2.5rem)" class="overflow-auto">
     <RouterView v-slot="{ Component }">

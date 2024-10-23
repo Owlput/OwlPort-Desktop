@@ -1,6 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+#![feature(hash_extract_if)]
+
 use anyhow::Ok;
 
 mod event;
@@ -24,6 +26,7 @@ fn main() -> anyhow::Result<()> {
         .plugin(plugins::owlnest::relay::init(peer_manager.clone()))
         .plugin(plugins::owlnest::advertise::init())
         .plugin(plugins::owlnest::gossipsub::init(peer_manager.clone()))
+        .plugin(plugins::owlnest::developer_options::init())
         .plugin(plugins::popup_test::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

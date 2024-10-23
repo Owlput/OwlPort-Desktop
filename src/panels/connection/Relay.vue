@@ -1,46 +1,28 @@
 <script setup lang="ts">
-import { ref, Ref, computed } from "vue";
-import { invoke } from "@tauri-apps/api/tauri";
+import { ref } from "vue";
+import { invoke } from "@tauri-apps/api/core";
 import RelayEntry from "./RelayEntry.vue";
-import SearchBar from "../../components/SearchBar.vue";
-import { isBodylessHandler, Status } from "../../utils";
+import { Status } from "../../utils";
+import { RelayStub } from "./types";
+import SearchDisplay from "../../components/SearchDisplay.vue";
 
-const relay_list: Ref<Array<[String, Number]>> = ref([]);
 const status = ref(Status.PendingInit);
-const search_keyword = ref("");
 
 function update_relay_list() {
-  invoke<Array<[String, Number]>>("plugin:owlnest-relay|list_relays")
+  return invoke<Array<RelayStub>>("plugin:owlnest-relay|list_relays")
     .then((v) => {
-      v.sort((a, b) => {
-        if (a[1].valueOf() > 0) return a[1].valueOf() - b[1].valueOf();
-        else return 1;
-      });
-      relay_list.value = v;
+      return v
     })
-    .catch((e) => { if (isBodylessHandler(e)) status.value = Status.NoBackend });
 }
-let filtered_list = computed(() => {
-  if (search_keyword.value !== "")
-    return relay_list.value.filter((v) => v[0].includes(search_keyword.value));
-  else return relay_list.value;
-});
 update_relay_list();
+function filter(source: RelayStub, search_text: String): boolean {
+  return source.peer_id.includes(search_text.valueOf())
+}
 </script>
 <template>
-  <SearchBar place-holder="Type Peer ID and press Enter to search" :refresh="update_relay_list"
-    v-model="search_keyword" />
-  <ul class="event-list text-autowrap select-none overflow-auto px-8 py-4" style="height: calc(100vh - 6.5rem)">
-    <li v-if="relay_list?.length === 0">
-      <p class="text-center">No relay connected.</p>
-    </li>
-    <li v-if="relay_list === null">
-      <p class="text-center">Fetching data from backend...</p>
-    </li>
-    <li v-for="relay in filtered_list" class="rounded-sm justify-between">
-      <Suspense>
-        <RelayEntry :peer-id="relay[0]" :latency="relay[1]" />
-      </Suspense>
-    </li>
-  </ul>
+  <SearchDisplay :criteria="filter" :get-or-refresh="update_relay_list" v-slot="slotProps"
+    place-holder="Search for topic or topic hash(start with #) here." :min-item-size="36"
+    scroller-height-expr="100vh - 6.5rem" @load-result="(result) => { status = result }">
+    <RelayEntry :relay_stub="slotProps.item"></RelayEntry>
+  </SearchDisplay>
 </template>

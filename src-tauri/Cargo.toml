@@ -10,26 +10,27 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1.5.3", features = [] }
+tauri-build = { version = "2", features = [] }
 
 [dependencies]
 chrono = "0.4"
 either = "1"
-tauri = { version = "1.7", features = ["clipboard-write-text", "shell-open"] }
+tauri = { version = "2" }
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1", features = ["sync"] }
 libp2p = { path = "../../../Owlput/rust-libp2p/libp2p", default-features = false }
 serde_json = "1"
 openssl = { version = "*" }
 openssl-sys = { version = "*", optional = true }
-owlnest = { path = "../../OwlNest/owlnest", features = ["full"] }
+owlnest = { path = "../../../Owlput/OwlNest/owlnest", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 whoami = "1.5"
-regex = "1.10"
+regex = "1.11"
 toml = "*"
 anyhow = "*"
 dashmap = "6"
+futures-timer = "*"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

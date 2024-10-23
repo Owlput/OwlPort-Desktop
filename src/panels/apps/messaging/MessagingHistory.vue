@@ -33,10 +33,11 @@ function show_scroll_to_bottom(_ev: any) {
     console.error("Internal state error: no 'chat-history' to select");
     return;
   }
-  if (element.scrollHeight - element.scrollTop - 350 < 200) {
-    show_scroll_bottom.value = false;
-  } else {
+  let scroll_pos = element.scrollHeight - element.scrollTop;
+  if (scroll_pos -350 > 200 && scroll_pos > element.offsetHeight) {
     show_scroll_bottom.value = true;
+  } else {
+    show_scroll_bottom.value = false;
   }
 }
 function scroll_to_bottom() {
@@ -57,7 +58,7 @@ function scroll_to_bottom() {
 
 <template>
   <section class="w-full h-full relative">
-    <ul class="flex flex-col h-full px-4 py-2 overflow-auto gutter" id="chat-history">
+    <ul class="flex flex-col px-4 py-2 overflow-auto gutter" style="height: calc(100vh - 10rem);" id="chat-history">
       <template v-for="message in history">
         <li v-if="message.from === props.remote" class="message-box bg-gray-300 self-start whitespace-pre-wrap">
           {{ message.msg }}

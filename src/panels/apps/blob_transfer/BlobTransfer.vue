@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { FileDropEvent } from "@tauri-apps/api/window";
+import { FileDropEvent } from "@tauri-apps/api/webviewWindow";
 import { ref, Ref, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import RecvEntry from "./RecvEntry.vue";

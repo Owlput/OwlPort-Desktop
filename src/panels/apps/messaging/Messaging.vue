@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { ref, Ref, computed, onUnmounted } from "vue";
 import { RouterView, useRouter } from "vue-router";
 import { isBodylessHandler } from "../../../utils";
+import PopUpHandler from "../../../components/PopUpHandler.vue";
 
 defineOptions({
   name: "Messaging",
@@ -43,7 +44,7 @@ onUnmounted(() => {
       <ul class="flex flex-col p-1">
         <li v-if="filtered_chats.length < 1 && chats.length !== 0">No chat fits your criteria</li>
         <li v-if="chats.length === 0">
-          <p class="text-slate-400 break-before-auto p-2">Only peers that had interactions with will be showed here</p>
+          <p class="text-slate-400 break-before-auto p-2">Only peers that had interactions with will be shown here</p>
         </li>
         <li v-for="chat in chats" class="min-w-[2rem]">
           <button class="w-full" :style="chat == $route.params.id ? { backgroundColor: '#ddd' } : {}" @click="() => $router.push(`/app/messaging/${chat}`)
@@ -61,6 +62,7 @@ onUnmounted(() => {
       </RouterView>
     </section>
   </main>
+  <PopUpHandler />
 </template>
 <style scoped>
 #messaging-grid {

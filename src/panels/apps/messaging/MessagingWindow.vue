@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, Ref, nextTick, onActivated, onDeactivated } from "vue";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import MessagingHistory from "./MessagingHistory.vue";
 import MessagingTextbox from "./MessagingTextbox.vue";
@@ -57,7 +57,7 @@ onDeactivated(() => {
 
 <template>
   <div id="chat-container" class="h-[100vh]">
-    <section style="min-height: calc(100vh - 10rem); max-height: 60%">
+    <section>
       <KeepAlive>
         <MessagingHistory v-model:history="message_history" :remote="$route.params.id as string" :local="local_peer!" />
       </KeepAlive>

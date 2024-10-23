@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { writeText } from "@tauri-apps/api/clipboard";
-import { invoke } from "@tauri-apps/api/tauri";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { invoke } from "@tauri-apps/api/core";
 import { ref, Ref } from "vue";
 import { isBodylessHandler } from "../../utils";
 import * as types from "./types";
@@ -48,47 +48,41 @@ function on_disconnect() {
 }
 </script>
 <template>
-  <section
-    @click.prevent.self="toggleExpand"
-    class="flex flex-nowrap flex-row justify-between cursor-pointer"
-  >
-    <section>
-      <span class="material-icons text-[3rem] w-full text-center"
-        >computer</span
-      >
-      <p
-        class="font-mono cursor-default"
-        @dblclick="() => writeText(props.peerId)"
-      >
-        {{ props.peerId.slice(0, 6) }}..{{
-          props.peerId.slice(props.peerId.length - 6, props.peerId.length)
-        }}
-      </p>
+  <div class="w-full border rounded-sm shadow-md">
+    <section @click.prevent.self="toggleExpand" class="flex flex-nowrap flex-row justify-between cursor-pointer">
+      <section>
+        <span class="material-icons text-[3rem] w-full text-center">computer</span>
+        <p class="font-mono cursor-default" @dblclick="() => writeText(props.peerId)">
+          {{ props.peerId.slice(0, 6) }}..{{
+            props.peerId.slice(props.peerId.length - 6, props.peerId.length)
+          }}
+        </p>
+      </section>
+      <section class="w-[16rem]">
+        <ul class="flex flex-row gap-2">
+          <li v-for="item in connection_type">
+            <p>{{ item }}</p>
+          </li>
+        </ul>
+        <section class="w-full mx-auto">
+          <button class="bg-transparent" @click="on_disconnect">
+            <img v-if="pending_disconnect" src="../../assets/unplug.svg" />
+            <img v-else src="../../assets/plugged.svg" />
+          </button>
+        </section>
+        <section>RTT: {{ "MOCKED" }} ms</section>
+      </section>
     </section>
-    <section class="w-[16rem]">
-      <ul class="flex flex-row gap-2">
-        <li v-for="item in connection_type">
-          <p>{{ item }}</p>
+    <section class="mx-1" v-if="show_supported_protocols && peer_info">
+      <p class="sm:hidden">Peer ID: {{ props.peerId }}</p>
+      <p>Protocol stack: {{ peer_info.protocol_version }}</p>
+      <p>Suported protocols({{ peer_info.supported_protocols.length }}):</p>
+      <ul class="flex flex-wrap">
+        <li v-for="item in peer_info.supported_protocols" class="m-1">
+          {{ item }}
         </li>
       </ul>
-      <section class="w-full mx-auto">
-        <button class="bg-transparent" @click="on_disconnect">
-          <img v-if="pending_disconnect" src="../../assets/unplug.svg" />
-          <img v-else src="../../assets/plugged.svg" />
-        </button>
-      </section>
-      <section>RTT: {{ "MOCKED" }} ms</section>
     </section>
-  </section>
-  <section class="mx-1" v-if="show_supported_protocols && peer_info">
-    <p class="sm:hidden">Peer ID: {{ props.peerId }}</p>
-    <p>Protocol stack: {{ peer_info.protocol_version }}</p>
-    <p>Suported protocols({{ peer_info.supported_protocols.length }}):</p>
-    <ul class="flex flex-wrap">
-      <li v-for="item in peer_info.supported_protocols" class="m-1">
-        {{ item }}
-      </li>
-    </ul>
-  </section>
-  <section v-if="!peer_info">Fetching peer info from backend...</section>
+    <section v-if="!peer_info">Fetching peer info from backend...</section>
+  </div>
 </template>

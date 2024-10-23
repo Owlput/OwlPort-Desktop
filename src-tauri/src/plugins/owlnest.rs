@@ -26,6 +26,7 @@ pub mod relay;
 pub mod swarm_plugin;
 pub mod upnp;
 pub mod gossipsub;
+pub mod developer_options;
 
 pub fn setup_peer() -> anyhow::Result<swarm::Manager> {
     let config = read_config("./owlnest_config.toml")?;

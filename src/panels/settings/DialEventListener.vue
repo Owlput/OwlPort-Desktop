@@ -2,7 +2,7 @@
 import { onUnmounted, ref, Ref, nextTick } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { isBodylessHandler } from "../../utils";
-import { SwarmEmit } from "./types";
+import { SwarmEmit } from "../connection/types";
 
 defineOptions({ name: "DialEventListener" });
 

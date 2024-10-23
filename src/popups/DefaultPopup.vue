@@ -1,15 +1,21 @@
-<script setup>
+<script setup lang="ts">
 const props = defineProps({
   title: String,
   message: String,
-  close:Function,
+  close: {
+    type: Function,
+    required: true
+  },
 });
 </script>
 
 <template>
-  <div>
-    <h2>{{ props.title ? props.title : "" }}</h2>
-    <p>{{ props.message }}</p>
-  </div>
-  <button @click="close">Close</button>
+  <section class=" bg-gray-300">
+    <div>
+      <h2 v-if="props.title">{{ props.title }}</h2>
+      <p>{{ props.message }}</p>
+    </div>
+    <button @click="() => props.close()">Close</button>
+  </section>
+
 </template>

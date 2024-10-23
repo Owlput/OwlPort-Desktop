@@ -15,5 +15,7 @@ import ToolTip from '../../../components/ToolTip.vue';
             <Tab path="/app/gossipsub/all_topics">All Topics</Tab>
         </ToolTip>
     </ol>
-    <RouterView></RouterView>
+    <section class="exclude-tab-height">
+        <RouterView></RouterView>
+    </section>
 </template>

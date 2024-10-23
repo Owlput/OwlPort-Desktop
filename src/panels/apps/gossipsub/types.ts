@@ -15,7 +15,7 @@ export class TopicHash {
 }
 
 export class ReadableTopic {
-  HashOnly: String | undefined = undefined;
+  HashOnly: {hash: String} | undefined = undefined;
   StringOnly: String | undefined = undefined;
   Both:
     | {
@@ -32,7 +32,7 @@ export class ReadableTopic {
   get_hash() {
     if (this.StringOnly) return null;
     if (this.Both) return this.Both.hash.hash;
-    return this.HashOnly;
+    return this.HashOnly!.hash;
   }
   get_string() {
     if (this.HashOnly) return null;

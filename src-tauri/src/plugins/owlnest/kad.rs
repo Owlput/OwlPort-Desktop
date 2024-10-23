@@ -149,16 +149,14 @@ async fn set_mode(state: tauri::State<'_, swarm::Manager>, mode: bool) -> Result
 }
 
 #[tauri::command]
-async fn get_all_records(
-    state: tauri::State<'_, swarm::Manager>,
-) -> Result<Vec<(PeerId, Vec<Multiaddr>)>, ()> {
+async fn get_all_records(state: tauri::State<'_, swarm::Manager>) -> Result<Vec<PeerStub>, ()> {
     Ok(state
         .kad()
         .all_records()
         .await
         .into_iter()
-        .map(|(peer, addrs)| (peer, addrs.into_vec()))
-        .collect::<Vec<(PeerId, Vec<Multiaddr>)>>())
+        .map(|(peer, addrs)| (peer, addrs.into_vec()).into())
+        .collect())
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -186,5 +184,19 @@ impl TryFrom<&OutEvent> for KadEmit {
             _ => return Err(()),
         };
         Ok(ev)
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct PeerStub {
+    peer_id: PeerId,
+    addresses: Vec<Multiaddr>,
+}
+impl From<(PeerId, Vec<Multiaddr>)> for PeerStub {
+    fn from(value: (PeerId, Vec<Multiaddr>)) -> Self {
+        Self {
+            peer_id: value.0,
+            addresses: value.1,
+        }
     }
 }

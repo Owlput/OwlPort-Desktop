@@ -47,3 +47,51 @@ export interface RsRecvInfo {
   remote: String;
   timestamp: BigInt;
 }
+
+export class BlobTransferEmit {
+  IncomingFile:
+    | {
+        from: string;
+        file_name: string;
+        local_recv_id: number;
+        bytes_total: number;
+      }
+    | undefined = undefined;
+  RecvProgressed:
+    | {
+        local_recv_id: number;
+        bytes_received: number;
+        bytes_total: number;
+      }
+    | undefined = undefined;
+  SendProgressed:
+    | {
+        local_send_id: number;
+        bytes_sent: number;
+        bytes_total: number;
+      }
+    | undefined = undefined;
+  OngoingRecvError:
+    | {
+        local_recv_id: number;
+        error: string;
+      }
+    | undefined = undefined;
+  OngoingSendError:
+    | {
+        local_send_id: number;
+        error: String;
+      }
+    | undefined = undefined;
+  CancelledSend:
+    | {
+        local_send_id: number;
+      }
+    | undefined = undefined;
+  CancelledRecv:
+    | {
+        local_recv_id: number;
+      }
+    | undefined = undefined;
+  Error: String | undefined = undefined;
+}

@@ -40,6 +40,16 @@ const routes = [
     ],
   },
   {
+    path: "/dev",
+    component: ()=> import("./components/EmptyWindow.vue"),
+    children:[
+      {
+        path:"swarm-event-listener",
+        component: () => import("./panels/settings/DialEventListener.vue")
+      }
+    ]
+  },
+  {
     path: "/",
     redirect: "/main/home",
   },
