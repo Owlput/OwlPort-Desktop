@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { ref, Ref, computed, PropType } from "vue";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { is_ip_private } from "../../utils";

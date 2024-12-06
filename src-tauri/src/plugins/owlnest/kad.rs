@@ -1,6 +1,7 @@
 use super::*;
 use libp2p::kad::Mode;
 use owlnest::net::p2p::protocols::kad::OutEvent;
+use tauri::Emitter;
 use std::{str::FromStr, sync::atomic::AtomicBool};
 
 #[derive(Debug, Clone)]
@@ -19,7 +20,7 @@ impl Default for State {
 
 pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-kad")
-        .setup(|app| {
+        .setup(|app, _api| {
             let app_handle = app.clone();
             let state = State::default();
             app.manage(state.clone());
@@ -28,7 +29,7 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                 while let Ok(ev) = listener.recv().await {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Kad(ev)) = ev.as_ref() {
                         if let Ok(ev) = ev.try_into() {
-                            let _ = app_handle.emit_all::<KadEmit>("owlnest-kad-emit", ev);
+                            let _ = app_handle.emit::<KadEmit>("owlnest-kad-emit", ev);
                         }
                         match ev {
                             libp2p::kad::Event::InboundRequest { .. } => {}

@@ -1,9 +1,10 @@
 use super::*;
 use owlnest::net::p2p::protocols::advertise;
+use tauri::Emitter;
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("owlnest-advertise")
-        .setup(|app| {
+        .setup(|app,_api| {
             let app_handle = app.clone();
             async_runtime::spawn(async move {
                 let mut listener = app_handle
@@ -15,7 +16,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                     {
                         if let Ok(ev) = ev.try_into() {
                             let _ =
-                                app_handle.emit_all::<AdvertiseEmit>("owlnest-advertise-emit", ev);
+                                app_handle.emit::<AdvertiseEmit>("owlnest-advertise-emit", ev);
                         }
                     }
                 }

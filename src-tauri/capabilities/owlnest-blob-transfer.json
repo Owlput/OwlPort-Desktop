@@ -1,0 +1,13 @@
+{
+  "identifier": "owlnest-blob-transfer",
+  "description": "permissions for owlnest-blob-transfer window",
+  "local": true,
+  "windows": ["owlnest-blob-transfer"],
+  "permissions": [
+    "core:default",
+    "owlnest-blob-transfer",
+    "blob-transfer-fs",
+    "clipboard-manager:allow-write-text",
+    "clipboard-manager:default"
+  ]
+}

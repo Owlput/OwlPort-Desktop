@@ -3,7 +3,7 @@ use dashmap::DashMap;
 use libp2p::identify::Info;
 use owlnest::net::p2p::swarm::{self, behaviour::BehaviourEvent, Manager as SwarmManager};
 use std::num::NonZeroU32;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tracing::{error, warn};
 
 #[derive(Clone)]
@@ -46,7 +46,7 @@ impl From<&Info> for PeerInfo {
 
 pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-swarm")
-        .setup(move |app| {
+        .setup(move |app, _api| {
             let app_handle = app.clone();
             let mut listener = manager.event_subscriber().subscribe();
             let state = State {
@@ -57,7 +57,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                 while let Ok(ev) = listener.recv().await {
                     if let Ok(ev) = TryInto::<SwarmEmit>::try_into(ev.as_ref()) {
                         app_handle
-                            .emit_all("swarm-emit", ev)
+                            .emit("swarm-emit", ev)
                             .expect("event emit to succeed");
                     }
                     use libp2p::swarm::SwarmEvent::*;

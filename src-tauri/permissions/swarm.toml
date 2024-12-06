@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "owlnest-swarm"
+description = """Full permission of the swarm"""
+commands.allow = [
+    "plugin:owlnest-swarm|listen",
+    "plugin:owlnest-swarm|dial",
+    "plugin:owlnest-swarm|get_local_peer_id",
+    "plugin:owlnest-swarm|list_connected",
+]

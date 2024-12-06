@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import SearchDisplay from "../../../components/SearchDisplay.vue";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { ReadableTopic } from "./types";
 import Topic from "./Topic.vue";
 

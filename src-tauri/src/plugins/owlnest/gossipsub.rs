@@ -1,10 +1,11 @@
 use super::*;
 use owlnest::net::p2p::protocols::gossipsub::*;
+use tauri::{Emitter, EventTarget};
 use tracing::warn;
 
 pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
-    Builder::new("libp2p-gossipsub")
-        .setup(move |app| {
+    Builder::new("owlnest-gossipsub")
+        .setup(move |app, _api| {
             let app_handle = app.clone();
             async_runtime::spawn(async move {
                 let mut listener = manager.event_subscriber().subscribe();
@@ -14,23 +15,28 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                         use OutEvent::*;
                         match ev {
                             Message { message, .. } => {
-                                if let Err(e) = app_handle.emit_to::<serde_types::GossipsubEmit>(
-                                    "GossipSub",
-                                    "libp2p-gossipsub-emit",
-                                    ev.try_into().unwrap(),
-                                ) {
+                                if let Err(e) = app_handle
+                                    .emit_to::<EventTarget, serde_types::GossipsubEmit>(
+                                        EventTarget::labeled("owlnest-gossipsub"),
+                                        "owlnest-gossipsub-emit",
+                                        ev.try_into().unwrap(),
+                                    )
+                                {
                                     warn!("{:?}", e)
                                 };
-                                let _ = manager
+                                let _ = &manager
                                     .gossipsub()
-                                    .message_store
+                                    .message_store()
                                     .insert_message(message.clone());
                             }
                             Subscribed { peer_id, topic } => {
-                                manager.gossipsub().topic_store.join_topic(peer_id, topic);
+                                manager.gossipsub().topic_store().join_topic(peer_id, topic);
                             }
                             Unsubscribed { peer_id, topic } => {
-                                manager.gossipsub().topic_store.leave_topic(peer_id, topic);
+                                manager
+                                    .gossipsub()
+                                    .topic_store()
+                                    .leave_topic(peer_id, topic);
                             }
                             _ => {}
                         }
@@ -62,7 +68,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
 #[tauri::command]
 async fn publish_message(
     state: tauri::State<'_, swarm::Manager>,
-    topic: ReadableTopic,
+    topic: Topic,
     message: String,
 ) -> Result<(), String> {
     let handle = state.gossipsub();
@@ -75,7 +81,7 @@ async fn publish_message(
         .await
     {
         Ok(_id) => {
-            let _ = handle.message_store.insert_message(Message {
+            let _ = handle.message_store().insert_message(Message {
                 source: Some(state.identity().get_peer_id()),
                 data: message.into_bytes(),
                 sequence_number: None,
@@ -94,11 +100,11 @@ async fn publish_message(
 #[tauri::command]
 async fn get_message_history(
     state: tauri::State<'_, swarm::Manager>,
-    topic: ReadableTopic,
+    topic: Topic,
 ) -> Result<Option<Box<[serde_types::Message]>>, String> {
     match state
         .gossipsub()
-        .message_store
+        .message_store()
         .get_messages(&topic.get_hash().into())
     {
         Some(list) => Ok(Some(
@@ -112,25 +118,22 @@ async fn get_message_history(
 #[tauri::command]
 async fn get_all_topics(
     state: tauri::State<'_, swarm::Manager>,
-) -> Result<Box<[ReadableTopic]>, String> {
+) -> Result<Box<[serde_types::TopicHash]>, String> {
     Ok(state
         .gossipsub()
-        .topic_store
+        .topic_store()
         .readable_topics()
         .to_vec()
         .into_iter()
-        .map(|(hash, string)| ReadableTopic::Both {
-            hash: hash.into(),
-            string,
-        })
+        .map(|(hash, _)| hash.into())
         .chain(
             state
                 .gossipsub()
-                .topic_store
+                .topic_store()
                 .hash_topics()
                 .to_vec()
                 .into_iter()
-                .map(|hash| ReadableTopic::HashOnly(hash.into())),
+                .map(|hash| hash.into()),
         )
         .collect())
 }
@@ -139,11 +142,11 @@ async fn get_all_topics(
 #[tauri::command]
 async fn list_participants(
     state: tauri::State<'_, swarm::Manager>,
-    topic: ReadableTopic,
+    topic: Topic,
 ) -> Result<Option<Box<[PeerId]>>, String> {
     match state
         .gossipsub()
-        .topic_store
+        .topic_store()
         .participants(&topic.get_hash().into())
     {
         Some(list) => Ok(Some(
@@ -155,28 +158,29 @@ async fn list_participants(
 
 /// Subscribe to
 #[tauri::command]
-async fn subscribe(
-    state: tauri::State<'_, swarm::Manager>,
-    topic: ReadableTopic,
-) -> Result<bool, String> {
-    if topic.get_string().is_none() {
-        return Err("Cannot subscribe without topic string.".into());
+async fn subscribe(state: tauri::State<'_, swarm::Manager>, topic: Topic) -> Result<bool, String> {
+    let topic_hash = topic.get_hash();
+    if topic.get_string().is_some() {
+        state.gossipsub().topic_store().insert_topic(
+            topic.get_string().unwrap().clone(),
+            topic_hash.clone().into(),
+        );
+    } else {
+        state
+            .gossipsub()
+            .topic_store()
+            .insert_hash(topic_hash.clone().into());
     }
-    let topic_string = topic.get_string().unwrap();
-    state
-        .gossipsub()
-        .topic_store
-        .insert_string(topic_string.clone());
     let result = state
         .gossipsub()
-        .subscribe_topic(topic_string)
+        .subscribe_topic_hash(topic_hash.clone().into())
         .await
         .map_err(|e| e.to_string());
     if let Ok(true) = result {
         state
             .gossipsub()
-            .topic_store
-            .subscribe_topic(topic_string.clone().into());
+            .topic_store()
+            .subscribe_topic(topic_hash.into(), None);
     }
     result
 }
@@ -184,53 +188,56 @@ async fn subscribe(
 #[tauri::command]
 async fn unsubscribe(
     state: tauri::State<'_, swarm::Manager>,
-    topic: ReadableTopic,
+    topic: Topic,
 ) -> Result<bool, String> {
-    if let Some(topic_string) = topic.get_string() {
-        let result = state
-            .gossipsub()
-            .unsubscribe_topic(topic_string)
-            .await
-            .map_err(|e| e.to_string());
-        if let Ok(true) = result {
-            state
-                .gossipsub()
-                .topic_store
-                .unsubscribe_topic(&Sha256Topic::new(topic_string).hash());
-        }
-        return result;
-    }
-    Err("Cannot unsubscribe without topic string.".into())
+    let topic_hash = topic.get_hash();
+    state
+        .gossipsub()
+        .unsubscribe_topic_hash(topic_hash.into())
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 async fn subscribed_topics(
     state: tauri::State<'_, swarm::Manager>,
-) -> Result<Box<[ReadableTopic]>, String> {
-    Ok(state.gossipsub().topic_store.subscribed_topics())
+) -> Result<Box<[serde_types::TopicHash]>, String> {
+    Ok(state
+        .gossipsub()
+        .topic_store()
+        .subscribed_topics()
+        .to_vec()
+        .into_iter()
+        .map(Into::into)
+        .collect())
 }
 
 #[tauri::command]
 async fn mesh_peers(
     state: tauri::State<'_, swarm::Manager>,
-    topic: ReadableTopic,
+    topic: Topic,
 ) -> Result<Box<[PeerId]>, String> {
-    if let Some(topic_string) = topic.get_string() {
-        return Ok(state.gossipsub().mesh_peers_of_topic(topic_string).await);
-    }
-    Err("Cannot get mesh peers without topic string.".into())
+    let topic_hash = topic.get_hash();
+    return Ok(state
+        .gossipsub()
+        .mesh_peers_of_topic(topic_hash.into())
+        .await);
 }
 
 #[tauri::command]
 async fn insert_topic_hash_map(
     state: tauri::State<'_, swarm::Manager>,
-    topic: ReadableTopic,
+    topic: Topic,
 ) -> Result<(), String> {
-    if let Some(topic_string) = topic.get_string() {
+    if let Topic::StringOnly {
+        topic_string,
+        hash_type,
+    } = topic
+    {
         return Ok(state
             .gossipsub()
-            .topic_store
-            .insert_string(topic_string.clone()));
+            .topic_store()
+            .insert_topic(topic_string.clone(), hash_type.hash(topic_string)));
     }
     Err("Cannot insert record without topic string.".into())
 }
@@ -238,11 +245,11 @@ async fn insert_topic_hash_map(
 #[tauri::command]
 async fn clear_message(
     state: tauri::State<'_, swarm::Manager>,
-    topic: Option<ReadableTopic>,
+    topic: Option<Topic>,
 ) -> Result<(), String> {
     state
         .gossipsub()
-        .message_store
+        .message_store()
         .clear_message(topic.map(|topic| topic.get_hash().into()).as_ref());
     Ok(())
 }
@@ -252,11 +259,14 @@ async fn try_map_topic_hash(
     state: tauri::State<'_, swarm::Manager>,
     topic: serde_types::TopicHash,
 ) -> Result<Option<String>, String> {
-    Ok(state.gossipsub().topic_store.try_map(&topic.into()))
+    Ok(state.gossipsub().topic_store().try_map(&topic.into()))
 }
 #[tauri::command]
-async fn try_map_string_to_hash(topic: String) -> Result<serde_types::TopicHash, String> {
-    Ok(Sha256Topic::new(topic).hash().into())
+async fn try_map_string_to_hash(
+    topic_string: String,
+    hash_type: HashType,
+) -> Result<serde_types::TopicHash, String> {
+    Ok(hash_type.hash(topic_string).into())
 }
 
 #[allow(unused)]
@@ -266,14 +276,14 @@ async fn spawn_window<R: Runtime>(
     state: tauri::State<'_, swarm::Manager>,
     peer: Option<PeerId>,
 ) -> Result<(), String> {
-    if let Some(window) = app.get_window("GossipSub") {
+    if let Some(window) = app.get_webview_window("owlnest-gossipsub") {
         let _ = window.set_focus();
         return Ok(());
     }
-    tauri::WindowBuilder::new(
+    tauri::WebviewWindowBuilder::new(
         &app,
-        "GossipSub",
-        tauri::WindowUrl::App("#/app/gossipsub".into()),
+        "owlnest-gossipsub",
+        tauri::WebviewUrl::App("#/app/gossipsub".into()),
     )
     .focused(true)
     .title("Owlnest - GossipSub")
@@ -382,6 +392,34 @@ mod serde_types {
             };
 
             Ok(ev)
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Topic {
+    HashOnly {
+        hash: serde_types::TopicHash,
+    },
+    StringOnly {
+        topic_string: String,
+        hash_type: HashType,
+    },
+}
+impl Topic {
+    pub fn get_hash(&self) -> serde_types::TopicHash {
+        match self {
+            Self::HashOnly { hash } => hash.clone(),
+            Self::StringOnly {
+                topic_string,
+                hash_type,
+            } => hash_type.hash(topic_string.clone()).into(),
+        }
+    }
+    pub fn get_string(&self) -> Option<&String> {
+        match self {
+            Self::HashOnly { .. } => None,
+            Self::StringOnly { topic_string, .. } => Some(topic_string),
         }
     }
 }

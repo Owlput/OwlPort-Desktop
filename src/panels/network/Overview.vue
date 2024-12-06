@@ -1,5 +1,5 @@
 <script setup>
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { ref, onUnmounted } from "vue";
 import { isBodylessHandler } from "../../utils";
 

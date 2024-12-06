@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { FileDropEvent } from "@tauri-apps/api/webviewWindow";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { ref, Ref, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import RecvEntry from "./RecvEntry.vue";
@@ -16,13 +16,12 @@ const peer_to_send: Ref<String> = ref(
 const file_path = ref("");
 const pending_send = ref(new Map<Number, PendingSend>());
 const pending_recv = ref(new Map<Number, PendingRecv>());
-const file_drop_listener = ref(() => {});
-const incoming_file_rlisten = ref(() => {});
+const file_drop_listener = ref(() => { });
+const incoming_file_rlisten = ref(() => { });
 
-listen<FileDropEvent>("tauri://file-drop", (ev) => {
+getCurrentWebview().onDragDropEvent((ev) => {
   handle_drop(ev.payload);
-})
-  .then((handle) => (file_drop_listener.value = handle))
+}).then((handle) => (file_drop_listener.value = handle))
   .catch(isBodylessHandler);
 listen("owlnest-blob-transfer-emit", (ev: any) => {
   if (ev.payload?.IncomingFile) {
@@ -91,7 +90,8 @@ onUnmounted(() => {
   incoming_file_rlisten.value();
 });
 function handle_drop(ev: any) {
-  file_path.value = ev.payload[0].replaceAll("\\", "/");
+  console.log(ev);
+  // file_path.value = ev.payload[0].replaceAll("\\", "/");
 }
 </script>
 <template>
@@ -104,21 +104,12 @@ function handle_drop(ev: any) {
       <input v-model="peer_to_send" /><button @click="send">Send</button>
     </section>
   </section>
-  <div
-    class="grid grid-cols-2 text-center select-none"
-    style="height: calc(100vh - 8rem)"
-  >
+  <div class="grid grid-cols-2 text-center select-none" style="height: calc(100vh - 8rem)">
     <section>
       <p>Pending send</p>
       <ul class="m-2 p-2 overflow-auto" v-if="pending_send.size > 0">
-        <li
-          v-for="item in pending_send.values()"
-          class="mx-2 mt-2 border-gray-300 rounded-md shadow-md"
-        >
-          <SendEntry
-            :file-path="item.file_path"
-            :send-id="item.send_id"
-          ></SendEntry>
+        <li v-for="item in pending_send.values()" class="mx-2 mt-2 border-gray-300 rounded-md shadow-md">
+          <SendEntry :file-path="item.file_path" :send-id="item.send_id"></SendEntry>
         </li>
       </ul>
       <p v-else class="p-2">No item</p>
@@ -126,15 +117,8 @@ function handle_drop(ev: any) {
     <section>
       <p>Pending recv</p>
       <ul class="m-2 p-2 overflow-auto" v-if="pending_recv.size > 0">
-        <li
-          v-for="item in pending_recv.values()"
-          class="mx-2 mt-2 rounded-md shadow-md"
-        >
-          <RecvEntry
-            :file-name="item!.file_name"
-            :recv-id="item!.recv_id"
-            :bytes-total="item!.bytes_total"
-          ></RecvEntry>
+        <li v-for="item in pending_recv.values()" class="mx-2 mt-2 rounded-md shadow-md">
+          <RecvEntry :file-name="item!.file_name" :recv-id="item!.recv_id" :bytes-total="item!.bytes_total"></RecvEntry>
         </li>
       </ul>
       <p v-else class="p-2">No item</p>

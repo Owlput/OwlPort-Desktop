@@ -1,0 +1,12 @@
+[[permission]]
+identifier = "owlnest-kad"
+description = """Access to owlnest-kad plugin"""
+commands.allow = [
+    "plugin:owlnest-kad|insert_default",
+    "plugin:owlnest-kad|bootstrap",
+    "plugin:owlnest-kad|insert_node",
+    "plugin:owlnest-kad|lookup",
+    "plugin:owlnest-kad|get_mode",
+    "plugin:owlnest-kad|set_mode",
+    "plugin:owlnest-kad|get_all_records",
+]

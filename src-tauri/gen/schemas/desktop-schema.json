@@ -84,7 +84,7 @@
           }
         },
         "permissions": {
-          "description": "List of permissions attached to this capability.\n\nMust include the plugin name as prefix in the form of `${plugin-name}:${permission-name}`. For commands directly implemented in the application itself only `${permission-name}` is required.\n\n## Example\n\n```json [ \"core:default\", \"shell:allow-open\", \"dialog:open\", { \"identifier\": \"fs:allow-write-text-file\", \"allow\": [{ \"path\": \"$HOME/test.txt\" }] } ```",
+          "description": "List of permissions attached to this capability.\n\nMust include the plugin name as prefix in the form of `${plugin-name}:${permission-name}`. For commands directly implemented in the application itself only `${permission-name}` is required.\n\n## Example\n\n```json [ \"core:default\", \"shell:allow-open\", \"dialog:open\", { \"identifier\": \"fs:allow-write-text-file\", \"allow\": [{ \"path\": \"$HOME/test.txt\" }] } ] ```",
           "type": "array",
           "items": {
             "$ref": "#/definitions/PermissionEntry"
@@ -176,6 +176,146 @@
     "Identifier": {
       "description": "Permission identifier",
       "oneOf": [
+        {
+          "description": "Allow getting statistics for various built-in apps.",
+          "type": "string",
+          "const": "app-info"
+        },
+        {
+          "description": "Allow spawning new windows for various built-in apps.",
+          "type": "string",
+          "const": "app-panel"
+        },
+        {
+          "description": "Allow access to read and write file for blob-transfer protocol.\n",
+          "type": "string",
+          "const": "blob-transfer-fs"
+        },
+        {
+          "description": "Access to owlnest-advertise protocol",
+          "type": "string",
+          "const": "owlnest-advertise"
+        },
+        {
+          "description": "Access to libp2p NAT status checker",
+          "type": "string",
+          "const": "owlnest-autonat"
+        },
+        {
+          "description": "Access to blob-transfer protocol.\nYou must also have blob-transfer-fs permission to read or write files.\n",
+          "type": "string",
+          "const": "owlnest-blob-transfer"
+        },
+        {
+          "description": "Access to owlnest-gossipsub plugin",
+          "type": "string",
+          "const": "owlnest-gossipsub"
+        },
+        {
+          "description": "Access to owlnest-kad plugin",
+          "type": "string",
+          "const": "owlnest-kad"
+        },
+        {
+          "description": "Access to owlnest-mdns plugin",
+          "type": "string",
+          "const": "owlnest-mdns"
+        },
+        {
+          "description": "Access to owlnest-messaging plugin",
+          "type": "string",
+          "const": "owlnest-messaging"
+        },
+        {
+          "description": "Access to client part of owlnest-relay plugin",
+          "type": "string",
+          "const": "owlnest-relay-client"
+        },
+        {
+          "description": "Full permission of the swarm",
+          "type": "string",
+          "const": "owlnest-swarm"
+        },
+        {
+          "description": "Allow to dial a peer",
+          "type": "string",
+          "const": "swarm-dial"
+        },
+        {
+          "description": "Allow to fetch information about local peer",
+          "type": "string",
+          "const": "swarm-get-local-peer-info"
+        },
+        {
+          "description": "Allow to listen on a address",
+          "type": "string",
+          "const": "swarm-listen"
+        },
+        {
+          "description": "No features are enabled by default, as we believe\nthe clipboard can be inherently dangerous and it is \napplication specific if read and/or write access is needed.\n\nClipboard interaction needs to be explicitly enabled.\n",
+          "type": "string",
+          "const": "clipboard-manager:default"
+        },
+        {
+          "description": "Enables the clear command without any pre-configured scope.",
+          "type": "string",
+          "const": "clipboard-manager:allow-clear"
+        },
+        {
+          "description": "Enables the read_image command without any pre-configured scope.",
+          "type": "string",
+          "const": "clipboard-manager:allow-read-image"
+        },
+        {
+          "description": "Enables the read_text command without any pre-configured scope.",
+          "type": "string",
+          "const": "clipboard-manager:allow-read-text"
+        },
+        {
+          "description": "Enables the write_html command without any pre-configured scope.",
+          "type": "string",
+          "const": "clipboard-manager:allow-write-html"
+        },
+        {
+          "description": "Enables the write_image command without any pre-configured scope.",
+          "type": "string",
+          "const": "clipboard-manager:allow-write-image"
+        },
+        {
+          "description": "Enables the write_text command without any pre-configured scope.",
+          "type": "string",
+          "const": "clipboard-manager:allow-write-text"
+        },
+        {
+          "description": "Denies the clear command without any pre-configured scope.",
+          "type": "string",
+          "const": "clipboard-manager:deny-clear"
+        },
+        {
+          "description": "Denies the read_image command without any pre-configured scope.",
+          "type": "string",
+          "const": "clipboard-manager:deny-read-image"
+        },
+        {
+          "description": "Denies the read_text command without any pre-configured scope.",
+          "type": "string",
+          "const": "clipboard-manager:deny-read-text"
+        },
+        {
+          "description": "Denies the write_html command without any pre-configured scope.",
+          "type": "string",
+          "const": "clipboard-manager:deny-write-html"
+        },
+        {
+          "description": "Denies the write_image command without any pre-configured scope.",
+          "type": "string",
+          "const": "clipboard-manager:deny-write-image"
+        },
+        {
+          "description": "Denies the write_text command without any pre-configured scope.",
+          "type": "string",
+          "const": "clipboard-manager:deny-write-text"
+        },
         {
           "description": "Default core plugins set which includes:\n- 'core:path:default'\n- 'core:event:default'\n- 'core:window:default'\n- 'core:webview:default'\n- 'core:app:default'\n- 'core:image:default'\n- 'core:resources:default'\n- 'core:menu:default'\n- 'core:tray:default'\n",
           "type": "string",

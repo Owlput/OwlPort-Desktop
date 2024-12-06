@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, Ref } from "vue";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import SearchBar from "../../../components/SearchBar.vue";
 import AddressBookEntry from "./AddressBookEntry.vue";
 import { isBodylessHandler } from "../../../utils";

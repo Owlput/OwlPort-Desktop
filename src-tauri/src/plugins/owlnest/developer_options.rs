@@ -7,17 +7,15 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
 }
 
 #[tauri::command]
-async fn swarm_event_listener<R: Runtime>(
-    app: tauri::AppHandle<R>,
-) -> Result<(), String> {
-    if let Some(window) = app.get_window("SwarmEventListener") {
+async fn swarm_event_listener<R: Runtime>(app: tauri::AppHandle<R>) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("SwarmEventListener") {
         let _ = window.set_focus();
         return Ok(());
     }
-    tauri::WindowBuilder::new(
+    tauri::WebviewWindowBuilder::new(
         &app,
         "BlobTransfer",
-        tauri::WindowUrl::App("#/dev/swarm-event-listener".into()),
+        tauri::WebviewUrl::App("#/dev/swarm-event-listener".into()),
     )
     .focused(true)
     .title("Developer Tool - Swarm Event Listener")

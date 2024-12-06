@@ -32,7 +32,7 @@ impl State {
 
 pub fn init<R: Runtime>(manager: swarm::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-mdns")
-        .setup(|app| {
+        .setup(|app, _api| {
             let state = State::default();
             let state_clone = state.clone();
             async_runtime::spawn(async move {
@@ -65,6 +65,7 @@ async fn list_discovered(
     state
         .node_list
         .iter()
-        .map(|entry| map.insert(entry.key().clone(), entry.value().clone())).count();
+        .map(|entry| map.insert(entry.key().clone(), entry.value().clone()))
+        .count();
     Ok(map)
 }

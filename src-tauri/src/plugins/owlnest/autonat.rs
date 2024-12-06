@@ -1,18 +1,19 @@
 use super::*;
 use autonat::OutEvent;
 use owlnest::net::p2p::protocols::autonat;
+use tauri::Emitter;
 use std::str::FromStr;
 
 pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-autonat")
-        .setup(|app| {
+        .setup(|app, _api| {
             let app_handle = app.clone();
             async_runtime::spawn(async move {
                 let mut listener = peer_manager.event_subscriber().subscribe();
                 while let Ok(ev) = listener.recv().await {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::AutoNat(ev)) = ev.as_ref() {
                         if let Ok(ev) = ev.try_into() {
-                            let _ = app_handle.emit_all::<AutoNatEmit>("owlnest-autonat-emit", ev);
+                            let _ = app_handle.emit::<AutoNatEmit>("owlnest-autonat-emit", ev);
                         }
                     }
                 }

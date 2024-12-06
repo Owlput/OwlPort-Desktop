@@ -1,0 +1,6 @@
+[[permission]]
+identifier = "swarm-listen"
+description = """Allow to listen on a address"""
+commands.allow = [
+    "plugin:owlnest-swarm|listen",
+]

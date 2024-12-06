@@ -1,11 +1,12 @@
 use super::*;
 use owlnest::net::p2p::protocols::messaging::*;
 use std::num::NonZeroU32;
+use tauri::{Emitter, EventTarget};
 use tracing::{info, warn};
 
 pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-messaging")
-        .setup(move |app| {
+        .setup(move |app, _api| {
             let app_handle = app.clone();
             async_runtime::spawn(async move {
                 let mut listener = manager.event_subscriber().subscribe();
@@ -14,8 +15,8 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                     {
                         match ev {
                             OutEvent::IncomingMessage { .. } => {
-                                if let Err(e) = app_handle.emit_to::<MessagingEmit>(
-                                    "Messaging",
+                                if let Err(e) = app_handle.emit_to::<EventTarget, MessagingEmit>(
+                                    EventTarget::labeled("owlnest-messaging"),
                                     "owlnest-messaging-emit",
                                     ev.try_into().unwrap(),
                                 ) {
@@ -36,7 +37,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                                 continue;
                             }
                             if let Err(e) = app_handle.emit_to(
-                                "Messaging",
+                                "owlnest-messaging",
                                 "owlnest-messaging-emit",
                                 MessagingEmit::Connected { peer: *peer_id },
                             ) {
@@ -46,7 +47,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                         }
                         swarm::SwarmEvent::ConnectionClosed { peer_id, .. } => {
                             if let Err(e) = app_handle.emit_to(
-                                "Messaging",
+                                "owlnest-messaging",
                                 "owlnest-messaging-emit",
                                 MessagingEmit::Disconnected { peer: *peer_id },
                             ) {
@@ -92,7 +93,7 @@ async fn send_msg(
         Ok(_dur) => {
             manager
                 .messaging()
-                .message_store
+                .message_store()
                 .push_message(&peer_id, message);
             Ok(())
         }
@@ -105,7 +106,7 @@ async fn get_chat_history(
     manager: tauri::State<'_, swarm::Manager>,
     peer_id: PeerId,
 ) -> Result<Box<[Message]>, String> {
-    match manager.messaging().message_store.get_messages(&peer_id) {
+    match manager.messaging().message_store().get_messages(&peer_id) {
         Some(v) => Ok(v),
         None => Err("NotFound".into()),
     }
@@ -113,7 +114,7 @@ async fn get_chat_history(
 
 #[tauri::command]
 async fn get_all_chats(manager: tauri::State<'_, swarm::Manager>) -> Result<Box<[PeerId]>, String> {
-    Ok(manager.messaging().message_store.list_all_peers())
+    Ok(manager.messaging().message_store().list_all_peers())
 }
 
 #[tauri::command]
@@ -123,7 +124,7 @@ async fn clear_chat_history(
 ) -> Result<(), String> {
     manager
         .messaging()
-        .message_store
+        .message_store()
         .clear_message(peer_id.as_ref());
     Ok(())
 }
@@ -140,12 +141,12 @@ async fn spawn_window<R: Runtime>(
     peer: Option<PeerId>,
 ) -> Result<(), String> {
     if let Some(peer) = peer {
-        let store = &manager.messaging().message_store;
+        let store = manager.messaging().message_store();
         if let None = store.get_messages(&peer) {
             store.insert_empty_record(&peer);
         }
     }
-    if let Some(window) = app.get_window("Messaging") {
+    if let Some(window) = app.get_webview_window("owlnest-messaging") {
         let _ = window.emit("focusChat", peer);
         let _ = window.set_focus();
         return Ok(());
@@ -155,7 +156,7 @@ async fn spawn_window<R: Runtime>(
     } else {
         "#/app/messaging".into()
     };
-    tauri::WindowBuilder::new(&app, "Messaging", tauri::WindowUrl::App(url.into()))
+    tauri::WebviewWindowBuilder::new(&app, "owlnest-messaging", tauri::WebviewUrl::App(url.into()))
         .focused(true)
         .title("Owlnest - Messaging")
         .build()

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onUnmounted, Ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { isBodylessHandler } from "../../../utils.js";
 
 const props = defineProps<{
@@ -31,28 +31,19 @@ onUnmounted(() => {
   <p>{{ props.fileName }}</p>
   <p>{{ (props.bytesTotal.valueOf() / 1024 / 1024).toFixed(2) }}MB</p>
   <p v-if="progress">{{ progress }}%</p>
-  <button
-    :disabled="accepted"
-    class="p-1 w-[50%] shadow-none"
-    @click="
-      () =>
-        invoke('plugin:owlnest-blob-transfer|recv', {
-          recvId: props.recvId,
-          fileName: props.fileName,
-        })
-    "
-  >
+  <button :disabled="accepted" class="p-1 w-[50%] shadow-none" @click="() =>
+      invoke('plugin:owlnest-blob-transfer|recv', {
+        recvId: props.recvId,
+        fileName: props.fileName,
+      })
+    ">
     Accept
   </button>
-  <button
-    class="p-1 w-[50%] shadow-none"
-    @click="
-      () =>
-        invoke('plugin:owlnest-blob-transfer|cancel_recv', {
-          recvId: props.recvId,
-        }).catch((e) => console.error(e))
-    "
-  >
+  <button class="p-1 w-[50%] shadow-none" @click="() =>
+      invoke('plugin:owlnest-blob-transfer|cancel_recv', {
+        recvId: props.recvId,
+      }).catch((e) => console.error(e))
+    ">
     Cancel
   </button>
 </template>

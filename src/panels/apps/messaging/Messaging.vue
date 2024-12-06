@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { ref, Ref, computed, onUnmounted } from "vue";
 import { RouterView, useRouter } from "vue-router";

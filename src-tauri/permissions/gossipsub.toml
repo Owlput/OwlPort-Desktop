@@ -1,0 +1,17 @@
+[[permission]]
+identifier = "owlnest-gossipsub"
+description = """Access to owlnest-gossipsub plugin"""
+commands.allow = [
+    "plugin:owlnest-gossipsub|publish_message",
+    "plugin:owlnest-gossipsub|get_message_history",
+    "plugin:owlnest-gossipsub|get_all_topics",
+    "plugin:owlnest-gossipsub|list_participants",
+    "plugin:owlnest-gossipsub|subscribe",
+    "plugin:owlnest-gossipsub|unsubscribe",
+    "plugin:owlnest-gossipsub|subscribed_topics",
+    "plugin:owlnest-gossipsub|mesh_peers",
+    "plugin:owlnest-gossipsub|insert_topic_hash_map",
+    "plugin:owlnest-gossipsub|try_map_topic_hash",
+    "plugin:owlnest-gossipsub|try_map_string_to_hash",
+    "plugin:owlnest-gossipsub|clear_message",
+]

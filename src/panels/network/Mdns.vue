@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Ref, ref } from "vue";
-import { invoke } from "@tauri-apps/api";
-import { is_ip_private, isBodylessHandler } from "../../utils";
+import { invoke } from "@tauri-apps/api/core";
+import { isBodylessHandler } from "../../utils";
 import AddressDisplay from "../../components/AddressDisplay.vue";
 
 let discovered_nodes: Ref<Map<String, Array<String>>> = ref(new Map());
@@ -33,7 +33,7 @@ invoke<any>("plugin:owlnest-mdns|list_discovered")
         <ul class="p-4 flex flex-wrap">
           <li class="mx-4 my-1 cursor-pointer" v-for="addr in peer[1]"
             @click="() => $router.push(`/main/connections/dial?dial=${addr}`)">
-              <AddressDisplay :address="addr.valueOf()" />
+            <AddressDisplay :address="addr.valueOf()" />
           </li>
         </ul>
       </li>

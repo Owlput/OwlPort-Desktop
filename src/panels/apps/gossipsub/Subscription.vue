@@ -2,7 +2,7 @@
 import { computed, ComputedRef, Ref, ref, shallowRef, ShallowRef } from 'vue';
 import { ReadableTopic } from './types';
 import SearchBar from '../../../components/SearchBar.vue';
-import { invoke } from '@tauri-apps/api';
+import { invoke } from '@tauri-apps/api/core';
 import { isBodylessHandler } from '../../../utils';
 import Topic from "./Topic.vue"
 import ToolTip from '../../../components/ToolTip.vue';

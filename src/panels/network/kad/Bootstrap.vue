@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import KadEventListener from "./KadEventListener.vue";
 
 </script>
 <template>
   <section class="flex py-4 px-12 border-b item-evenly-sized">
-    <button
-      class="py-2 w-16"
-      @click="() => invoke('plugin:owlnest-kad|insert_default')"
-    >
+    <button class="py-2 w-16" @click="() => invoke('plugin:owlnest-kad|insert_default')">
       Insert default nodes
     </button>
     <button @click="() => invoke('plugin:owlnest-kad|bootstrap')">

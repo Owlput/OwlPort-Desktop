@@ -1,9 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
 #![feature(hash_extract_if)]
 
-use anyhow::Ok;
+use tauri::generate_context;
 
 mod event;
 mod macros;
@@ -15,6 +14,7 @@ fn main() -> anyhow::Result<()> {
     setup_logging();
     let peer_manager = plugins::owlnest::setup_peer()?;
     tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
         .manage(peer_manager.clone())
         .plugin(plugins::owlnest::swarm_plugin::init(peer_manager.clone()))
         .plugin(plugins::owlnest::messaging::init(peer_manager.clone()))
@@ -28,13 +28,13 @@ fn main() -> anyhow::Result<()> {
         .plugin(plugins::owlnest::gossipsub::init(peer_manager.clone()))
         .plugin(plugins::owlnest::developer_options::init())
         .plugin(plugins::popup_test::init())
-        .run(tauri::generate_context!())
+        .run(generate_context!())
         .expect("error while running tauri application");
     Ok(())
 }
 
 fn setup_logging() {
-    use owlnest::logging_prelude::*;
+    use owlnest::utils::logging_prelude::*;
     use std::sync::Mutex;
     use tracing_subscriber::Layer;
     let time = chrono::Local::now().timestamp_micros();

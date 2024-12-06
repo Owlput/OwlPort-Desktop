@@ -1,0 +1,15 @@
+[[permission]]
+identifier = "owlnest-blob-transfer"
+description = """
+Access to blob-transfer protocol.
+You must also have blob-transfer-fs permission to read or write files.
+"""
+commands.allow = [
+    "plugin:owlnest-blob-transfer|send",
+    "plugin:owlnest-blob-transfer|recv",
+    "plugin:owlnest-blob-transfer|cancel_send",
+    "plugin:owlnest-blob-transfer|cancel_recv",
+    "plugin:owlnest-blob-transfer|list_pending_send",
+    "plugin:owlnest-blob-transfer|list_pending_recv",
+    "plugin:owlnest-blob-transfer|list_connected",
+]

@@ -1,7 +1,7 @@
 #[allow(unused)]
 use tauri::{
     plugin::{Builder, TauriPlugin},
-    Runtime,
+    Emitter, EventTarget, Runtime,
 };
 
 pub mod owlnest;

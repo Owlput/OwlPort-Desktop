@@ -1,0 +1,6 @@
+[[permission]]
+identifier = "owlnest-mdns"
+description = """Access to owlnest-mdns plugin"""
+commands.allow = [
+    "plugin:owlnest-mdns|list_discovered",
+]

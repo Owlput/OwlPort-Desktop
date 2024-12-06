@@ -20,13 +20,13 @@ pub mod messaging;
 pub mod advertise;
 pub mod autonat;
 pub mod blob;
+pub mod developer_options;
+pub mod gossipsub;
 pub mod kad;
 pub mod mdns;
 pub mod relay;
 pub mod swarm_plugin;
 pub mod upnp;
-pub mod gossipsub;
-pub mod developer_options;
 
 pub fn setup_peer() -> anyhow::Result<swarm::Manager> {
     let config = read_config("./owlnest_config.toml")?;

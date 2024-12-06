@@ -119,7 +119,7 @@ impl State {
 
 pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-relay")
-        .setup(|app| {
+        .setup(|app, _api| {
             let state = State {
                 connected: Default::default(),
                 manager: peer_manager.clone(),

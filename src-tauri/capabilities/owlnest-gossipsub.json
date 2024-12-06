@@ -1,0 +1,12 @@
+{
+  "identifier": "owlnest-gossipsub",
+  "description": "permissions for owlnest-gossipsub window",
+  "local": true,
+  "windows": ["owlnest-gossipsub"],
+  "permissions": [
+    "core:default",
+    "owlnest-gossipsub",
+    "clipboard-manager:allow-write-text",
+    "clipboard-manager:default"
+  ]
+}

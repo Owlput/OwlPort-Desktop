@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, Ref } from "vue";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import SearchBar from "../../../components/SearchBar.vue";
 import { Message, ReadableTopic } from "./types";
 import { isBodylessHandler } from "../../../utils";
@@ -68,11 +68,12 @@ function send_message() {
 </template>
 
 <style>
-.message-list{
+.message-list {
   display: flex;
   padding: 1rem;
 }
-.message-list > li{
+
+.message-list>li {
   background-color: rgb(155, 245, 155);
   width: 100%;
   height: fit-content;
