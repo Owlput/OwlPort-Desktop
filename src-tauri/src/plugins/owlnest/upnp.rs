@@ -1,5 +1,6 @@
 use super::*;
 use owlnest::net::p2p::{protocols::upnp, swarm::behaviour::BehaviourEvent};
+use tauri::Emitter;
 use std::{collections::HashSet, sync::atomic::AtomicI8};
 
 ///
@@ -15,7 +16,7 @@ struct State {
 
 pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-upnp")
-        .setup(|app| {
+        .setup(|app, _api| {
             let state = State::default();
             let app_handle = app.clone();
             let state_clone = state.clone();
@@ -23,7 +24,7 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                 let mut listener = peer_manager.event_subscriber().subscribe();
                 while let Ok(ev) = listener.recv().await {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Upnp(ev)) = ev.as_ref() {
-                        let _ = app_handle.emit_all::<UpnpEmit>("owlnest-upnp-emit", ev.into());
+                        let _ = app_handle.emit::<UpnpEmit>("owlnest-upnp-emit", ev.into());
                         match ev {
                             upnp::OutEvent::NewExternalAddr(addr) => {
                                 state

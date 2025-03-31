@@ -19,7 +19,7 @@ You will need Rust toolchain installed on your machine to compile the code. Use 
 
 #### Prerequisite: vcpkg for linking openssl
 
-Note: You can also use `vendored` feature of crate `openssl` with crate `openssl-src` to bundle an openssl library along with the application. This will increase the size of the produced binary and build time.
+Note: You can also use `vendored` feature to compile OpenSSL library from source, without external copy of OpenSSL. This will increase time taken on first-time build and build after cleaning build artifacts. You will also need a Perl installation to compile OpenSSL from source.
 
  - Clone `https://github.com/Microsoft/vcpkg` and execute `bootstrap-vcpkg.bat` inside the cloned repository. 
  - Execute `./vcpkg.exe integrate install` to integrate this copy of vcpkg with your shell.
@@ -42,3 +42,6 @@ Note: You can also use dynamically linked openssl. Please refer to crate `openss
 
  - Similar to Windows, Tauri needs a browser engine to render the UI properly, which is `webkit2gtk` in this case.
  - Please refer to [official documentation](https://tauri.app/v1/guides/getting-started/prerequisites#setting-up-linux) of Tauri for more information to setup for developing Tauri applications.
+
+## Bodyless development  
+Bodyless mode is selected(or rather, body-full mode is deselected) when execute `yarn vite` without bringing up tauri CLI(nor Rust toolchain) first. In this mode, all calls through tauri IPC from frontend code will result in error. In this mode, all errors relates to IPC calls is suppressed. 

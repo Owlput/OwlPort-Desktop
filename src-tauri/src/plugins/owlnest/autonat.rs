@@ -1,18 +1,19 @@
 use super::*;
 use autonat::OutEvent;
 use owlnest::net::p2p::protocols::autonat;
+use tauri::Emitter;
 use std::str::FromStr;
 
 pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-autonat")
-        .setup(|app| {
+        .setup(|app, _api| {
             let app_handle = app.clone();
             async_runtime::spawn(async move {
                 let mut listener = peer_manager.event_subscriber().subscribe();
                 while let Ok(ev) = listener.recv().await {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::AutoNat(ev)) = ev.as_ref() {
                         if let Ok(ev) = ev.try_into() {
-                            let _ = app_handle.emit_all::<AutoNatEmit>("owlnest-autonat-emit", ev);
+                            let _ = app_handle.emit::<AutoNatEmit>("owlnest-autonat-emit", ev);
                         }
                     }
                 }
@@ -40,7 +41,7 @@ async fn add_server(
         None
     };
     let peer_id = PeerId::from_str(&peer).map_err(|e| e.to_string())?;
-    let _ = state.autonat().add_server(peer_id, address).await;
+    let _ = state.autonat().add_server(&peer_id, address).await;
     Ok(())
 }
 #[tauri::command]
@@ -49,13 +50,13 @@ async fn remove_server(
     peer: String,
 ) -> Result<(), String> {
     let peer = PeerId::from_str(&peer).map_err(|e| e.to_string())?;
-    let _ = state.autonat().remove_server(peer).await;
+    let _ = state.autonat().remove_server(&peer).await;
     Ok(())
 }
 #[tauri::command]
 async fn probe(state: tauri::State<'_, swarm::Manager>, address: String) -> Result<(), String> {
     let address = Multiaddr::from_str(&address).map_err(|e| e.to_string())?;
-    let _ = state.autonat().probe(address).await;
+    let _ = state.autonat().probe(&address).await;
     Ok(())
 }
 

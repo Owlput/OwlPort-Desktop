@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "owlnest-advertise"
+description = """Access to owlnest-advertise protocol"""
+commands.allow = [
+    "plugin:owlnest-advertise|get_provider_state",
+    "plugin:owlnest-advertise|set_provider_state",
+    "plugin:owlnest-advertise|query_advertised",
+    "plugin:owlnest-advertise|set_remote_advertisement",
+]

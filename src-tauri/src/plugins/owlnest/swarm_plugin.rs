@@ -1,13 +1,14 @@
 use super::*;
+use dashmap::DashMap;
 use libp2p::identify::Info;
-use owlnest::net::p2p::swarm::{self, behaviour::BehaviourEvent};
+use owlnest::net::p2p::swarm::{self, behaviour::BehaviourEvent, Manager as SwarmManager};
 use std::num::NonZeroU32;
+use tauri::{Emitter, Manager};
 use tracing::{error, warn};
 
 #[derive(Clone)]
 struct State {
-    pub swarm_manager: swarm::manager::Manager,
-    pub connected_peers: Arc<RwLock<HashMap<PeerId, (PeerInfo, Vec<ConnectionInfo>)>>>,
+    pub connected_peers: Arc<DashMap<PeerId, (PeerInfo, Vec<ConnectionInfo>)>>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -45,23 +46,22 @@ impl From<&Info> for PeerInfo {
 
 pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-swarm")
-        .setup(|app| {
+        .setup(move |app, _api| {
             let app_handle = app.clone();
             let mut listener = manager.event_subscriber().subscribe();
             let state = State {
-                swarm_manager: manager,
-                connected_peers: Arc::new(RwLock::new(HashMap::new())),
+                connected_peers: Arc::new(DashMap::new()),
             };
             let state_clone = state.clone();
             async_runtime::spawn(async move {
                 while let Ok(ev) = listener.recv().await {
-                    if let Ok(ev) = TryInto::<SwarmEventEmit>::try_into(ev.as_ref()) {
+                    if let Ok(ev) = TryInto::<SwarmEmit>::try_into(ev.as_ref()) {
                         app_handle
-                            .emit_all("swarm-emit", ev)
+                            .emit("swarm-emit", ev)
                             .expect("event emit to succeed");
                     }
                     use libp2p::swarm::SwarmEvent::*;
-                    let mut guard = state.connected_peers.write().await;
+                    let store = &state.connected_peers;
                     match ev.as_ref() {
                         ConnectionEstablished {
                             peer_id,
@@ -71,9 +71,9 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                             ..
                         } => {
                             if *num_established < NonZeroU32::new(2).unwrap() {
-                                guard.insert(*peer_id, Default::default());
+                                store.insert(*peer_id, Default::default());
                             }
-                            guard.get_mut(peer_id).unwrap().1.push(ConnectionInfo {
+                            store.get_mut(peer_id).unwrap().1.push(ConnectionInfo {
                                 connection_id: connection_id.into_inner() as u64,
                                 remote_address: endpoint.get_remote_address().clone(),
                             });
@@ -84,7 +84,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                             ..
                         } => {
                             if *num_established < 1 {
-                                guard.remove(peer_id);
+                                store.remove(peer_id);
                             }
                         }
                         IncomingConnection { .. } => {}
@@ -105,8 +105,8 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                                 ..
                             }) = ev
                             {
-                                if let Some(v) = guard.get_mut(peer_id) {
-                                    v.0 = info.into()
+                                if let Some(mut v) = store.get_mut(peer_id) {
+                                    v.value_mut().0 = info.into()
                                 } else {
                                     error!("Behaviour event handled before ConnectionEstablished")
                                 }
@@ -115,7 +115,6 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                         NewExternalAddrOfPeer { .. } => {}
                         _ => warn!("New branch for SwarmEvent not covered"),
                     }
-                    drop(guard)
                 }
                 error!("Swarm sender Dropped! Internal state corrupted!");
             });
@@ -135,9 +134,11 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
 }
 
 #[tauri::command]
-async fn dial(state: tauri::State<'_, State>, dial_options: DialOptions) -> Result<(), String> {
+async fn dial(
+    state: tauri::State<'_, SwarmManager>,
+    dial_options: DialOptions,
+) -> Result<(), String> {
     state
-        .swarm_manager
         .swarm()
         .dial(&dial_options.address)
         .await
@@ -151,7 +152,7 @@ pub struct DialOptions {
 
 #[tauri::command]
 async fn listen(
-    state: tauri::State<'_, State>,
+    state: tauri::State<'_, SwarmManager>,
     listen_options: ListenOptions,
 ) -> Result<(), String> {
     let addr = listen_options
@@ -159,7 +160,6 @@ async fn listen(
         .parse()
         .map_err(|e| format!("{:?}", e))?;
     state
-        .swarm_manager
         .swarm()
         .listen(&addr)
         .await
@@ -168,33 +168,39 @@ async fn listen(
 }
 
 #[tauri::command]
-async fn get_local_peer_id(state: tauri::State<'_, State>) -> Result<String, String> {
-    Ok(state.swarm_manager.identity().get_peer_id().to_string())
+async fn get_local_peer_id(state: tauri::State<'_, SwarmManager>) -> Result<String, String> {
+    Ok(state.identity().get_peer_id().to_string())
 }
 
 #[tauri::command]
-async fn list_listeners(state: tauri::State<'_, State>) -> Result<Box<[Multiaddr]>, String> {
-    Ok(state.swarm_manager.swarm().list_listeners().await)
+async fn list_listeners(state: tauri::State<'_, SwarmManager>) -> Result<Box<[Multiaddr]>, String> {
+    Ok(state.swarm().list_listeners().await)
 }
 
 #[tauri::command]
 async fn list_connected(state: tauri::State<'_, State>) -> Result<Vec<PeerId>, String> {
-    Ok(state.connected_peers.read().await.keys().cloned().collect())
+    Ok(state.connected_peers.iter().map(|kv| *kv.key()).collect())
 }
+
 #[tauri::command]
 async fn get_peer_info(
     state: tauri::State<'_, State>,
     peer_id: PeerId,
 ) -> Result<Option<(PeerInfo, Vec<ConnectionInfo>)>, String> {
-    Ok(state.connected_peers.read().await.get(&peer_id).cloned())
+    Ok(state
+        .connected_peers
+        .get(&peer_id)
+        .map(|entry| (entry.0.clone(), entry.1.clone())))
 }
 
 #[tauri::command]
-async fn disconnect_peer(state: tauri::State<'_, State>, peer_id: PeerId) -> Result<(), String> {
+async fn disconnect_peer(
+    state: tauri::State<'_, SwarmManager>,
+    peer_id: PeerId,
+) -> Result<(), String> {
     state
-        .swarm_manager
         .swarm()
-        .disconnect_peer_id(peer_id)
+        .disconnect_peer_id(&peer_id)
         .await
         .map_err(|_| "Cannot disconnect".into())
 }
@@ -205,7 +211,7 @@ pub struct ListenOptions {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub enum SwarmEventEmit {
+pub enum SwarmEmit {
     ConnectionEstablished {
         /// A connection to the given peer has been opened.
         peer_id: PeerId,
@@ -248,7 +254,7 @@ pub enum SwarmEventEmit {
         error: serde_types::DialError,
     },
 }
-impl TryFrom<&swarm::SwarmEvent> for SwarmEventEmit {
+impl TryFrom<&swarm::SwarmEvent> for SwarmEmit {
     type Error = ();
     fn try_from(value: &swarm::SwarmEvent) -> Result<Self, Self::Error> {
         use swarm::SwarmEvent;

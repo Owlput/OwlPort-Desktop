@@ -1,23 +1,26 @@
 <script setup>
 import { ref } from "vue";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
+import { isBodylessHandler } from "../../utils";
 
 const public_address = ref([]);
 const gateway_status = ref("");
-invoke("plugin:owlnest-upnp|list_available_external_addr").then(
-  (result) => (public_address.value = result)
-);
-invoke("plugin:owlnest-upnp|get_gateway_status").then((result) => {
-  if (result === -1) {
-    gateway_status.value = "Gateway not found or doesn't support UPnP";
-  } else if (result === 0) {
-    gateway_status.value = "Gateway not publicly reachable";
-  } else if (result === 1) {
-    gateway_status.value = "Gateway publicly reachable";
-  } else {
-    console.error("UPnP: unhandled gateway status");
-  }
-});
+invoke("plugin:owlnest-upnp|list_available_external_addr")
+  .then((result) => (public_address.value = result))
+  .catch(isBodylessHandler);
+invoke("plugin:owlnest-upnp|get_gateway_status")
+  .then((result) => {
+    if (result === -1) {
+      gateway_status.value = "Gateway not found or doesn't support UPnP";
+    } else if (result === 0) {
+      gateway_status.value = "Gateway not publicly reachable";
+    } else if (result === 1) {
+      gateway_status.value = "Gateway publicly reachable";
+    } else {
+      console.error("UPnP: unhandled gateway status");
+    }
+  })
+  .catch(isBodylessHandler);
 </script>
 <template>
   <section class="px-8 py-4">

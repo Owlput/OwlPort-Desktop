@@ -1,33 +1,39 @@
-<script setup>
-import { ref } from "vue";
-import { invoke } from "@tauri-apps/api";
-let discovered_nodes = ref({});
-invoke("plugin:owlnest-mdns|list_discovered").then((v) => {
-  discovered_nodes.value = v;
-});
+<script setup lang="ts">
+import { Ref, ref } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+import { isBodylessHandler } from "../../utils";
+import AddressDisplay from "../../components/AddressDisplay.vue";
+
+let discovered_nodes: Ref<Map<String, Array<String>>> = ref(new Map());
+invoke<any>("plugin:owlnest-mdns|list_discovered")
+  .then((v) => {
+    Object.keys(v).forEach((k) => discovered_nodes.value.set(k, v[k].map((v: any) => v.split('/p2p/')[0])))
+  })
+  .catch(isBodylessHandler);
 </script>
 
 <template>
   <div>
     <section class="mx-[3rem] my-4 p-2 shadow-md rounded-md">
       <p class="text-center">Peers discovered by mDNS</p>
+      <section class="flex gap-2">
+        <p class="bg-blue-300 p-1 rounded-sm">Public addresses</p>
+        <p class="bg-green-300 p-1 rounded-sm">Local addresses</p>
+      </section>
     </section>
 
-    <p v-if="Object.keys(discovered_nodes).length < 1" class="text-center">
+    <p v-if="discovered_nodes.size === 0" class="text-center">
       No peer discovered
     </p>
-    <ul v-for="peer in Object.keys(discovered_nodes)" class="p-2 border">
+    <ul v-for="peer in discovered_nodes.entries()" class="m-8 border">
       <li>
         <section>
-          <p class="text-autowrap">Peer ID: {{ peer }}</p>
+          <p class="text-autowrap">Peer ID: {{ peer[0] }}</p>
         </section>
-        <ul class="p-4 bg-slate-200">
-          <li
-            v-for="addr in discovered_nodes[peer]"
-            class="w-full text-autowrap"
-            @click="() => $router.push(`/main/connections/dial?dial=${addr}`)"
-          >
-            <p class="text-autowrap">{{ addr }}</p>
+        <ul class="p-4 flex flex-wrap">
+          <li class="mx-4 my-1 cursor-pointer" v-for="addr in peer[1]"
+            @click="() => $router.push(`/main/connections/dial?dial=${addr}`)">
+            <AddressDisplay :address="addr.valueOf()" />
           </li>
         </ul>
       </li>

@@ -1,0 +1,19 @@
+{
+  "identifier": "main",
+  "description": "permissions for the main window",
+  "local": true,
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "owlnest-autonat",
+    "owlnest-kad",
+    "owlnest-mdns",
+    "owlnest-relay-client",
+    "owlnest-swarm",
+    "app-panel",
+    "app-info",
+    "owlnest-developer-options",
+    "clipboard-manager:allow-write-text",
+    "clipboard-manager:default"
+  ]
+}

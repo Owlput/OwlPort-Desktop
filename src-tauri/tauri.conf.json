@@ -2,42 +2,29 @@
   "build": {
     "beforeDevCommand": "yarn dev",
     "beforeBuildCommand": "yarn build",
-    "devPath": "http://localhost:14250",
-    "distDir": "../dist",
-    "features": ["debug"]
+    "frontendDist": "../dist",
+    "features": [
+      "debug"
+    ],
+    "devUrl": "http://localhost:14250"
   },
-  "package": {
-    "productName": "owlport_desktop",
-    "version": "0.0.0"
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
   },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "shell": {
-        "all": false,
-        "open": true
-      },
-      "clipboard": {
-        "all": false,
-        "readText": false,
-        "writeText": true
-      }
-    },
-    "bundle": {
-      "active": true,
-      "targets": "all",
-      "identifier": "org.owlput.portal",
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ]
-    },
-    "security": {
-      "csp": null
-    },
+  "productName": "owlport_desktop",
+  "mainBinaryName": "owlport_desktop",
+  "version": "0.0.0",
+  "identifier": "org.owlput.portal",
+  "plugins": {},
+  "app": {
     "windows": [
       {
         "fullscreen": false,
@@ -46,6 +33,9 @@
         "width": 800,
         "height": 600
       }
-    ]
+    ],
+    "security": {
+      "csp": null
+    }
   }
 }

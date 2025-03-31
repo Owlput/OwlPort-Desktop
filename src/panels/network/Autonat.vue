@@ -1,12 +1,28 @@
-<script setup>
-import { invoke } from "@tauri-apps/api";
+<script setup lang="ts">
+import { invoke } from "@tauri-apps/api/core";
 import { ref } from "vue";
+import { isBodylessHandler } from "../../utils";
+
+class NatStatus {
+  Public: { address: String } | undefined = undefined;
+  Private: Object | undefined = undefined;
+  Unknown: Object | undefined = undefined;
+}
+
+interface NatStatusWithConfidence {
+  status: NatStatus,
+  confidence: Number,
+}
+
 const address_to_probe = ref("");
 const nat_status = ref({ confidence: 0, status: "Unknown" });
 function get_nat_status() {
-  invoke("plugin:owlnest-autonat|get_nat_status").then(
-    (result) => (nat_status.value = result)
-  );
+  invoke("plugin:owlnest-autonat|get_nat_status")
+    .then((result) => {
+      console.log(result);
+      nat_status.value = result;
+    })
+    .catch(isBodylessHandler);
 }
 get_nat_status();
 function probe() {
@@ -15,7 +31,7 @@ function probe() {
   }
   invoke("plugin:owlnest-autonat|probe", {
     address: address_to_probe.value,
-  }).catch((e) => console.log(e));
+  }).catch(isBodylessHandler);
   setTimeout(get_nat_status, 500);
 }
 </script>

@@ -1,6 +1,5 @@
 use super::*;
 use crate::event::popup_manager::{DefaultPopupProps, Popup};
-use tauri::Manager;
 
 macro_rules! get_timestamp {
     () => {{
@@ -23,7 +22,7 @@ async fn emit_test_event<R: Runtime>(
     app: tauri::AppHandle<R>,
     _window: tauri::Window<R>,
 ) -> Result<(), String> {
-    let _ = app.emit_all(
+    let _ = app.emit(
         "newPopup",
         Popup {
             timeout: 10000,

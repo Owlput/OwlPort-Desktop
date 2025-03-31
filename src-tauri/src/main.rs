@@ -1,7 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![feature(hash_extract_if)]
 
-use anyhow::Ok;
+use tauri::generate_context;
 
 mod event;
 mod macros;
@@ -11,8 +12,17 @@ extern crate tokio;
 
 fn main() -> anyhow::Result<()> {
     setup_logging();
-    let peer_manager = plugins::owlnest::setup_peer()?;
+    let peer_manager = match plugins::owlnest::setup_peer() {
+        Err(e) => {
+            tracing::error!("{:?}", e);
+            tracing::error!("Failed to start OwlPort: Cannot read config file.");
+            tracing::error!("An example config file is generated in the same directory, remove the trailing `.example` to use the default values!");
+            return Err(e)
+        }
+        Ok(v) => v,
+    };
     tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
         .manage(peer_manager.clone())
         .plugin(plugins::owlnest::swarm_plugin::init(peer_manager.clone()))
         .plugin(plugins::owlnest::messaging::init(peer_manager.clone()))
@@ -23,14 +33,16 @@ fn main() -> anyhow::Result<()> {
         .plugin(plugins::owlnest::upnp::init(peer_manager.clone()))
         .plugin(plugins::owlnest::relay::init(peer_manager.clone()))
         .plugin(plugins::owlnest::advertise::init())
+        .plugin(plugins::owlnest::gossipsub::init(peer_manager.clone()))
+        .plugin(plugins::owlnest::developer_options::init())
         .plugin(plugins::popup_test::init())
-        .run(tauri::generate_context!())
+        .run(generate_context!())
         .expect("error while running tauri application");
     Ok(())
 }
 
 fn setup_logging() {
-    use owlnest::logging_prelude::*;
+    use owlnest::utils::logging_prelude::*;
     use std::sync::Mutex;
     use tracing_subscriber::Layer;
     let time = chrono::Local::now().timestamp_micros();

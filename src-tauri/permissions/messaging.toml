@@ -1,0 +1,10 @@
+[[permission]]
+identifier = "owlnest-messaging"
+description = """Access to owlnest-messaging plugin"""
+commands.allow = [
+    "plugin:owlnest-messaging|send_msg",
+    "plugin:owlnest-messaging|get_chat_history",
+    "plugin:owlnest-messaging|clear_chat_history",
+    "plugin:owlnest-messaging|list_connected",
+    "plugin:owlnest-messaging|get_all_chats",
+]

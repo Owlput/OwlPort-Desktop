@@ -1,0 +1,7 @@
+[[permission]]
+identifier = "swarm-get-local-peer-info"
+description = """Allow to fetch information about local peer"""
+commands.allow = [
+    "plugin:owlnest-swarm|get_local_peer_id",
+    "plugin:owlnest-swarm|list_connected",
+]

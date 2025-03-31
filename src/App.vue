@@ -1,11 +1,36 @@
-<script setup>
-import {useRouter} from 'vue-router'
-const router = useRouter();
-document.addEventListener('keypress',(ev)=>{
-  if (ev.key === "Esc"){
-    router.back()
-  }
+<script setup lang="ts">
+import { emit, listen } from '@tauri-apps/api/event';
+import { MessagingEmit } from './panels/apps/messaging/types';
+import { Popup } from './components/Types';
+import { onUnmounted } from 'vue';
+import { BlobTransferEmit } from './panels/apps/blob_transfer/types';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { useRoute } from 'vue-router';
+import { isBodyless } from './utils';
+
+let appWindowLabel;
+if (!isBodyless()) {console.log("backend connected"); appWindowLabel = getCurrentWebviewWindow().label;  } else { let route = useRoute(); 
+  appWindowLabel = route.fullPath.split("/")[1] }
+
+let event_handles: Array<Function> = []
+if (appWindowLabel === "messaging") {
+  listen<MessagingEmit>("owlnest-messaging-emit", (ev) => {
+    if (ev.payload.IncomingMessage) {
+      emit("newPopup", new Popup(Date.now(), "DefaultPopup", { message: "Incoming message. Open Apps > Messaging to view the message." }))
+    }
+  }).then((handle) => event_handles.push(handle))
+}
+if (appWindowLabel === "blob-transfer") {
+  listen<BlobTransferEmit>("owlnest-blob-transfer-emit", (ev) => {
+    if (ev.payload.IncomingFile) {
+      emit("newPopup", new Popup(Date.now(), "DefaultPopup", { message: "Incoming file. Open Apps > Messaging to view the message." }))
+    }
+  }).then((handle) => event_handles.push(handle))
+}
+onUnmounted(() => {
+  event_handles.forEach((unlisten) => unlisten())
 })
+
 </script>
 
 <template>

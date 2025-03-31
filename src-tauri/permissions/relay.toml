@@ -1,0 +1,8 @@
+[[permission]]
+identifier = "owlnest-relay-client"
+description = """Access to client part of owlnest-relay plugin"""
+commands.allow = [
+    "plugin:owlnest-relay|list_relays",
+    "plugin:owlnest-relay|get_relay_info",
+    "plugin:owlnest-relay|listen_relay",
+]

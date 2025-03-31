@@ -1,0 +1,7 @@
+[[permission]]
+identifier = "blob-transfer-fs"
+description = """
+Allow access to read and write file for blob-transfer protocol.
+"""
+[[scope.allow]]
+path = "$HOME/Download"

@@ -20,6 +20,8 @@ pub mod messaging;
 pub mod advertise;
 pub mod autonat;
 pub mod blob;
+pub mod developer_options;
+pub mod gossipsub;
 pub mod kad;
 pub mod mdns;
 pub mod relay;

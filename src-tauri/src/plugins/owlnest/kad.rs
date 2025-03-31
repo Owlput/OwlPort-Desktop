@@ -1,6 +1,7 @@
 use super::*;
 use libp2p::kad::Mode;
 use owlnest::net::p2p::protocols::kad::OutEvent;
+use tauri::Emitter;
 use std::{str::FromStr, sync::atomic::AtomicBool};
 
 #[derive(Debug, Clone)]
@@ -19,7 +20,7 @@ impl Default for State {
 
 pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-kad")
-        .setup(|app| {
+        .setup(|app, _api| {
             let app_handle = app.clone();
             let state = State::default();
             app.manage(state.clone());
@@ -28,7 +29,7 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                 while let Ok(ev) = listener.recv().await {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Kad(ev)) = ev.as_ref() {
                         if let Ok(ev) = ev.try_into() {
-                            let _ = app_handle.emit_all::<KadEmit>("owlnest-kad-emit", ev);
+                            let _ = app_handle.emit::<KadEmit>("owlnest-kad-emit", ev);
                         }
                         match ev {
                             libp2p::kad::Event::InboundRequest { .. } => {}
@@ -68,36 +69,36 @@ async fn insert_default(state: tauri::State<'_, swarm::Manager>) -> Result<(), S
     state
         .kad()
         .insert_node(
-            PeerId::from_str("QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN").unwrap(),
-            "/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
+            &PeerId::from_str("QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN").unwrap(),
+            &"/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
         )
         .await;
     state
         .kad()
         .insert_node(
-            PeerId::from_str("QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa").unwrap(),
-            "/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
+            &PeerId::from_str("QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa").unwrap(),
+            &"/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
         )
         .await;
     state
         .kad()
         .insert_node(
-            PeerId::from_str("QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb").unwrap(),
-            "/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
+            &PeerId::from_str("QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb").unwrap(),
+            &"/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
         )
         .await;
     state
         .kad()
         .insert_node(
-            PeerId::from_str("QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt").unwrap(),
-            "/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
+            &PeerId::from_str("QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt").unwrap(),
+            &"/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
         )
         .await;
     state
         .kad()
         .insert_node(
-            PeerId::from_str("QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ").unwrap(),
-            "/ip4/104.131.131.82/tcp/4001".parse::<Multiaddr>().unwrap(),
+            &PeerId::from_str("QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ").unwrap(),
+            &"/ip4/104.131.131.82/tcp/4001".parse::<Multiaddr>().unwrap(),
         )
         .await;
     Ok(())
@@ -119,7 +120,7 @@ async fn insert_node(
 ) -> Result<String, String> {
     let peer_id = PeerId::from_str(&peer_id).map_err(|e| e.to_string())?;
     let address = Multiaddr::from_str(&address).map_err(|e| e.to_string())?;
-    let routing_update = state.kad().insert_node(peer_id, address).await;
+    let routing_update = state.kad().insert_node(&peer_id, &address).await;
     Ok(format!("{:?}", routing_update))
 }
 
@@ -149,16 +150,14 @@ async fn set_mode(state: tauri::State<'_, swarm::Manager>, mode: bool) -> Result
 }
 
 #[tauri::command]
-async fn get_all_records(
-    state: tauri::State<'_, swarm::Manager>,
-) -> Result<Vec<(PeerId, Vec<Multiaddr>)>, ()> {
+async fn get_all_records(state: tauri::State<'_, swarm::Manager>) -> Result<Vec<PeerStub>, ()> {
     Ok(state
         .kad()
         .all_records()
         .await
         .into_iter()
-        .map(|(peer, addrs)| (peer, addrs.into_vec()))
-        .collect::<Vec<(PeerId, Vec<Multiaddr>)>>())
+        .map(|(peer, addrs)| (peer, addrs.into_vec()).into())
+        .collect())
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -186,5 +185,19 @@ impl TryFrom<&OutEvent> for KadEmit {
             _ => return Err(()),
         };
         Ok(ev)
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct PeerStub {
+    peer_id: PeerId,
+    addresses: Vec<Multiaddr>,
+}
+impl From<(PeerId, Vec<Multiaddr>)> for PeerStub {
+    fn from(value: (PeerId, Vec<Multiaddr>)) -> Self {
+        Self {
+            peer_id: value.0,
+            addresses: value.1,
+        }
     }
 }

@@ -1,0 +1,6 @@
+[[permission]]
+identifier = "swarm-dial"
+description = """Allow to dial a peer"""
+commands.allow = [
+    "plugin:owlnest-swarm|dial",
+]

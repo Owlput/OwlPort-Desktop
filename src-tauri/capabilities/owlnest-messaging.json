@@ -1,0 +1,12 @@
+{
+  "identifier": "owlnest-messaging",
+  "description": "permissions for owlnest-messaging window",
+  "local": true,
+  "windows": ["owlnest-messaging"],
+  "permissions": [
+    "core:default",
+    "owlnest-messaging",
+    "clipboard-manager:allow-write-text",
+    "clipboard-manager:default"
+  ]
+}

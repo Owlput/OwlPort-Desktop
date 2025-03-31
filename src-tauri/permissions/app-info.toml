@@ -1,0 +1,7 @@
+[[permission]]
+identifier = "app-info"
+description = """Allow getting statistics for various built-in apps."""
+commands.allow = [
+    "plugin:owlnest-blob-transfer|list_connected",
+    "plugin:owlnest-messaging|list_connected"
+]

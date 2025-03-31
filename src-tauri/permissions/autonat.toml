@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "owlnest-autonat"
+description = """Access to libp2p NAT status checker"""
+commands.allow = [
+    "plugin:owlnest-autonat|add_server",
+    "plugin:owlnest-autonat|remove_server",
+    "plugin:owlnest-autonat|probe",
+    "plugin:owlnest-autonat|get_nat_status",
+]
