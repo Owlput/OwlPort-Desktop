@@ -9,7 +9,7 @@ import { useRoute } from 'vue-router';
 import { isBodyless } from './utils';
 
 let appWindowLabel;
-if (!isBodyless()) {console.log("has backend"); appWindowLabel = getCurrentWebviewWindow().label;  } else { let route = useRoute(); 
+if (!isBodyless()) {console.log("backend connected"); appWindowLabel = getCurrentWebviewWindow().label;  } else { let route = useRoute(); 
   appWindowLabel = route.fullPath.split("/")[1] }
 
 let event_handles: Array<Function> = []

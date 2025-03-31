@@ -12,6 +12,7 @@
     "owlnest-swarm",
     "app-panel",
     "app-info",
+    "owlnest-developer-options",
     "clipboard-manager:allow-write-text",
     "clipboard-manager:default"
   ]

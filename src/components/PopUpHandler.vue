@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineAsyncComponent, ref, Ref, watchEffect } from "vue";
+import { defineAsyncComponent, ref, Ref } from "vue";
 import { listen, } from "@tauri-apps/api/event";
 import { isBodylessHandler } from "../utils";
 import { Popup } from "./Types";
@@ -46,7 +46,7 @@ listen<Popup>("newPopup", (popup) => {
     }
 
   */
-  console.log("received new popup:",popup.payload)
+  console.log("received new popup:", popup.payload)
   add_popup(popup.payload);
 }).catch(isBodylessHandler);
 </script>

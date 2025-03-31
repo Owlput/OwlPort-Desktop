@@ -1,11 +1,21 @@
-export interface ConnectionInfo {
-  connection_id: Number;
-  remote_address: String;
+export class ConnectionInfo {
+  connection_id: number;
+  remote_address: string;
+  constructor(connection_id:number, remote_address:string){
+    this.connection_id = connection_id;
+    this.remote_address = remote_address;
+  }
 }
 
-export interface PeerInfo {
+export class PeerInfo {
   supported_protocols: Array<String>;
   protocol_version: String;
+  connections: Array<ConnectionInfo>;
+  constructor(supported_protocols: Array<String>, protocol_version: String, connections: Array<{connection_id:number, remote_address:string}>){
+    this.supported_protocols = supported_protocols;
+    this.protocol_version = protocol_version;
+    this.connections = connections.map((v)=>new ConnectionInfo(v.connection_id, v.remote_address))
+  }
 }
 
 export class SwarmEmit {

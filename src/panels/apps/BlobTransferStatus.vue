@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
-import { onUnmounted, ref } from "vue";
+import { onUnmounted, ref, shallowRef } from "vue";
 import { isBodylessHandler } from "../../utils";
 
 let expand = ref(false);
-let connected_peers = ref([]);
+let connected_peers = shallowRef([]);
 invoke<any>("plugin:owlnest-blob-transfer|list_connected")
   .then((peers) => (connected_peers.value = peers))
   .catch(isBodylessHandler);

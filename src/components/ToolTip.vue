@@ -36,7 +36,7 @@ if (props.bottom) postioning = " top-[100%] left-[50%] translate-x-[-50%]";
     <div class="relative" @mouseenter="on_enter" @mouseleave="on_leave">
         <slot></slot>
         <template v-if="show_tooltop">
-            <p :class="'absolute text-wrap shadow-md bg-white rounded-md text-sm max-w-[100%]' + postioning"
+            <p :class="'absolute text-wrap shadow-md bg-white rounded-md text-sm max-w-[200%]' + postioning"
                 style="padding: 0.125rem; z-index: 20;">{{ props.helpText }}</p>
         </template>
     </div>

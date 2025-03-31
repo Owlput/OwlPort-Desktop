@@ -3,5 +3,6 @@ identifier = "app-panel"
 description = """Allow spawning new windows for various built-in apps."""
 commands.allow = [
     "plugin:owlnest-blob-transfer|spawn_window",
-    "plugin:owlnest-messaging|spawn_window"
+    "plugin:owlnest-messaging|spawn_window",
+    "plugin:owlnest-gossipsub|spawn_window"
 ]

@@ -7,9 +7,12 @@ import { Popup } from '../../components/Types';
 <template>
     <p>Developer Options</p>
     <button
-        @click="() => invoke('plugin:libp2p-gossipsub|try_map_string_to_hash', { topic: 'TestTopic' }).then(v => console.log(v))">Test
+        @click="() => invoke('plugin:owlnest-gossipsub|try_map_string_to_hash', { topic: 'TestTopic' }).then(v => console.log(v))">Test
         Map String to TopicHash</button>
     <button @click="() => emit('newPopup', new Popup(Date.now(), 'DefaultPopup', { message: 'what' }))">Test popup from
         frontend</button>
     <button @click="() => invoke('plugin:owlnest-developer-options|swarm_event_listener')">Swarm Event Listener</button>
+    <button @click="() => invoke('plugin:owlnest-developer-options|print_struct').then((v)=>console.log(v))">
+    print struct
+  </button>
 </template>

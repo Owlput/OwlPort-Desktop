@@ -23,6 +23,6 @@ function filter(source: RelayStub, search_text: String): boolean {
   <SearchDisplay :criteria="filter" :get-or-refresh="update_relay_list" v-slot="slotProps"
     place-holder="Search for topic or topic hash(start with #) here." :min-item-size="36"
     scroller-height-expr="100vh - 6.5rem" @load-result="(result) => { status = result }">
-    <RelayEntry :relay_stub="slotProps.item"></RelayEntry>
+    <div class="px-4 select-none"><RelayEntry :relay_stub="slotProps.item"></RelayEntry></div>
   </SearchDisplay>
 </template>

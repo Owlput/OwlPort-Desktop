@@ -4,7 +4,7 @@ use tauri::Emitter;
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("owlnest-advertise")
-        .setup(|app,_api| {
+        .setup(|app, _api| {
             let app_handle = app.clone();
             async_runtime::spawn(async move {
                 let mut listener = app_handle
@@ -15,8 +15,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Advertise(ev)) = ev.as_ref()
                     {
                         if let Ok(ev) = ev.try_into() {
-                            let _ =
-                                app_handle.emit::<AdvertiseEmit>("owlnest-advertise-emit", ev);
+                            let _ = app_handle.emit::<AdvertiseEmit>("owlnest-advertise-emit", ev);
                         }
                     }
                 }
@@ -61,7 +60,7 @@ async fn set_remote_advertisement(
 ) -> Result<(), ()> {
     Ok(state
         .advertise()
-        .set_remote_advertisement(remote, advertisement_state)
+        .set_remote_advertisement(&remote, advertisement_state)
         .await)
 }
 
@@ -97,7 +96,7 @@ impl TryFrom<&advertise::OutEvent> for AdvertiseEmit {
                 from: *from,
                 result: result.is_ok(),
             },
-            ProviderState(state, _) => Self::ProviderState { state: *state },
+            ProviderState(state) => Self::ProviderState { state: *state },
             AdvertisedPeerChanged(peer_id, state) => Self::AdvertisedPeerChanged {
                 peer: *peer_id,
                 state: *state,

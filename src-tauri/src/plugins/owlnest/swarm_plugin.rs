@@ -181,6 +181,7 @@ async fn list_listeners(state: tauri::State<'_, SwarmManager>) -> Result<Box<[Mu
 async fn list_connected(state: tauri::State<'_, State>) -> Result<Vec<PeerId>, String> {
     Ok(state.connected_peers.iter().map(|kv| *kv.key()).collect())
 }
+
 #[tauri::command]
 async fn get_peer_info(
     state: tauri::State<'_, State>,
@@ -199,7 +200,7 @@ async fn disconnect_peer(
 ) -> Result<(), String> {
     state
         .swarm()
-        .disconnect_peer_id(peer_id)
+        .disconnect_peer_id(&peer_id)
         .await
         .map_err(|_| "Cannot disconnect".into())
 }

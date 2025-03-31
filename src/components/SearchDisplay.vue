@@ -1,9 +1,9 @@
 <script setup lang="ts" generic="T">
-import { computed, ComputedRef, PropType, Ref, ref } from 'vue';
+import { computed, ComputedRef, PropType, Ref, ref, shallowRef } from 'vue';
 import SearchBar from './SearchBar.vue';
 import { isBodyless, Status } from '../utils';
 
-type CriteriaFn = (source: T, search_text: String) => boolean;
+type CriteriaFn = (source: T, search_text: string) => boolean;
 const props = defineProps({
     criteria: {
         type: Function as PropType<CriteriaFn>,
@@ -35,8 +35,8 @@ class ListItemWrapper<T> {
     }
 }
 
-const search_text: Ref<String> = ref('');
-const list_items: Ref<Array<ListItemWrapper<T>>> = ref([]);
+const search_text: Ref<string> = ref('');
+const list_items: Ref<Array<ListItemWrapper<T>>> = shallowRef([]);
 const displayed_items: ComputedRef<Array<ListItemWrapper<T>>> = computed(() => {
     if (search_text.value.length === 0) return list_items.value;
     return list_items.value.filter((v) => props.criteria(v.inner, search_text.value))

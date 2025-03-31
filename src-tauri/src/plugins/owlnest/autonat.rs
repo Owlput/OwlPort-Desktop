@@ -41,7 +41,7 @@ async fn add_server(
         None
     };
     let peer_id = PeerId::from_str(&peer).map_err(|e| e.to_string())?;
-    let _ = state.autonat().add_server(peer_id, address).await;
+    let _ = state.autonat().add_server(&peer_id, address).await;
     Ok(())
 }
 #[tauri::command]
@@ -50,13 +50,13 @@ async fn remove_server(
     peer: String,
 ) -> Result<(), String> {
     let peer = PeerId::from_str(&peer).map_err(|e| e.to_string())?;
-    let _ = state.autonat().remove_server(peer).await;
+    let _ = state.autonat().remove_server(&peer).await;
     Ok(())
 }
 #[tauri::command]
 async fn probe(state: tauri::State<'_, swarm::Manager>, address: String) -> Result<(), String> {
     let address = Multiaddr::from_str(&address).map_err(|e| e.to_string())?;
-    let _ = state.autonat().probe(address).await;
+    let _ = state.autonat().probe(&address).await;
     Ok(())
 }
 

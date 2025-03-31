@@ -17,14 +17,14 @@ const peer_info: Ref<types.PeerInfo | null> = ref(null);
 const connection_type = ["IPv4", "TCP", "Mocked"];
 function toggleExpand() {
   if (show_supported_protocols.value === false) {
-    invoke<types.PeerInfo>(
+    invoke<any>(
       "plugin:owlnest-swarm|get_peer_info",
       {
         peerId: props.peerId,
       }
     )
       .then((v) => {
-        peer_info.value = v;
+        peer_info.value = new types.PeerInfo(v[0].supported_protocols, v[0].protocol_version, v[1]);
         show_supported_protocols.value = true;
       })
       .catch(isBodylessHandler);
@@ -48,7 +48,7 @@ function on_disconnect() {
 }
 </script>
 <template>
-  <div class="w-full border rounded-sm shadow-md">
+  <div class="border rounded-sm shadow-md mx-4 px-4 select-none">
     <section @click.prevent.self="toggleExpand" class="flex flex-nowrap flex-row justify-between cursor-pointer">
       <section>
         <span class="material-icons text-[3rem] w-full text-center">computer</span>
@@ -73,16 +73,17 @@ function on_disconnect() {
         <section>RTT: {{ "MOCKED" }} ms</section>
       </section>
     </section>
-    <section class="mx-1" v-if="show_supported_protocols && peer_info">
+    <hr v-if="show_supported_protocols" />
+    <section v-if="show_supported_protocols && peer_info">
       <p class="sm:hidden">Peer ID: {{ props.peerId }}</p>
       <p>Protocol stack: {{ peer_info.protocol_version }}</p>
       <p>Suported protocols({{ peer_info.supported_protocols.length }}):</p>
       <ul class="flex flex-wrap">
-        <li v-for="item in peer_info.supported_protocols" class="m-1">
+        <li v-for="item in peer_info.supported_protocols" class="m-1 border px-1">
           {{ item }}
         </li>
       </ul>
     </section>
-    <section v-if="!peer_info">Fetching peer info from backend...</section>
+    <section v-if="!peer_info && show_supported_protocols">Fetching peer info from backend...</section>
   </div>
 </template>

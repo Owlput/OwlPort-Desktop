@@ -16,8 +16,10 @@ function query() {
 </script>
 
 <template>
-  <section class="single-input px-4">
-    <input v-model="peer_to_query" @keydown.enter.exact.prevent="query" />
+  <section class="single-input px-2">
+    <input v-model="peer_to_query" @keydown.enter.exact.prevent="query" 
+    placeholder="Query for a Peer ID"
+    />
     <button @click="query">Query</button>
   </section>
   <ul>

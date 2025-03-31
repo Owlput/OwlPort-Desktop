@@ -1,8 +1,10 @@
+use owlnest::net::p2p::protocols::gossipsub::HashType;
+
 use super::*;
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("owlnest-developer-options")
-        .invoke_handler(generate_handler![swarm_event_listener])
+        .invoke_handler(generate_handler![swarm_event_listener, print_struct])
         .build()
 }
 
@@ -22,4 +24,11 @@ async fn swarm_event_listener<R: Runtime>(app: tauri::AppHandle<R>) -> Result<()
     .build()
     .expect("New window to be created successfully");
     Ok(())
+}
+
+#[tauri::command]
+async fn print_struct(
+    _state: tauri::State<'_, swarm::Manager>,
+) -> Result<HashType, String> {
+    Ok(HashType::Identity)
 }

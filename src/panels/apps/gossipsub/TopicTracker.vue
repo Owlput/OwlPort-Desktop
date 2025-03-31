@@ -1,34 +1,44 @@
 <script setup lang="ts">
-import { ref, Ref } from "vue";
+import { onMounted, onUnmounted, ref, Ref, ShallowRef, shallowRef } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import SearchBar from "../../../components/SearchBar.vue";
-import { Message, ReadableTopic } from "./types";
+import * as types from "./types";
 import { isBodylessHandler } from "../../../utils";
+import { TopicHash } from "./types";
 
-const topic_to_track = ref("")
+const topic_to_track: Ref<string> = ref("")
 const send_on_enter = ref(false)
-const message_history: Ref<Array<Message>> = ref([]);
+const message_history: ShallowRef<Array<types.MessageRecord>> = shallowRef([]);
 const message = ref("")
 const utf8Decoder = new TextDecoder();
+const refresh_interval_handle: Ref<number | null> = ref(null);
 
 function update_topic_history() {
   if (topic_to_track.value.length === 0) return;
+  let param;
   if (topic_to_track.value[0] === '#') {
-    invoke<Array<any>>("plugin:libp2p-gossipsub|get_message_history", { topic: { HashOnly: topic_to_track.value } }).then(
-      (v) => message_history.value = v.map((v) => new Message(v.data, v.topic, v.sequence_number, v.source))
-    );
+    param = { topic: types.Topic.hash_only(new TopicHash(topic_to_track.value.slice(1))) }
   } else {
-    invoke<Array<any>>("plugin:libp2p-gossipsub|get_message_history", { topic: { StringOnly: topic_to_track.value } }).then(
-      (v) => message_history.value = v.map((v) => new Message(v.data, v.topic, v.sequence_number, v.source))
-    );
+    param = { topic: types.Topic.sha256_string(topic_to_track.value) }
   }
+  invoke<Array<any>>("plugin:owlnest-gossipsub|get_message_history", param).then(
+    (v) => message_history.value = v ? v.map((v) => types.MessageRecord.deserialize(v)) : []
+  );
 }
 function send_message() {
   if (topic_to_track.value.length === 0 || message.value.length === 0) return;
-  let topic = topic_to_track.value.startsWith('#') ? new ReadableTopic({ HashOnly: { hash: topic_to_track.value } }) : new ReadableTopic({ StringOnly: topic_to_track.value });
-  invoke("plugin:libp2p-gossipsub|publish_message", { topic, message: message.value }).then((v) => { console.log(v) }).catch(isBodylessHandler);
+  let topic = topic_to_track.value.startsWith('#') ? types.Topic.hash_only(new TopicHash(topic_to_track.value.slice(1))) : types.Topic.sha256_string(topic_to_track.value);
+  invoke("plugin:owlnest-gossipsub|publish_message", { topic, message: message.value }).then((v) => { console.log(v) }).catch(isBodylessHandler);
 }
 
+onMounted(() => {
+  refresh_interval_handle.value = setInterval(update_topic_history, 2000)
+})
+onUnmounted(() => {
+  if (refresh_interval_handle.value !== null) {
+    clearInterval(refresh_interval_handle.value)
+  }
+})
 
 </script>
 <template>
@@ -37,8 +47,14 @@ function send_message() {
       :refresh="update_topic_history" @search-submit="update_topic_history"></SearchBar>
     <ul style="height: calc(100vh - 15.5rem);" class="message-list">
       <li v-for="msg in message_history" class="rounded-md">
-        <p>From: {{ msg.source }}</p>
-        <p>Message: {{ utf8Decoder.decode(msg.data) }}</p>
+        <div v-if="msg.Local">
+          <p>From: Self</p>
+          <p>Message: {{ utf8Decoder.decode(msg.Local) }}</p>
+        </div>
+        <div v-else>
+          <p>From: {{ msg.Remote!.source }}</p>
+          <p>Message: {{ utf8Decoder.decode(msg.Remote!.data) }}</p>
+        </div>
       </li>
     </ul>
 
@@ -47,10 +63,10 @@ function send_message() {
         @keydown.enter.exact.prevent="() => {
           if (!send_on_enter) message += `\n`;
         }
-          " @keyup.enter.exact.prevent="() => {
-            if (send_on_enter) send_message();
-          }
-            "></textarea>
+        " @keyup.enter.exact.prevent="() => {
+          if (send_on_enter) send_message();
+        }
+        "></textarea>
       <section class="flex justify-between items-center px-8 select-none h-[3rem]">
         <ul class="flex flex-row">
           <li class="hover:bg-slate-100 active:bg-slate-300 text" @click="() => { }">
@@ -71,6 +87,8 @@ function send_message() {
 .message-list {
   display: flex;
   padding: 1rem;
+  flex-direction: column;
+  gap: 1rem
 }
 
 .message-list>li {

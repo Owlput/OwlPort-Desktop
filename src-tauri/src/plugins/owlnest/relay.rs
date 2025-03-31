@@ -225,7 +225,7 @@ async fn set_remote_advertisement(
 ) -> Result<(), String> {
     Ok(state
         .advertise()
-        .set_remote_advertisement(relay, advertisement_state)
+        .set_remote_advertisement(&relay, advertisement_state)
         .await)
 }
 

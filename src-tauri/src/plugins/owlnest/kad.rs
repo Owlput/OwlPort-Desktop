@@ -69,36 +69,36 @@ async fn insert_default(state: tauri::State<'_, swarm::Manager>) -> Result<(), S
     state
         .kad()
         .insert_node(
-            PeerId::from_str("QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN").unwrap(),
-            "/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
+            &PeerId::from_str("QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN").unwrap(),
+            &"/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
         )
         .await;
     state
         .kad()
         .insert_node(
-            PeerId::from_str("QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa").unwrap(),
-            "/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
+            &PeerId::from_str("QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa").unwrap(),
+            &"/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
         )
         .await;
     state
         .kad()
         .insert_node(
-            PeerId::from_str("QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb").unwrap(),
-            "/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
+            &PeerId::from_str("QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb").unwrap(),
+            &"/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
         )
         .await;
     state
         .kad()
         .insert_node(
-            PeerId::from_str("QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt").unwrap(),
-            "/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
+            &PeerId::from_str("QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt").unwrap(),
+            &"/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
         )
         .await;
     state
         .kad()
         .insert_node(
-            PeerId::from_str("QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ").unwrap(),
-            "/ip4/104.131.131.82/tcp/4001".parse::<Multiaddr>().unwrap(),
+            &PeerId::from_str("QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ").unwrap(),
+            &"/ip4/104.131.131.82/tcp/4001".parse::<Multiaddr>().unwrap(),
         )
         .await;
     Ok(())
@@ -120,7 +120,7 @@ async fn insert_node(
 ) -> Result<String, String> {
     let peer_id = PeerId::from_str(&peer_id).map_err(|e| e.to_string())?;
     let address = Multiaddr::from_str(&address).map_err(|e| e.to_string())?;
-    let routing_update = state.kad().insert_node(peer_id, address).await;
+    let routing_update = state.kad().insert_node(&peer_id, &address).await;
     Ok(format!("{:?}", routing_update))
 }
 

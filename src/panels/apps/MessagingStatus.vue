@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
-import { ref, Ref, onUnmounted } from "vue";
+import { ref, Ref, onUnmounted, shallowRef } from "vue";
 import { isBodylessHandler } from "../../utils";
 
 let expand = ref(false);
-let connected_peers: Ref<Array<String>> = ref([]);
+let connected_peers: Ref<Array<String>> = shallowRef([]);
 
 function toggleExpand() {
   expand.value = !expand.value;

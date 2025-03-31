@@ -21,23 +21,24 @@
 
 input,
 button {
-  border-radius: 8px;
   border: 1px solid transparent;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
   color: #0f0f0f;
   background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.25s;
+}
+
+input {
+  box-shadow: 0px 2px 0px rgba(0, 0, 0, 0.2);
 }
 
 button {
   cursor: pointer;
 }
-
 button:hover {
-  border-color: #396cd8;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 button:active {
   box-shadow: 0 2px 2px rgba(200, 200, 200, 0.2);
@@ -79,11 +80,12 @@ button:active {
   width: 100%;
   height: 3rem;
   display: grid;
+  padding: 0.5rem;
   grid-template-columns: auto 8rem;
 }
 .single-input > input {
   height: 3rem;
-  padding: 0px 0.75rem;
+  padding: 0px 0.5rem;
 }
 .single-input > button {
   height: 3rem;
@@ -147,6 +149,6 @@ button:active {
   vertical-align: middle;
 }
 
-.exclude-tab-height{
+.exclude-tab-height {
   height: calc(100vh - 3rem);
 }

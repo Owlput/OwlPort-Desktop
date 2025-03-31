@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --mode withrust",
-    "build": "vite build",
+    "build": "vite build --mode withrust",
     "preview": "vite preview",
     "tauri": "tauri"
   },

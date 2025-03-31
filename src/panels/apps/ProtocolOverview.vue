@@ -15,7 +15,7 @@ import GenericAppStatus from "./GenericAppStatus.vue";
     <li class="p-2">
       <GenericAppStatus
         :app-name="'Gossip-Sub Messaging'"
-        :window-entrypoint="'plugin:libp2p-gossipsub|spawn_window'"
+        :window-entrypoint="'plugin:owlnest-gossipsub|spawn_window'"
         :alternative-path="'/app/gossipsub'"
       />
     </li>

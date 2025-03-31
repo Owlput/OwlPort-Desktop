@@ -12,7 +12,15 @@ extern crate tokio;
 
 fn main() -> anyhow::Result<()> {
     setup_logging();
-    let peer_manager = plugins::owlnest::setup_peer()?;
+    let peer_manager = match plugins::owlnest::setup_peer() {
+        Err(e) => {
+            tracing::error!("{:?}", e);
+            tracing::error!("Failed to start OwlPort: Cannot read config file.");
+            tracing::error!("An example config file is generated in the same directory, remove the trailing `.example` to use the default values!");
+            return Err(e)
+        }
+        Ok(v) => v,
+    };
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
         .manage(peer_manager.clone())

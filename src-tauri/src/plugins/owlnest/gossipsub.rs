@@ -1,5 +1,6 @@
 use super::*;
 use owlnest::net::p2p::protocols::gossipsub::*;
+use store::{MessageRecord, TopicStore};
 use tauri::{Emitter, EventTarget};
 use tracing::warn;
 
@@ -24,10 +25,11 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                                 {
                                     warn!("{:?}", e)
                                 };
-                                let _ = &manager
-                                    .gossipsub()
-                                    .message_store()
-                                    .insert_message(message.clone());
+                                println!("new message {:?}", message);
+                                let _ = &manager.gossipsub().message_store().insert_message(
+                                    &message.topic,
+                                    MessageRecord::Remote(message.clone()),
+                                );
                             }
                             Subscribed { peer_id, topic } => {
                                 manager.gossipsub().topic_store().join_topic(peer_id, topic);
@@ -73,27 +75,19 @@ async fn publish_message(
 ) -> Result<(), String> {
     let handle = state.gossipsub();
     let topic_hash: TopicHash = topic.get_hash().into();
-    match handle
+    if let Err(e) = handle
         .publish_message(
-            topic_hash.clone(),
+            &topic_hash,
             message.clone().into_bytes().into_boxed_slice(),
         )
         .await
     {
-        Ok(_id) => {
-            let _ = handle.message_store().insert_message(Message {
-                source: Some(state.identity().get_peer_id()),
-                data: message.into_bytes(),
-                sequence_number: None,
-                topic: topic.get_hash().into(),
-            });
-            Ok(())
-        }
-        Err(e) => Err(format!(
+        return Err(format!(
             "Failed to publish message on {}: {}",
             topic_hash, e
-        )),
+        ));
     }
+    Ok(())
 }
 
 /// List all messages received about the given topic, including message from self.
@@ -101,31 +95,29 @@ async fn publish_message(
 async fn get_message_history(
     state: tauri::State<'_, swarm::Manager>,
     topic: Topic,
-) -> Result<Option<Box<[serde_types::Message]>>, String> {
-    match state
+) -> Result<Option<Box<[serde_types::MessageRecord]>>, String> {
+    Ok(state
         .gossipsub()
         .message_store()
         .get_messages(&topic.get_hash().into())
-    {
-        Some(list) => Ok(Some(
-            list.to_vec().into_iter().map(|msg| msg.into()).collect(),
-        )),
-        None => Ok(None),
-    }
+        .map(|i| i.into_vec().into_iter().map(Into::into).collect()))
 }
 
 /// List all topics, whether readable or not.
 #[tauri::command]
 async fn get_all_topics(
     state: tauri::State<'_, swarm::Manager>,
-) -> Result<Box<[serde_types::TopicHash]>, String> {
+) -> Result<Box<[TopicRecord]>, String> {
     Ok(state
         .gossipsub()
         .topic_store()
         .readable_topics()
         .to_vec()
         .into_iter()
-        .map(|(hash, _)| hash.into())
+        .map(|(hash, topic_string)| TopicRecord::WithString {
+            topic_hash: hash.into(),
+            topic_string,
+        })
         .chain(
             state
                 .gossipsub()
@@ -159,28 +151,25 @@ async fn list_participants(
 /// Subscribe to
 #[tauri::command]
 async fn subscribe(state: tauri::State<'_, swarm::Manager>, topic: Topic) -> Result<bool, String> {
-    let topic_hash = topic.get_hash();
+    let topic_hash = topic.get_hash().into();
     if topic.get_string().is_some() {
-        state.gossipsub().topic_store().insert_topic(
-            topic.get_string().unwrap().clone(),
-            topic_hash.clone().into(),
-        );
-    } else {
         state
             .gossipsub()
             .topic_store()
-            .insert_hash(topic_hash.clone().into());
+            .insert_topic(topic.get_string().unwrap().clone(), &topic_hash);
+    } else {
+        state.gossipsub().topic_store().insert_hash(&topic_hash);
     }
     let result = state
         .gossipsub()
-        .subscribe_topic_hash(topic_hash.clone().into())
+        .subscribe_topic_hash(&topic_hash.clone())
         .await
         .map_err(|e| e.to_string());
     if let Ok(true) = result {
         state
             .gossipsub()
             .topic_store()
-            .subscribe_topic(topic_hash.into(), None);
+            .subscribe_topic(&topic_hash.into(), None);
     }
     result
 }
@@ -191,24 +180,23 @@ async fn unsubscribe(
     topic: Topic,
 ) -> Result<bool, String> {
     let topic_hash = topic.get_hash();
-    state
+    Ok(state
         .gossipsub()
-        .unsubscribe_topic_hash(topic_hash.into())
-        .await
-        .map_err(|e| e.to_string())
+        .unsubscribe_topic_hash(&topic_hash.into())
+        .await)
 }
 
 #[tauri::command]
 async fn subscribed_topics(
     state: tauri::State<'_, swarm::Manager>,
-) -> Result<Box<[serde_types::TopicHash]>, String> {
+) -> Result<Box<[TopicRecord]>, String> {
     Ok(state
         .gossipsub()
         .topic_store()
         .subscribed_topics()
         .to_vec()
         .into_iter()
-        .map(Into::into)
+        .map(|hash| TopicRecord::from_mapped(hash, state.gossipsub().topic_store()))
         .collect())
 }
 
@@ -220,7 +208,7 @@ async fn mesh_peers(
     let topic_hash = topic.get_hash();
     return Ok(state
         .gossipsub()
-        .mesh_peers_of_topic(topic_hash.into())
+        .mesh_peers_of_topic(&topic_hash.into())
         .await);
 }
 
@@ -228,7 +216,7 @@ async fn mesh_peers(
 async fn insert_topic_hash_map(
     state: tauri::State<'_, swarm::Manager>,
     topic: Topic,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     if let Topic::StringOnly {
         topic_string,
         hash_type,
@@ -237,7 +225,7 @@ async fn insert_topic_hash_map(
         return Ok(state
             .gossipsub()
             .topic_store()
-            .insert_topic(topic_string.clone(), hash_type.hash(topic_string)));
+            .insert_topic(topic_string.clone(), &hash_type.hash(topic_string)));
     }
     Err("Cannot insert record without topic string.".into())
 }
@@ -297,8 +285,9 @@ mod serde_types {
     pub use gossipsub::serde_types::TopicHash;
     use libp2p::{gossipsub::MessageId, PeerId};
     use owlnest::net::p2p::protocols::gossipsub;
-    use serde::Serialize;
+    use serde::{Deserialize, Serialize};
     use std::convert::Infallible;
+    use derive_more::From;
 
     /// The message sent to the user after a [`RawMessage`] has been transformed by a
     /// [`crate::DataTransform`].
@@ -333,6 +322,58 @@ mod serde_types {
         }
     }
 
+    /// The kind of message.
+    #[derive(Debug, Clone, Serialize)]
+    pub enum MessageRecord {
+        /// Message published by a remote node.
+        Remote(Message),
+        /// Message published by local node.
+        Local(Box<[u8]>),
+    }
+    impl From<super::MessageRecord> for MessageRecord {
+        fn from(value: super::MessageRecord) -> Self {
+            match value {
+                super::MessageRecord::Local(bytes) => Self::Local(bytes),
+                super::MessageRecord::Remote(msg) => Self::Remote(msg.into()),
+            }
+        }
+    }
+
+    /// Messages that have expired while attempting to be sent to a peer.
+    #[derive(Copy, Clone, Debug, Default, Serialize, Deserialize, From)]
+    pub struct FailedMessages {
+        /// The number of publish messages that failed to be published in a heartbeat.
+        pub publish: usize,
+        /// The number of forward messages that failed to be published in a heartbeat.
+        pub forward: usize,
+        /// The number of messages that were failed to be sent to the priority queue as it was full.
+        pub priority: usize,
+        /// The number of messages that were failed to be sent to the non-priority queue as it was
+        /// full.
+        pub non_priority: usize,
+        /// The number of messages that timed out and could not be sent.
+        pub timeout: usize,
+    }
+
+    impl From<&libp2p::gossipsub::FailedMessages> for FailedMessages {
+        fn from(value: &libp2p::gossipsub::FailedMessages) -> Self {
+            let libp2p::gossipsub::FailedMessages {
+                publish,
+                forward,
+                priority,
+                non_priority,
+                timeout,
+            } = *value;
+            Self {
+                publish,
+                forward,
+                priority,
+                non_priority,
+                timeout,
+            }
+        }
+    }
+
     #[derive(Debug, Clone, Serialize)]
     /// Event that can be emitted by the gossipsub behaviour.
     pub enum GossipsubEmit {
@@ -362,6 +403,12 @@ mod serde_types {
         },
         /// A peer that does not support gossipsub has connected.
         GossipsubNotSupported { peer_id: PeerId },
+        SlowPeer {
+            /// The peer_id
+            peer_id: PeerId,
+            /// The types and amounts of failed messages that are occurring for this peer.
+            failed_messages: FailedMessages,
+        },
     }
 
     impl TryFrom<&super::OutEvent> for GossipsubEmit {
@@ -389,13 +436,18 @@ mod serde_types {
                 GossipsubNotSupported { peer_id } => {
                     Self::GossipsubNotSupported { peer_id: *peer_id }
                 }
+                SlowPeer {
+                    peer_id,
+                    failed_messages,
+                } => Self::SlowPeer {
+                    peer_id: *peer_id,
+                    failed_messages: failed_messages.into(),
+                },
             };
-
             Ok(ev)
         }
     }
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Topic {
     HashOnly {
@@ -421,5 +473,32 @@ impl Topic {
             Self::HashOnly { .. } => None,
             Self::StringOnly { topic_string, .. } => Some(topic_string),
         }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum TopicRecord {
+    HashOnly {
+        hash: serde_types::TopicHash,
+    },
+    WithString {
+        topic_hash: serde_types::TopicHash,
+        topic_string: String,
+    },
+}
+impl TopicRecord {
+    pub fn from_mapped<S: TopicStore + ?Sized>(hash: TopicHash, store: &Box<S>) -> Self {
+        if let Some(string) = store.as_ref().try_map(&hash) {
+            return TopicRecord::WithString {
+                topic_hash: hash.into(),
+                topic_string: string,
+            };
+        }
+        TopicRecord::HashOnly { hash: hash.into() }
+    }
+}
+impl From<TopicHash> for TopicRecord {
+    fn from(value: TopicHash) -> Self {
+        Self::HashOnly { hash: value.into() }
     }
 }
