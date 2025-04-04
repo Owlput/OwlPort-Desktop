@@ -1,0 +1,11 @@
+{
+    "identifier": "developer-event-listener",
+    "description": "permissions for swarm event listener window for developers",
+    "local": true,
+    "windows": ["developer-swarm-event-listener"],
+    "permissions": [
+      "core:default",
+      "owlnest-swarm"
+    ]
+  }
+  

@@ -13,19 +13,21 @@ document.addEventListener("keyup", (ev: KeyboardEvent) => {
 });
 </script>
 <template>
-  <div id="main-grid">
-    <section class="w-[5rem]" v-if="$route.path.slice(0, 3) != '/app'">
-      <SideBar></SideBar>
-    </section>
-    <div>
-      <RouterView v-slot="{ Component }">
-        <KeepAlive exclude="Overview">
-          <component :is="Component" />
-        </KeepAlive>
-      </RouterView>
+  <v-app>
+    <div id="main-grid">
+      <section class="w-[5rem]" v-if="$route.path.slice(0, 3) != '/app'">
+        <SideBar></SideBar>
+      </section>
+      <div>
+        <RouterView v-slot="{ Component }">
+          <KeepAlive exclude="Overview">
+            <component :is="Component" />
+          </KeepAlive>
+        </RouterView>
+      </div>
     </div>
-  </div>
-  <PopUpHandler></PopUpHandler>
+    <PopUpHandler></PopUpHandler>
+  </v-app>
 </template>
 
 <style>
@@ -35,7 +37,8 @@ document.addEventListener("keyup", (ev: KeyboardEvent) => {
   height: 100vh;
   width: 100vw;
 }
-#main-grid > div {
+
+#main-grid>div {
   width: calc(100vw - 5rem);
   height: 100vh;
 }

@@ -14,6 +14,7 @@
     "app-info",
     "owlnest-developer-options",
     "clipboard-manager:allow-write-text",
-    "clipboard-manager:default"
+    "clipboard-manager:default",
+    "owlnest-developer-options"
   ]
 }

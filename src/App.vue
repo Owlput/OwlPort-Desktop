@@ -9,8 +9,10 @@ import { useRoute } from 'vue-router';
 import { isBodyless } from './utils';
 
 let appWindowLabel;
-if (!isBodyless()) {console.log("backend connected"); appWindowLabel = getCurrentWebviewWindow().label;  } else { let route = useRoute(); 
-  appWindowLabel = route.fullPath.split("/")[1] }
+if (!isBodyless()) { console.log("backend connected"); appWindowLabel = getCurrentWebviewWindow().label; } else {
+  let route = useRoute();
+  appWindowLabel = route.fullPath.split("/")[1]
+}
 
 let event_handles: Array<Function> = []
 if (appWindowLabel === "messaging") {
@@ -34,9 +36,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <RouterView v-slot="{ Component }">
-    <KeepAlive exclude="Overview">
-      <component :is="Component" />
-    </KeepAlive>
-  </RouterView>
+    <RouterView v-slot="{ Component }">
+      <KeepAlive exclude="Overview">
+        <component :is="Component" />
+      </KeepAlive>
+    </RouterView>
 </template>

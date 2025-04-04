@@ -7,6 +7,7 @@ commands.allow = [
     "plugin:owlnest-swarm|get_local_peer_id",
     "plugin:owlnest-swarm|list_connected",
     "plugin:owlnest-swarm|list_listeners",
+    "plugin:owlnest-swarm|remove_listener",
     "plugin:owlnest-swarm|get_peer_info",
     "plugin:owlnest-swarm|disconnect_peer"
 ]

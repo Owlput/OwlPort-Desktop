@@ -29,7 +29,7 @@ const routes = [
   },
   {
     path: "/app",
-    component: () => import("./AppWrapper.vue"),
+    component: () => import("./App.vue"),
     children: [
       messagingApp,
       {
@@ -45,7 +45,7 @@ const routes = [
     children:[
       {
         path:"swarm-event-listener",
-        component: () => import("./panels/settings/DialEventListener.vue")
+        component: () => import("./panels/settings/SwarmEventListener.vue")
       }
     ]
   },
