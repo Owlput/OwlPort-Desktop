@@ -34,7 +34,7 @@ const show_addresses = ref(false);
           No reachable address(Addresses not public)
         </li>
         <li v-for="addr in props.peer.addresses" class="my-1 w-full">
-          <AddressDisplay :address="addr.valueOf()" />
+          <AddressDisplay :address="addr.valueOf()" behavior="copy" />
         </li>
       </ul>
     </section>

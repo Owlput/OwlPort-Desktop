@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onUnmounted, ref, Ref, nextTick } from "vue";
 import { listen } from "@tauri-apps/api/event";
-import { is_ip_private, isBodylessHandler } from "../../utils";
+import { isBodylessHandler } from "../../utils";
 import { SwarmEmit } from "../connection/types";
 import AddressDisplay from "../../components/AddressDisplay.vue";
 
@@ -71,7 +71,7 @@ onUnmounted(() => {
         </li>
         <li v-else-if="event.NewListenAddr" class="flex gap-2">
           <p>New listening address: </p>
-          <AddressDisplay :address="event.NewListenAddr.address" />
+          <AddressDisplay :address="event.NewListenAddr.address" behavior="copy"/>
         </li>
         <li v-else>
           {{ event }}
