@@ -47,8 +47,7 @@ function listen(addr?: string) {
         <span class="material-icons">refresh</span>
       </button>
     </header>
-    <p class="shadow-md h-10 p-1 mx-8 text-center text-lg border border-gray-100 bg-blue-100"
-      v-if="active_listeners.length < 1">No
+    <p class="shadow-md h-10 p-1 mx-8 text-center text-lg border border-gray-100" v-if="active_listeners.length < 1">No
       active listeners.</p>
     <ul v-else style="height: calc(100vh - 15rem - 1px); overflow: auto" class="select-none px-8">
       <li v-for="addr in active_listeners" class="my-1 shadow-md w-full h-10 p-0">

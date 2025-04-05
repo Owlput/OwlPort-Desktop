@@ -48,7 +48,7 @@
 
 .single-input {
   width: 100%;
-  height: 3rem;
+  height: min-content;
   display: grid;
   padding: 0.5rem;
   grid-template-columns: auto 8rem;
