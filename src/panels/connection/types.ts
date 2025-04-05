@@ -8,10 +8,10 @@ export class ConnectionInfo {
 }
 
 export class PeerInfo {
-  supported_protocols: Array<String>;
-  protocol_version: String;
+  supported_protocols: Array<string>;
+  protocol_version: string;
   connections: Array<ConnectionInfo>;
-  constructor(supported_protocols: Array<String>, protocol_version: String, connections: Array<{connection_id:number, remote_address:string}>){
+  constructor(supported_protocols: Array<string>, protocol_version: string, connections: Array<{connection_id:number, remote_address:string}>){
     this.supported_protocols = supported_protocols;
     this.protocol_version = protocol_version;
     this.connections = connections.map((v)=>new ConnectionInfo(v.connection_id, v.remote_address))
@@ -21,32 +21,32 @@ export class PeerInfo {
 export class SwarmEmit {
   ConnectionEstablished:
     | {
-        peer_id: String;
+        peer_id: string;
         endpoint: ConnectedPoint;
       }
     | undefined = undefined;
   ConnectionClosed:
     | {
-        peer_id: String;
+        peer_id: string;
         endpoint: ConnectedPoint;
-        cause: String;
+        cause: string;
         num_established: Number;
       }
     | undefined = undefined;
   Dialing:
     | {
-        maybe_peer_id: String | null;
+        maybe_peer_id: string | null;
       }
     | undefined = undefined;
   IncomingConnection:
     | {
-        local_addr: String;
-        send_back_addr: String;
+        local_addr: string;
+        send_back_addr: string;
       }
     | undefined = undefined;
   NewListenAddr:
     | {
-        address: String;
+        address: string;
       }
     | undefined = undefined;
   OutgoingConnectionError:
@@ -59,14 +59,14 @@ export class SwarmEmit {
 export class ConnectedPoint {
   Dialer:
     | {
-        address: String;
+        address: string;
         role_override: boolean;
       }
     | undefined = undefined;
   Listener:
     | {
-        local_addr: String;
-        send_back_addr: String;
+        local_addr: string;
+        send_back_addr: string;
       }
     | undefined = undefined;
 }
@@ -80,21 +80,21 @@ export class DialError {
   NoAddresses: {} | undefined = undefined;
   DialPeerConditionFalse: {} | undefined = undefined;
   Aborted: {} | undefined = undefined;
-  WrongPeerId: { obtained: String; endpoint: ConnectedPoint } | undefined =
+  WrongPeerId: { obtained: string; endpoint: ConnectedPoint } | undefined =
     undefined;
-  Denied: String | undefined = undefined;
-  Transport: Array<Array<String>> | undefined = undefined;
+  Denied: string | undefined = undefined;
+  Transport: Array<Array<string>> | undefined = undefined;
 }
 
 export interface RelayInfo {
-  listenable_address: Array<String>;
-  listened_address: Array<String>;
+  listenable_address: Array<string>;
+  listened_address: Array<string>;
   supports_ext: Boolean;
   latency: Number;
-  advertised: Array<String> | null;
+  advertised: Array<string> | null;
 }
 
 export interface RelayStub {
-  peer_id: String;
+  peer_id: string;
   latency: Number;
 }

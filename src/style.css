@@ -47,19 +47,10 @@
 }
 
 .single-input {
-  width: 100%;
-  height: min-content;
-  display: grid;
-  padding: 0.5rem;
-  grid-template-columns: auto 8rem;
-}
-.single-input > input {
-  height: 3rem;
-  padding: 0px 0.5rem;
-}
-.single-input > button {
-  height: 3rem;
-  margin-left: 1rem;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
 }
 
 .event-list {

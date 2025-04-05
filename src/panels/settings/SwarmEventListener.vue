@@ -3,6 +3,7 @@ import { onUnmounted, ref, Ref, nextTick } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { is_ip_private, isBodylessHandler } from "../../utils";
 import { SwarmEmit } from "../connection/types";
+import AddressDisplay from "../../components/AddressDisplay.vue";
 
 defineOptions({ name: "DialEventListener" });
 
@@ -29,8 +30,7 @@ onUnmounted(() => {
 </script>
 <template>
   <v-main>
-    <ul class="event-list text-autowrap pb-2 px-4 event-list" style="height: calc(100% - 2.75rem)"
-      id="dial-event-listener">
+    <ul class="event-list text-autowrap pb-2 px-4 event-list" id="dial-event-listener">
       <template v-for="event in dial_events">
         <li v-if="event.ConnectionEstablished" class="bg-green-300">
           <p>
@@ -71,14 +71,7 @@ onUnmounted(() => {
         </li>
         <li v-else-if="event.NewListenAddr" class="flex gap-2">
           <p>New listening address: </p>
-          <v-chip v-if="is_ip_private(event.NewListenAddr.address)" density="compact" color="#66bb6a">
-            {{ event.NewListenAddr.address }}
-            <v-tooltip activator="parent" location="bottom"> Not reachable on Internet </v-tooltip>
-          </v-chip>
-          <v-chip v-else density="compact" color="#42a5f5">
-            {{ event.NewListenAddr.address }}
-            <v-tooltip activator="parent" location="bottom"> Reachable on Internet </v-tooltip>
-          </v-chip>
+          <AddressDisplay :address="event.NewListenAddr.address" />
         </li>
         <li v-else>
           {{ event }}

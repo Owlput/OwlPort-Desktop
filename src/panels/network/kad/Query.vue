@@ -16,12 +16,11 @@ function query() {
 </script>
 
 <template>
-  <section class="single-input px-2">
-    <input v-model="peer_to_query" @keydown.enter.exact.prevent="query" 
-    placeholder="Query for a Peer ID"
-    />
-    <button @click="query">Query</button>
-  </section>
+  <form class="single-input mt-4 mx-4" @submit="query">
+    <v-text-field v-model="peer_to_query" @keydown.enter.exact.prevent="query" placeholder="Query for a Peer ID" />
+    <v-btn type="submit" size="large" height="3.5rem">Query</v-btn>
+  </form>
+  <v-divider />
   <ul>
     <li v-for="ev in events">
       <p>{{ JSON.stringify(ev) }}</p>

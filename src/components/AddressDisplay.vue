@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { is_ip_private } from '../utils';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
-import ToolTip from './ToolTip.vue';
 
 const props = defineProps({
     address: {
@@ -9,32 +8,31 @@ const props = defineProps({
         required: true
     }
 });
-enum AddressType {
-    Public,
-    Private,
-    NotApplicable,
+
+const PUBLIC_ADDRESS_COLOR = {
+    primary: "#64B5F6",
+    secondary: "#64B5F6",
 }
-function check_address_type(addr: string): [AddressType, String] {
+const PRIVATE_ADDRESS_COLOR = {
+    primary: "#81C784",
+    secondary: "#81C784",
+}
+const UNKNOWN_ADDRESS_COLOR = {
+    primary: "#616161",
+    secondary: "#616161",
+}
+function check_address_type(addr: string): [{ primary: String, secondary: String, }, String] {
     let components = addr.split('/');
-    if (components[1] !== 'ip4' && components[1] !== 'ip6') return [AddressType.NotApplicable, "Cannot determine address type"];
-    if (is_ip_private(components[2])) return [AddressType.Private, "Private address"];
-    else return [AddressType.Public, "Public address"]
+    if (components[1] !== 'ip4' && components[1] !== 'ip6') return [ UNKNOWN_ADDRESS_COLOR, "Unknown address type."];
+    if (is_ip_private(components[2])) return [ PRIVATE_ADDRESS_COLOR, "Private address."];
+    else return [ PUBLIC_ADDRESS_COLOR, "Public address."]
 }
-let [address_type, tooltip] = check_address_type(props.address);
+let [ color, tooltip] = check_address_type(props.address);
 </script>
 
 <template>
-    <ToolTip :help-text="tooltip.valueOf()">
-        <div @dblclick="writeText(props.address)">
-            <section v-if="address_type === AddressType.Public" class="p-1 bg-blue-300 hover:bg-blue-400">
-                <p>{{ props.address }}</p>
-            </section>
-            <section v-else-if="address_type == AddressType.Private" class="p-1 bg-green-300 hover:bg-green-400">
-                <p>{{ props.address }}</p>
-            </section>
-            <section v-else class="p-1 bg-gray-300 hover:bg-slate-400">
-                <p>{{ props.address }}</p>
-            </section>
-        </div>
-    </ToolTip>
+    <v-chip @click="writeText(props.address)" class="select-none" :style="'color: ' + color.primary + ';'">
+        {{ props.address }}
+        <v-tooltip activator="parent" location="bottom"> {{ tooltip + " Click to copy." }} </v-tooltip>
+    </v-chip>
 </template>
