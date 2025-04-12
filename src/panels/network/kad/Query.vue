@@ -16,7 +16,7 @@ function query() {
 </script>
 
 <template>
-  <form class="single-input mt-4 mx-4" @submit="query">
+  <form class="single-input mt-4 mx-4" @submit.prevent="query">
     <v-text-field v-model="peer_to_query" @keydown.enter.exact.prevent="query" placeholder="Query for a Peer ID" />
     <v-btn type="submit" size="large" height="3.5rem">Query</v-btn>
   </form>

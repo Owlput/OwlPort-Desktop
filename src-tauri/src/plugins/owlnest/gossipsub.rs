@@ -76,10 +76,7 @@ async fn publish_message(
     let handle = state.gossipsub();
     let topic_hash: TopicHash = topic.get_hash().into();
     if let Err(e) = handle
-        .publish_message(
-            &topic_hash,
-            message.clone().into_bytes().into_boxed_slice(),
-        )
+        .publish_message(&topic_hash, message.clone().into_bytes().into_boxed_slice())
         .await
     {
         return Err(format!(
@@ -141,9 +138,7 @@ async fn list_participants(
         .topic_store()
         .participants(&topic.get_hash().into())
     {
-        Some(list) => Ok(Some(
-            list.to_vec().into_iter().map(|msg| msg.into()).collect(),
-        )),
+        Some(list) => Ok(Some(list.iter().copied().map(|msg| msg).collect())),
         None => Ok(None),
     }
 }
@@ -169,7 +164,7 @@ async fn subscribe(state: tauri::State<'_, swarm::Manager>, topic: Topic) -> Res
         state
             .gossipsub()
             .topic_store()
-            .subscribe_topic(&topic_hash.into(), None);
+            .subscribe_topic(&topic_hash, None);
     }
     result
 }
@@ -282,12 +277,12 @@ async fn spawn_window<R: Runtime>(
 }
 
 mod serde_types {
+    use derive_more::From;
     pub use gossipsub::serde_types::TopicHash;
     use libp2p::{gossipsub::MessageId, PeerId};
     use owlnest::net::p2p::protocols::gossipsub;
     use serde::{Deserialize, Serialize};
     use std::convert::Infallible;
-    use derive_more::From;
 
     /// The message sent to the user after a [`RawMessage`] has been transformed by a
     /// [`crate::DataTransform`].

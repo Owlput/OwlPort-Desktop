@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { ref, Ref } from 'vue';
-import { TopicRecord, Topic, TopicInfo } from './types';
+import { TopicRecord, Topic } from './types';
 import { invoke } from '@tauri-apps/api/core';
 import { isBodylessHandler } from '../../../utils';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
-import ToolTip from '../../../components/ToolTip.vue';
 
 const props = defineProps({
     topic: {
@@ -14,7 +12,7 @@ const props = defineProps({
     unsub: Boolean
 });
 const emit = defineEmits(["unsubscribe"])
-const topic: Ref<TopicInfo | null> = ref(null);
+// const topic: Ref<TopicInfo | null> = ref(null);
 // invoke<TopicInfo>("plugin:libp2p-gossipsub|get_topic_info", { hash: props.hash }).then(
 //     (v) => topic.value = v
 // )
@@ -26,25 +24,27 @@ function unsubscribe() {
 </script>
 <template>
     <section v-if="props.topic">
-        <div class="flex">
+        <div class="flex px-1">
             <div style="width: calc(100% - 1.5rem);" class="p-1">
                 <section class="flex justify-between items-center">
                     <p class="text-autowrap">Hash: {{ props.topic.get_hash().hash }}</p>
-                    <button class="aspect-square w-fit"
-                        @click="() => writeText(props.topic.get_hash().hash)"><span
-                            class="material-icons icon-center">content_copy</span></button>
+                    <button class="aspect-square w-fit" @click="() => writeText(props.topic.get_hash().hash)">
+                        <span class="mdi-content-copy mdi text-center text-2xl"></span>
+                    </button>
                 </section>
                 <section v-if="!props.topic.HashOnly" class="flex justify-between items-center">
                     <p class="text-autowrap">String repr: {{ props.topic.get_string()! }}</p>
-                    <button class="aspect-square w-fit" @click="writeText(props.topic.get_string()!.valueOf())"><span
-                            class="material-icons icon-center">content_copy</span></button>
+                    <button class="aspect-square w-fit" @click="writeText(props.topic.get_string()!.valueOf())">
+                        <span class="mdi-content-copy mdi text-center text-2xl"></span>
+                    </button>
                 </section>
             </div>
-            <ToolTip v-if="props.unsub" help-text="unsubscribe">
-                <button class="w-8 py-3 px-1 ml-1" @click="unsubscribe">
-                    <span class="material-icons text-2xl text-center align-baseline">speaker_notes_offf</span>
-                </button>
-            </ToolTip>
+            <button v-if="props.unsub" class="w-8 py-3 px-1 ml-1 cursor-pointer" @click="unsubscribe">
+                <span class="mdi-forum-remove-outline mdi text-2xl text-center"></span>
+                <v-tooltip activator="parent" location="bottom">
+                    Unsubscribe
+                </v-tooltip>
+            </button>
         </div>
     </section>
     <section v-else>

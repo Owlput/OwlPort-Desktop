@@ -27,8 +27,6 @@ async fn swarm_event_listener<R: Runtime>(app: tauri::AppHandle<R>) -> Result<()
 }
 
 #[tauri::command]
-async fn print_struct(
-    _state: tauri::State<'_, swarm::Manager>,
-) -> Result<HashType, String> {
+async fn print_struct(_state: tauri::State<'_, swarm::Manager>) -> Result<HashType, String> {
     Ok(HashType::Identity)
 }

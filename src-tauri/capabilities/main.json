@@ -10,6 +10,7 @@
     "owlnest-mdns",
     "owlnest-relay-client",
     "owlnest-swarm",
+    "owlnest-upnp",
     "app-panel",
     "app-info",
     "owlnest-developer-options",

@@ -4,9 +4,12 @@ import { invoke } from "@tauri-apps/api/core";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { is_ip_private, isBodylessHandler } from "../../utils";
 import EntryExpand from "../../components/EntryExpand.vue";
+import ControlledButton from "../../components/ControlledButton.vue"
 
 const listen_addr = ref("/ip4/0.0.0.0/tcp/0");
 const active_listeners: Ref<Array<string>> = ref([]);
+const button_promise: Ref<Promise<any> | null> = ref(null);
+const listen_btn_loading_state = ref(false);
 function update_listener_list() {
   invoke<Array<string>>("plugin:owlnest-swarm|list_listeners")
     .then((result) => {
@@ -20,20 +23,22 @@ function remove_listener(address: string) {
 }
 update_listener_list();
 function listen(addr?: string) {
-  if ((!listen_addr.value || listen_addr.value.length < 1) && !addr) return;
-  invoke("plugin:owlnest-swarm|listen", {
+  if ((!listen_addr.value || listen_addr.value.length < 1) && !addr && !listen_btn_loading_state.value) return;
+  button_promise.value = invoke("plugin:owlnest-swarm|listen", {
     listenOptions: { addr: addr ? addr : listen_addr.value },
-  }).catch(isBodylessHandler);
+  });
   setTimeout(update_listener_list, 100);
 }
 </script>
 
 <template>
   <section class="px-8 pt-8 pb-2">
-    <form class="flex flex-row gap-4" @submit="() => listen()">
-      <v-text-field class="text-xl" v-model="listen_addr" @keypress.enter="() => listen()"
-        placeholder="Listen on an address, in MultiAddr" />
-      <v-btn type="submit" size="x-large">Listen</v-btn>
+    <form class="flex flex-row gap-4" @submit.prevent="() => listen()">
+      <v-text-field class="text-xl" v-model="listen_addr" placeholder="Listen on an address, in MultiAddr" />
+      <ControlledButton v-model:clickpromise="button_promise" v-model:isloading="listen_btn_loading_state" type="submit"
+        size="x-large">
+        Listen
+      </ControlledButton>
     </form>
     <v-btn block
       @click="() => { listen('/ip4/0.0.0.0/tcp/0'); listen('/ip4/0.0.0.0/udp/0/quic-v1'); listen('/ip6/::/tcp/0'); listen('/ip6/::/udp/0/quic-v1') }">Listen
@@ -43,8 +48,8 @@ function listen(addr?: string) {
   <section>
     <header class="flex justify-between items-center select-none">
       <p class="text-lg px-8 py-2 w-fit">Active Listeners:</p>
-      <button class="float-right h-[26px] mr-8" @click="update_listener_list">
-        <span class="material-icons">refresh</span>
+      <button class="float-right h-[26px] mr-8 cursor-pointer" @click="update_listener_list">
+        <span class="mdi-refresh mdi text-2xl"></span>
       </button>
     </header>
     <p class="shadow-md h-10 p-1 mx-8 text-center text-lg border border-gray-100" v-if="active_listeners.length < 1">No

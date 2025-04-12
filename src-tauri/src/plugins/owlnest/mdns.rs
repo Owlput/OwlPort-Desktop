@@ -22,7 +22,7 @@ impl State {
         for node in expired_nodes {
             if let Some(mut entry) = self.node_list.get_mut(&node.0) {
                 entry.value_mut().remove(&node.1);
-                if entry.value().len() < 1 {
+                if entry.value().is_empty() {
                     self.node_list.remove(&node.0);
                 }
             }
@@ -65,7 +65,7 @@ async fn list_discovered(
     state
         .node_list
         .iter()
-        .map(|entry| map.insert(entry.key().clone(), entry.value().clone()))
+        .map(|entry| map.insert(*entry.key(), entry.value().clone()))
         .count();
     Ok(map)
 }

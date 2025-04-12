@@ -298,7 +298,7 @@ impl TryFrom<&OutEvent> for BlobTransferEmit {
                 local_recv_id,
                 bytes_total,
             } => Self::IncomingFile {
-                from: from.clone(),
+                from: *from,
                 file_name: file_name.clone(),
                 local_recv_id: *local_recv_id,
                 bytes_total: *bytes_total,

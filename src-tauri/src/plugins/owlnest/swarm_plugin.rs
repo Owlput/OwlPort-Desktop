@@ -48,7 +48,6 @@ impl From<&Info> for PeerInfo {
                 .map(|protocol| protocol.to_string())
                 .collect(),
             protocol_version: value.protocol_version.clone(),
-            ..Default::default()
         }
     }
 }
@@ -67,7 +66,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                             .emit("swarm-emit", ev)
                             .expect("event emit to succeed");
                     }
-                    println!("{:?}",ev);
+                    println!("{:?}", ev);
                     use libp2p::swarm::SwarmEvent::*;
                     let store = &state.connected_peers;
                     match ev.as_ref() {
@@ -103,7 +102,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                             address,
                         } => {
                             println!("New listen addr: {}", address);
-                            if let None = state.active_listeners.get_mut(address) {
+                            if state.active_listeners.get_mut(address).is_none() {
                                 state.active_listeners.insert(address.clone(), *listener_id);
                                 continue;
                             }
@@ -300,7 +299,7 @@ impl TryFrom<&swarm::SwarmEvent> for SwarmEmit {
         use swarm::SwarmEvent;
         let ev = match value {
             SwarmEvent::Dialing { peer_id, .. } => Self::Dialing {
-                maybe_peer_id: peer_id.clone(),
+                maybe_peer_id: *peer_id,
             },
             SwarmEvent::ConnectionEstablished {
                 peer_id,

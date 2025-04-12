@@ -103,7 +103,7 @@ onUnmounted(() => {
 
 <template>
   <div class="px-8 py-4">
-    <form class="single-input" @submit="probe">
+    <form class="single-input" @submit.prevent="probe">
       <v-text-field v-model="address_to_probe" @keydown.enter.exact.prevent="probe"
         placeholder="Probe a address to test for reachability" required />
       <v-btn type="submit" size="large" height="3.5rem">Probe</v-btn>
@@ -115,7 +115,8 @@ onUnmounted(() => {
         <p class="text-2xl text-center">NAT Status</p>
         <p class="h-16 w-full text-center">
           <span :class="status_style.icon + ' mdi text-[5rem] block mt-8'">
-            <v-tooltip activator="parent" location="bottom"> {{ status_style.desc_status }} </v-tooltip>
+            <v-tooltip activator="parent" location="bottom" open-on-hover open-delay="1000"> {{ status_style.desc_status
+              }} </v-tooltip>
           </span>
         </p>
         <p class="text-large text-center m-2" :style="'color: ' + status_style.color">{{ nat_status.status_string() }}

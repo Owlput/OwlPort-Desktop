@@ -46,6 +46,17 @@ function on_disconnect() {
   clearTimeout(pending_disconnect.value.valueOf());
   pending_disconnect.value = null;
 }
+
+
+// function parse_protocol(proto: string): [string, string] {
+//   if (proto.startsWith("/libp2p/autonat")) return ["AutoNAT", "Auto-discover of NAT status"];
+//   if (proto.startsWith("/ipfs/ping")) return ["Ping", "Ping protocol for universal connectivity"];
+//   if (proto.startsWith("/ipfs/id")) return ["Identify", "Identify protocol for universal connectivity"];
+//   if (proto.startsWith("/owlnest/messaging")) return ["OwlNest Messaging","Direct messaging"]
+//   if (proto.startsWith("/owlnest/blob")) return ["OwlNest Blob Transfer","Direct transfer of bulk binary data"];
+//   if (proto.startsWith("/libp2p/circuit/relay"))
+//   return [proto, ""]
+// }
 </script>
 <template>
   <div class="border rounded-sm shadow-md mx-4 px-4 select-none">

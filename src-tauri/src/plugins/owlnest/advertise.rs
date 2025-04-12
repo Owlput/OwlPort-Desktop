@@ -58,10 +58,11 @@ async fn set_remote_advertisement(
     remote: PeerId,
     advertisement_state: bool,
 ) -> Result<(), ()> {
-    Ok(state
+    state
         .advertise()
         .set_remote_advertisement(&remote, advertisement_state)
-        .await)
+        .await;
+    Ok(())
 }
 
 #[derive(Debug, Serialize, Clone)]

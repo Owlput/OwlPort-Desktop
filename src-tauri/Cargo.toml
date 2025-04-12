@@ -22,7 +22,7 @@ libp2p = { path = "../../../Owlput/rust-libp2p/libp2p", default-features = false
 serde_json = "1"
 openssl = { version = "*" }
 openssl-sys = { version = "*", optional = true }
-owlnest = { path = "../../../Owlput/OwlNest/owlnest", features = ["full"] }
+owlnest = { path = "../../../drHuangMHT/OwlNest/owlnest", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 whoami = "1.6"

@@ -142,7 +142,7 @@ async fn spawn_window<R: Runtime>(
 ) -> Result<(), String> {
     if let Some(peer) = peer {
         let store = manager.messaging().message_store();
-        if let None = store.get_messages(&peer) {
+        if store.get_messages(&peer).is_none() {
             store.insert_empty_record(&peer);
         }
     }
@@ -156,11 +156,15 @@ async fn spawn_window<R: Runtime>(
     } else {
         "#/app/messaging".into()
     };
-    tauri::WebviewWindowBuilder::new(&app, "owlnest-messaging", tauri::WebviewUrl::App(url.into()))
-        .focused(true)
-        .title("Owlnest - Messaging")
-        .build()
-        .expect("New window to be created successfully");
+    tauri::WebviewWindowBuilder::new(
+        &app,
+        "owlnest-messaging",
+        tauri::WebviewUrl::App(url.into()),
+    )
+    .focused(true)
+    .title("Owlnest - Messaging")
+    .build()
+    .expect("New window to be created successfully");
 
     Ok(())
 }

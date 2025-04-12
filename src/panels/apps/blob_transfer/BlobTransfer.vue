@@ -78,6 +78,7 @@ function send() {
     peer: peer_to_send.value,
     filePath: file_path.value,
   }).then((local_send_id) => {
+    console.log(local_send_id)
     pending_send.value.set(local_send_id, {
       file_path: file_path.value,
       send_id: local_send_id,
@@ -90,38 +91,41 @@ onUnmounted(() => {
   incoming_file_rlisten.value();
 });
 function handle_drop(ev: any) {
-  console.log(ev);
-  // file_path.value = ev.payload[0].replaceAll("\\", "/");
+  if (ev.type === "drop") file_path.value = ev.paths[0].replaceAll("\\", "/");
 }
 </script>
 <template>
-  <section class="px-8 py-4">
-    <div class="w-full text-center h-12 bg-gray-300">
-      <p v-if="!file_path" class="select-none">Drop your file on the window</p>
-      <p v-else>{{ file_path }}</p>
+  <section class="mx-8 my-4">
+    <div class="w-full text-center h-12 border-dashed rounded-2xl border-2">
+      <p v-if="!file_path" class="mt-2 select-none text-xl">Drop your file on the window</p>
+      <p v-else class="mt-2 text-xl text-center">{{ file_path }}</p>
+      <v-tooltip activator="parent" location="bottom" open-on-hover open-delay="1000">
+        Drop your file on the window to read its path
+      </v-tooltip>
     </div>
-    <section class="single-input">
-      <input v-model="peer_to_send" /><button @click="send">Send</button>
-    </section>
+    <form class="single-input mt-2" @submit.prevent="send">
+      <v-text-field v-model="peer_to_send" label="Peer ID" />
+      <v-btn size="large" height="3.5rem" type="submit">Send</v-btn>
+    </form>
   </section>
-  <div class="grid grid-cols-2 text-center select-none" style="height: calc(100vh - 8rem)">
+  <div class="grid grid-cols-2 text-center select-none mx-8 gap-4" style="height: calc(100vh - 14rem)">
     <section>
-      <p>Pending send</p>
-      <ul class="m-2 p-2 overflow-auto" v-if="pending_send.size > 0">
+      <p class="border border-gray-200 shadow-sm rounded-full mx-auto">Pending send</p>
+      <ul class="mt-1 h-full overflow-auto border border-gray-200 shadow-sm rounded-sm ">
+        <p v-if="pending_send.size < 1" class="p-2">No item</p>
         <li v-for="item in pending_send.values()" class="mx-2 mt-2 border-gray-300 rounded-md shadow-md">
           <SendEntry :file-path="item.file_path" :send-id="item.send_id"></SendEntry>
         </li>
       </ul>
-      <p v-else class="p-2">No item</p>
     </section>
     <section>
-      <p>Pending recv</p>
-      <ul class="m-2 p-2 overflow-auto" v-if="pending_recv.size > 0">
+      <p class="border border-gray-200 shadow-sm rounded-full mx-auto">Pending recv</p>
+      <ul class="mt-1 h-full overflow-auto border border-gray-200 shadow-sm rounded-sm ">
+        <p v-if="pending_recv.size < 1" class="p-2">No item</p>
         <li v-for="item in pending_recv.values()" class="mx-2 mt-2 rounded-md shadow-md">
           <RecvEntry :file-name="item!.file_name" :recv-id="item!.recv_id" :bytes-total="item!.bytes_total"></RecvEntry>
         </li>
       </ul>
-      <p v-else class="p-2">No item</p>
     </section>
   </div>
 </template>

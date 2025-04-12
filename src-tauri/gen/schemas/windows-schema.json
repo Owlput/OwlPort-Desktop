@@ -242,6 +242,11 @@
           "const": "owlnest-swarm"
         },
         {
+          "description": "Get upnp status",
+          "type": "string",
+          "const": "owlnest-upnp"
+        },
+        {
           "description": "Allow to dial a peer",
           "type": "string",
           "const": "swarm-dial"

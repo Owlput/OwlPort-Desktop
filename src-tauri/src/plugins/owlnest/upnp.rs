@@ -1,7 +1,7 @@
 use super::*;
 use owlnest::net::p2p::{protocols::upnp, swarm::behaviour::BehaviourEvent};
-use tauri::Emitter;
 use std::{collections::HashSet, sync::atomic::AtomicI8};
+use tauri::Emitter;
 
 ///
 /// Gateway state:
