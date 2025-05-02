@@ -53,12 +53,17 @@ refresh()
 </script>
 <template>
     <SearchBar v-model="search_text" :place-holder="props.placeHolder" :refresh="refresh" />
-    <DynamicScroller :items="displayed_items" :min-item-size="props.minItemSize" :buffer="200"
-        :key-field="props.keyField" :style="`height: calc(${props.scrollerHeightExpr})`" class="overflow-auto">
-        <template v-slot="{ item, index, active }">
-            <DynamicScrollerItem :item="item" :active="active" :data-index="index">
-                <slot :item="item.inner"></slot>
-            </DynamicScrollerItem>
-        </template>
-    </DynamicScroller>
+    <template v-if="list_items.length > 0">
+        <DynamicScroller :items="displayed_items" :min-item-size="props.minItemSize" :buffer="200"
+            :key-field="props.keyField" :style="`height: calc(${props.scrollerHeightExpr})`" class="overflow-auto">
+            <template v-slot="{ item, index, active }">
+                <DynamicScrollerItem :item="item" :active="active" :data-index="index">
+                    <slot :item="item.inner"></slot>
+                </DynamicScrollerItem>
+            </template>
+        </DynamicScroller>
+    </template>
+    <template v-else>
+        <p class="text-xl text-center">No Entry</p>
+    </template>
 </template>
