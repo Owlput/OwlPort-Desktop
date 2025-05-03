@@ -17,7 +17,7 @@ fn main() -> anyhow::Result<()> {
             tracing::error!("{:?}", e);
             tracing::error!("Failed to start OwlPort: Cannot read config file.");
             tracing::error!("An example config file is generated in the same directory, remove the trailing `.example` to use the default values!");
-            return Err(e)
+            return Err(e);
         }
         Ok(v) => v,
     };

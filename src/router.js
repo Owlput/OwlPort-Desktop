@@ -29,7 +29,7 @@ const routes = [
   },
   {
     path: "/app",
-    component: () => import("./AppWrapper.vue"),
+    component: () => import("./panels/apps/App.vue"),
     children: [
       messagingApp,
       {
@@ -41,13 +41,13 @@ const routes = [
   },
   {
     path: "/dev",
-    component: ()=> import("./components/EmptyWindow.vue"),
-    children:[
+    component: () => import("./components/EmptyWindow.vue"),
+    children: [
       {
-        path:"swarm-event-listener",
-        component: () => import("./panels/settings/DialEventListener.vue")
-      }
-    ]
+        path: "swarm-event-listener",
+        component: () => import("./panels/settings/SwarmEventListener.vue"),
+      },
+    ],
   },
   {
     path: "/",

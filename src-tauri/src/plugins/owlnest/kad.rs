@@ -1,8 +1,8 @@
 use super::*;
 use libp2p::kad::Mode;
 use owlnest::net::p2p::protocols::kad::OutEvent;
-use tauri::Emitter;
 use std::{str::FromStr, sync::atomic::AtomicBool};
+use tauri::Emitter;
 
 #[derive(Debug, Clone)]
 struct State {

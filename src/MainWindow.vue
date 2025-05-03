@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import PopUpHandler from "./components/PopUpHandler.vue";
 import SideBar from "./components/SideBar.vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+import { isBodyless } from "./utils";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 const router = useRouter();
 document.addEventListener("keyup", (ev: KeyboardEvent) => {
   if (!ev.isTrusted || ev.isComposing) {
@@ -11,21 +13,29 @@ document.addEventListener("keyup", (ev: KeyboardEvent) => {
     router.back();
   }
 });
+
+let appWindowLabel;
+if (!isBodyless()) { console.log("backend connected"); appWindowLabel = getCurrentWebviewWindow().label; } else {
+  let route = useRoute();
+  appWindowLabel = route.fullPath.split("/")[1]
+}
 </script>
 <template>
-  <div id="main-grid">
-    <section class="w-[5rem]" v-if="$route.path.slice(0, 3) != '/app'">
-      <SideBar></SideBar>
-    </section>
-    <div>
-      <RouterView v-slot="{ Component }">
-        <KeepAlive exclude="Overview">
-          <component :is="Component" />
-        </KeepAlive>
-      </RouterView>
+  <v-app>
+    <div id="main-grid">
+      <section class="w-[5rem]" v-if="$route.path.slice(0, 3) != '/app'">
+        <SideBar></SideBar>
+      </section>
+      <div>
+        <RouterView v-slot="{ Component }">
+          <KeepAlive exclude="Overview">
+            <component :is="Component" />
+          </KeepAlive>
+        </RouterView>
+      </div>
     </div>
-  </div>
-  <PopUpHandler></PopUpHandler>
+    <PopUpHandler></PopUpHandler>
+  </v-app>
 </template>
 
 <style>
@@ -35,7 +45,8 @@ document.addEventListener("keyup", (ev: KeyboardEvent) => {
   height: 100vh;
   width: 100vw;
 }
-#main-grid > div {
+
+#main-grid>div {
   width: calc(100vw - 5rem);
   height: 100vh;
 }

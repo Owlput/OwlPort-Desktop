@@ -130,7 +130,7 @@ async function get_relay_advertised_peers() {
       <ul class="p-2 flex flex-wrap gap-2">
         <li v-for="addr in relay_info.listenable_address" class="max-w-[100%] hover:cursor-pointer"
           @dblclick="() => listen_on_relay(addr)">
-          <AddressDisplay :address="addr.valueOf()" />
+          <AddressDisplay :address="addr.valueOf()" behavior="copy" />
         </li>
       </ul>
     </section>

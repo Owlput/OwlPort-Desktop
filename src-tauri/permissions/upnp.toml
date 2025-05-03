@@ -1,0 +1,7 @@
+[[permission]]
+identifier = "owlnest-upnp"
+description = """Get upnp status"""
+commands.allow = [
+    "plugin:owlnest-upnp|list_available_external_addr",
+    "plugin:owlnest-upnp|get_gateway_status",
+]

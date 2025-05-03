@@ -10,10 +10,12 @@
     "owlnest-mdns",
     "owlnest-relay-client",
     "owlnest-swarm",
+    "owlnest-upnp",
     "app-panel",
     "app-info",
     "owlnest-developer-options",
     "clipboard-manager:allow-write-text",
-    "clipboard-manager:default"
+    "clipboard-manager:default",
+    "owlnest-developer-options"
   ]
 }

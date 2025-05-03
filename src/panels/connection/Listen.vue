@@ -2,59 +2,75 @@
 import { Ref, ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-import { isBodylessHandler } from "../../utils";
+import { is_ip_private, isBodylessHandler } from "../../utils";
 import EntryExpand from "../../components/EntryExpand.vue";
+import ControlledButton from "../../components/ControlledButton.vue"
 
 const listen_addr = ref("/ip4/0.0.0.0/tcp/0");
-const active_listeners: Ref<Array<String>> = ref([]);
+const active_listeners: Ref<Array<string>> = ref([]);
+const button_promise: Ref<Promise<any> | null> = ref(null);
+const listen_btn_loading_state = ref(false);
 function update_listener_list() {
-  invoke<Array<String>>("plugin:owlnest-swarm|list_listeners")
+  invoke<Array<string>>("plugin:owlnest-swarm|list_listeners")
     .then((result) => {
       active_listeners.value = result;
     })
     .catch(isBodylessHandler);
 }
+function remove_listener(address: string) {
+  invoke("plugin:owlnest-swarm|remove_listener", { address });
+  setTimeout(update_listener_list, 100)
+}
 update_listener_list();
-function listen_on() {
-  invoke("plugin:owlnest-swarm|listen", {
-    listenOptions: { addr: listen_addr.value },
-  }).catch(isBodylessHandler);
+function listen(addr?: string) {
+  if ((!listen_addr.value || listen_addr.value.length < 1) && !addr && !listen_btn_loading_state.value) return;
+  button_promise.value = invoke("plugin:owlnest-swarm|listen", {
+    listenOptions: { addr: addr ? addr : listen_addr.value },
+  });
   setTimeout(update_listener_list, 100);
 }
 </script>
 
 <template>
-  <section class="px-8 py-4 border-b">
-    <p class="text-left w-full px-4 text-lg select-none">
-      Listen on an address
-    </p>
-    <div class="single-input">
-      <input class="text-xl" v-model="listen_addr" @keypress.enter.exact.prevent="() => listen_on()" />
-      <button @click="listen_on">Listen</button>
-    </div>
+  <section class="px-8 pt-8 pb-2">
+    <form class="flex flex-row gap-4" @submit.prevent="() => listen()">
+      <v-text-field class="text-xl" v-model="listen_addr" placeholder="Listen on an address, in MultiAddr" />
+      <ControlledButton v-model:clickpromise="button_promise" v-model:isloading="listen_btn_loading_state" type="submit"
+        size="x-large">
+        Listen
+      </ControlledButton>
+    </form>
+    <v-btn block
+      @click="() => { listen('/ip4/0.0.0.0/tcp/0'); listen('/ip4/0.0.0.0/udp/0/quic-v1'); listen('/ip6/::/tcp/0'); listen('/ip6/::/udp/0/quic-v1') }">Listen
+      on all addresses</v-btn>
   </section>
+  <v-divider />
   <section>
-    <div class="flex justify-between items-center select-none">
+    <header class="flex justify-between items-center select-none">
       <p class="text-lg px-8 py-2 w-fit">Active Listeners:</p>
-      <button class="float-right h-[26px] mr-8" @click="update_listener_list">
-        <span class="material-icons">refresh</span>
+      <button class="float-right h-[26px] mr-8 cursor-pointer" @click="update_listener_list">
+        <span class="mdi-refresh mdi text-2xl"></span>
       </button>
-    </div>
-    <p v-if="active_listeners.length < 1">No active listeners.</p>
-    <ul v-else style="height: calc(100vh - 12.5rem - 1px); overflow: auto" class="select-none px-8">
+    </header>
+    <p class="shadow-md h-10 p-1 mx-8 text-center text-lg border border-gray-100" v-if="active_listeners.length < 1">No
+      active listeners.</p>
+    <ul v-else style="height: calc(100vh - 15rem - 1px); overflow: auto" class="select-none px-8">
       <li v-for="addr in active_listeners" class="my-1 shadow-md w-full h-10 p-0">
-        <EntryExpand>
-          <template #main>
-            <p class="w-full h-full p-2 bg-green-100">{{ addr }}</p>
-          </template>
-          <template #more>
-            <div class="flex gap-1 bg-green-100 h-full p-1">
-              <button><span class="material-icons icon-center">delete_forever</span></button>
-              <button class="" @click="writeText(addr.toString())">
-                <span class="material-icons icon-center">content_copy</span></button>
-            </div>
-          </template>
-        </EntryExpand>
+        <v-card :color="is_ip_private(addr.split('/')[2]) ? '#d4ffd5' : '#dbeafe'">
+          <EntryExpand>
+            <template #main>
+              <p class=" w-full h-full p-2">{{ addr }}</p>
+            </template>
+            <template #more>
+              <div class="flex gap-1 h-full p-1">
+                <button @click="() => remove_listener(addr)"><span
+                    class="material-icons icon-center">delete_forever</span></button>
+                <button class="" @click="writeText(addr.toString())">
+                  <span class="material-icons icon-center">content_copy</span></button>
+              </div>
+            </template>
+          </EntryExpand>
+        </v-card>
       </li>
     </ul>
   </section>

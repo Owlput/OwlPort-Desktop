@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, Ref, ShallowRef, shallowRef } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-import SearchBar from "../../../components/SearchBar.vue";
 import * as types from "./types";
 import { isBodylessHandler } from "../../../utils";
 import { TopicHash } from "./types";
 
 const topic_to_track: Ref<string> = ref("")
-const send_on_enter = ref(false)
+const hash_type: Ref<string> = ref("Identity");
+const hash_type_items = [{ name: 'Identity', value: "identity" }, { name: 'SHA256', value: "sha256" }];
+
 const message_history: ShallowRef<Array<types.MessageRecord>> = shallowRef([]);
-const message = ref("")
 const utf8Decoder = new TextDecoder();
 const refresh_interval_handle: Ref<number | null> = ref(null);
 
@@ -25,6 +25,9 @@ function update_topic_history() {
     (v) => message_history.value = v ? v.map((v) => types.MessageRecord.deserialize(v)) : []
   );
 }
+
+const send_on_enter = ref(false)
+const message = ref("")
 function send_message() {
   if (topic_to_track.value.length === 0 || message.value.length === 0) return;
   let topic = topic_to_track.value.startsWith('#') ? types.Topic.hash_only(new TopicHash(topic_to_track.value.slice(1))) : types.Topic.sha256_string(topic_to_track.value);
@@ -42,10 +45,21 @@ onUnmounted(() => {
 
 </script>
 <template>
-  <div class="w-[100vw]">
-    <SearchBar v-model="topic_to_track" place-holder="Type the topic or hash(start with #) to track here"
-      :refresh="update_topic_history" @search-submit="update_topic_history"></SearchBar>
-    <ul style="height: calc(100vh - 15.5rem);" class="message-list">
+  <div>
+    <form class="flex px-4 pt-4 pb-2" @submit.prevent="update_topic_history">
+      <v-text-field style="width: calc(100% - 12rem);" @keyup.enter="update_topic_history" hide-details
+        placeholder="Type the topic or hash(start with #) to track" v-model.lazy="topic_to_track" />
+      <v-select class="h-12 mx-1 border rounded-md shadow-sm" label="Hasher" :items="hash_type_items" hide-details
+        v-model="hash_type" item-title="name" item-value="value">
+      </v-select>
+      <v-btn class="aspect-square h-12 cursor-pointer" type="submit" height="3.5rem">
+        <span class="mdi-email-arrow-left-outline mdi text-center text-2xl"></span>
+        <v-tooltip activator="parent" location="bottom" open-on-hover open-delay="2000">
+          Track
+        </v-tooltip>
+      </v-btn>
+    </form>
+    <ul style="height: calc(100vh - 16rem);" class="message-list">
       <li v-for="msg in message_history" class="rounded-md">
         <div v-if="msg.Local">
           <p>From: Self</p>
@@ -57,9 +71,9 @@ onUnmounted(() => {
         </div>
       </li>
     </ul>
-
-    <section class="h-full w-full border-t">
-      <textarea v-model="message" class="resize-none border w-full p-4" style="height: calc(100% - 3.5rem)"
+    <v-divider />
+    <section class="h-full w-full">
+      <textarea v-model="message" class="resize-none w-full p-4" style="height: calc(100% - 3.5rem)"
         @keydown.enter.exact.prevent="() => {
           if (!send_on_enter) message += `\n`;
         }
@@ -77,7 +91,7 @@ onUnmounted(() => {
             <p class="float-right">Send on Enter</p>
           </li>
         </ul>
-        <button class="w-[4rem] h-10" @click="send_message">Send</button>
+        <v-btn class="w-[4rem] h-10" @click="send_message">Send</v-btn>
       </section>
     </section>
   </div>
@@ -88,7 +102,8 @@ onUnmounted(() => {
   display: flex;
   padding: 1rem;
   flex-direction: column;
-  gap: 1rem
+  gap: 1rem;
+  overflow: auto;
 }
 
 .message-list>li {

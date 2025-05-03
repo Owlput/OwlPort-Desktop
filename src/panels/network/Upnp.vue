@@ -6,7 +6,7 @@ import { isBodylessHandler } from "../../utils";
 const public_address = ref([]);
 const gateway_status = ref("");
 invoke("plugin:owlnest-upnp|list_available_external_addr")
-  .then((result) => (public_address.value = result))
+  .then((result) => { console.log(result); (public_address.value = result) })
   .catch(isBodylessHandler);
 invoke("plugin:owlnest-upnp|get_gateway_status")
   .then((result) => {

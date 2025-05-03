@@ -14,26 +14,22 @@ invoke<any>("plugin:owlnest-mdns|list_discovered")
 
 <template>
   <div>
-    <section class="mx-[3rem] my-4 p-2 shadow-md rounded-md">
-      <p class="text-center">Peers discovered by mDNS</p>
-      <section class="flex gap-2">
-        <p class="bg-blue-300 p-1 rounded-sm">Public addresses</p>
-        <p class="bg-green-300 p-1 rounded-sm">Local addresses</p>
-      </section>
+    <section class="mx-8 mt-4 p-2 shadow-md rounded-md">
+      <p class="text-center text-xl select-none">Peers discovered by mDNS</p>
     </section>
-
     <p v-if="discovered_nodes.size === 0" class="text-center">
       No peer discovered
     </p>
-    <ul v-for="peer in discovered_nodes.entries()" class="m-8 border">
-      <li>
+    <ul v-for="peer in discovered_nodes.entries()" class="mx-8 mt-4">
+      <li class="shadow-sm border border-gray-100 rounded-sm p-2">
         <section>
           <p class="text-autowrap">Peer ID: {{ peer[0] }}</p>
         </section>
-        <ul class="p-4 flex flex-wrap">
-          <li class="mx-4 my-1 cursor-pointer" v-for="addr in peer[1]"
-            @click="() => $router.push(`/main/connections/dial?dial=${addr}`)">
-            <AddressDisplay :address="addr.valueOf()" />
+        <ul class="p-2 flex flex-wrap">
+          <li class="mx-4 my-1" v-for="addr in peer[1]">
+            <AddressDisplay :address="addr.valueOf()" behavior="custom"
+              :on-click="() => $router.push(`/main/connections/dial?dial=${addr}`)"
+              on-click-desc="Click to dial page." />
           </li>
         </ul>
       </li>

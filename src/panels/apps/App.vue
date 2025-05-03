@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { emit, listen } from '@tauri-apps/api/event';
-import { MessagingEmit } from './panels/apps/messaging/types';
-import { Popup } from './components/Types';
+import { MessagingEmit } from './messaging/types';
+import { Popup } from '../../components/Types';
+import PopUpHandler from '../../components/PopUpHandler.vue';
 import { onUnmounted } from 'vue';
-import { BlobTransferEmit } from './panels/apps/blob_transfer/types';
+import { BlobTransferEmit } from './blob_transfer/types';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { useRoute } from 'vue-router';
-import { isBodyless } from './utils';
+import { isBodyless } from '../../utils';
 
 let appWindowLabel;
-if (!isBodyless()) {console.log("backend connected"); appWindowLabel = getCurrentWebviewWindow().label;  } else { let route = useRoute(); 
-  appWindowLabel = route.fullPath.split("/")[1] }
+if (!isBodyless()) { console.log("backend connected"); appWindowLabel = getCurrentWebviewWindow().label; } else {
+  let route = useRoute();
+  appWindowLabel = route.fullPath.split("/")[1]
+}
 
 let event_handles: Array<Function> = []
 if (appWindowLabel === "messaging") {
@@ -30,13 +33,11 @@ if (appWindowLabel === "blob-transfer") {
 onUnmounted(() => {
   event_handles.forEach((unlisten) => unlisten())
 })
-
 </script>
 
 <template>
   <RouterView v-slot="{ Component }">
-    <KeepAlive exclude="Overview">
-      <component :is="Component" />
-    </KeepAlive>
+    <component :is="Component" />
   </RouterView>
+  <PopUpHandler></PopUpHandler>
 </template>

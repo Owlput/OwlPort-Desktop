@@ -41,7 +41,7 @@ impl State {
             return;
         }
         let connected_list = &self.connected;
-        if let None = connected_list.get(peer_id) {
+        if connected_list.get(peer_id).is_none() {
             connected_list.insert(
                 *peer_id,
                 RelayInfo {
@@ -58,9 +58,7 @@ impl State {
         entry_to_update.value_mut().listened_address.retain(|v| {
             info.listen_addrs
                 .iter()
-                .filter(|new_addr| v.to_string().contains(&new_addr.to_string()))
-                .next()
-                .is_some()
+                .any(|new_addr| v.to_string().contains(&new_addr.to_string()))
         });
         entry_to_update.value_mut().listenable_address = HashSet::from_iter(
             info.listen_addrs
@@ -69,8 +67,7 @@ impl State {
                     !entry_to_update
                         .listened_address
                         .iter()
-                        .find(|addr| addr.to_string().contains(&v.to_string()))
-                        .is_some()
+                        .any(|addr| addr.to_string().contains(&v.to_string()))
                 })
                 .cloned(),
         );
@@ -98,16 +95,13 @@ impl State {
         if let Some(mut entry) = self
             .connected
             .iter_mut()
-            .filter(|entry| {
+            .find(|entry| {
                 let (k, v) = entry.pair();
                 // get the one that has the address that is part of the newly listened address
                 v.listenable_address
                     .iter()
-                    .filter(|_| address_string.contains(&format!("{}/p2p-circuit", k)))
-                    .next()
-                    .is_some()
+                    .any(|_| address_string.contains(&format!("{}/p2p-circuit", k)))
             })
-            .next()
         {
             let v = entry.value_mut();
             v.listenable_address
@@ -223,10 +217,11 @@ async fn set_remote_advertisement(
     relay: PeerId,
     advertisement_state: bool,
 ) -> Result<(), String> {
-    Ok(state
+    state
         .advertise()
         .set_remote_advertisement(&relay, advertisement_state)
-        .await)
+        .await;
+    Ok(())
 }
 
 #[tauri::command]
@@ -246,9 +241,7 @@ async fn listen_relay(
     let manager = state.manager.clone();
     let handle = async move {
         let mut listener = manager.event_subscriber().subscribe();
-        if let Err(e) = manager.swarm().listen(&relay_address).await {
-            return Err(e);
-        };
+        manager.swarm().listen(&relay_address).await?;
         while let Ok(ev) = listener.recv().await {
             if let SwarmEvent::NewListenAddr { address, .. } = ev.as_ref() {
                 if address.to_string().contains(&relay_address.to_string()) {
@@ -263,7 +256,7 @@ async fn listen_relay(
         return Err("Timeout waiting for future to complete".into());
     }
     let result = result.unwrap();
-    result.map_err(|e| format!("{:?}", e))
+    result.map_err(|e:libp2p::TransportError<std::io::Error>| format!("{:?}", e))
 }
 
 #[derive(Debug, Clone, Serialize)]

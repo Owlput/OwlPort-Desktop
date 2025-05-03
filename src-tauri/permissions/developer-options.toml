@@ -3,5 +3,5 @@ identifier = "owlnest-developer-options"
 description = """Access to developer options"""
 commands.allow = [
     "plugin:owlnest-developer-options|print_struct",
-    "plugin:owlnest-developer-options|swarn_event_listener",
+    "plugin:owlnest-developer-options|swarm_event_listener",
 ]

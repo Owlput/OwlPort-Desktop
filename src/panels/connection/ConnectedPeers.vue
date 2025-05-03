@@ -23,8 +23,12 @@ function filter(source: String, search_text: String): boolean {
   <p v-if="status === Status.NoBackend">
     Bodyless mode.
   </p>
-  <SearchDisplay v-else place-holder="Type Peer ID and press Enter to search" :get-or-refresh="update_list"
-    :criteria="filter" v-slot="slotProps" :min-item-size="64" scroller-height-expr="100vh - 6.5rem">
-    <ConnectedPeerEntry :peer-id="slotProps.item" />
-  </SearchDisplay>
+  <div v-else class="w-full px-4 pt-4">
+    <SearchDisplay place-holder="Type Peer ID and press Enter to search" :get-or-refresh="update_list"
+      :criteria="filter" v-slot="slotProps" :min-item-size="64" scroller-height-expr="100vh - 8.5rem">
+      <div class="px-4 py-2">
+        <ConnectedPeerEntry :peer-id="slotProps.item" />
+      </div>
+    </SearchDisplay>
+  </div>
 </template>

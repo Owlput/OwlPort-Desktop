@@ -1,6 +1,6 @@
 use super::*;
 use dashmap::DashMap;
-use libp2p::identify::Info;
+use libp2p::{core::transport::ListenerId, identify::Info};
 use owlnest::net::p2p::swarm::{self, behaviour::BehaviourEvent, Manager as SwarmManager};
 use std::num::NonZeroU32;
 use tauri::{Emitter, Manager};
@@ -9,6 +9,15 @@ use tracing::{error, warn};
 #[derive(Clone)]
 struct State {
     pub connected_peers: Arc<DashMap<PeerId, (PeerInfo, Vec<ConnectionInfo>)>>,
+    pub active_listeners: Arc<DashMap<Multiaddr, ListenerId>>,
+}
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            connected_peers: Arc::new(DashMap::new()),
+            active_listeners: Arc::new(DashMap::new()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -39,7 +48,6 @@ impl From<&Info> for PeerInfo {
                 .map(|protocol| protocol.to_string())
                 .collect(),
             protocol_version: value.protocol_version.clone(),
-            ..Default::default()
         }
     }
 }
@@ -49,9 +57,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
         .setup(move |app, _api| {
             let app_handle = app.clone();
             let mut listener = manager.event_subscriber().subscribe();
-            let state = State {
-                connected_peers: Arc::new(DashMap::new()),
-            };
+            let state = State::default();
             let state_clone = state.clone();
             async_runtime::spawn(async move {
                 while let Ok(ev) = listener.recv().await {
@@ -60,6 +66,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                             .emit("swarm-emit", ev)
                             .expect("event emit to succeed");
                     }
+                    println!("{:?}", ev);
                     use libp2p::swarm::SwarmEvent::*;
                     let store = &state.connected_peers;
                     match ev.as_ref() {
@@ -90,9 +97,27 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                         IncomingConnection { .. } => {}
                         IncomingConnectionError { .. } => {}
                         OutgoingConnectionError { .. } => {}
-                        NewListenAddr { .. } => {}
+                        NewListenAddr {
+                            listener_id,
+                            address,
+                        } => {
+                            println!("New listen addr: {}", address);
+                            if state.active_listeners.get_mut(address).is_none() {
+                                state.active_listeners.insert(address.clone(), *listener_id);
+                                continue;
+                            }
+                            *state
+                                .active_listeners
+                                .get_mut(address)
+                                .expect("already handled")
+                                .value_mut() = *listener_id;
+                        }
                         ExpiredListenAddr { .. } => {}
-                        ListenerClosed { .. } => {}
+                        ListenerClosed { addresses, .. } => {
+                            for addr in addresses {
+                                state.active_listeners.remove(addr);
+                            }
+                        }
                         ListenerError { .. } => {}
                         Dialing { .. } => {}
                         NewExternalAddrCandidate { .. } => {}
@@ -124,6 +149,7 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
         .invoke_handler(generate_handler![
             dial,
             listen,
+            remove_listener,
             get_local_peer_id,
             list_listeners,
             list_connected,
@@ -165,6 +191,19 @@ async fn listen(
         .await
         .map_err(|e| format!("{:?}", e))?;
     Ok(())
+}
+
+#[tauri::command]
+async fn remove_listener(
+    manager: tauri::State<'_, SwarmManager>,
+    state: tauri::State<'_, State>,
+    address: Multiaddr,
+) -> Result<bool, String> {
+    let listener_id = match state.active_listeners.get(&address) {
+        Some(entry) => *entry.value(),
+        None => return Ok(false),
+    };
+    Ok(manager.swarm().remove_listener(&listener_id).await)
 }
 
 #[tauri::command]
@@ -260,7 +299,7 @@ impl TryFrom<&swarm::SwarmEvent> for SwarmEmit {
         use swarm::SwarmEvent;
         let ev = match value {
             SwarmEvent::Dialing { peer_id, .. } => Self::Dialing {
-                maybe_peer_id: peer_id.clone(),
+                maybe_peer_id: *peer_id,
             },
             SwarmEvent::ConnectionEstablished {
                 peer_id,
