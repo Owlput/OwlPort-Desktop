@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import PopUpHandler from "./components/PopUpHandler.vue";
 import SideBar from "./components/SideBar.vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+import { isBodyless } from "./utils";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 const router = useRouter();
 document.addEventListener("keyup", (ev: KeyboardEvent) => {
   if (!ev.isTrusted || ev.isComposing) {
@@ -11,6 +13,12 @@ document.addEventListener("keyup", (ev: KeyboardEvent) => {
     router.back();
   }
 });
+
+let appWindowLabel;
+if (!isBodyless()) { console.log("backend connected"); appWindowLabel = getCurrentWebviewWindow().label; } else {
+  let route = useRoute();
+  appWindowLabel = route.fullPath.split("/")[1]
+}
 </script>
 <template>
   <v-app>
