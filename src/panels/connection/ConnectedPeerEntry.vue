@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { ref, Ref } from "vue";
 import { isBodylessHandler } from "../../utils";
 import * as types from "./types";
+import Protocol from "./peer_info_components/Protocol.vue";
 
 const props = defineProps({
   peerId: {
@@ -13,6 +14,7 @@ const props = defineProps({
 });
 const pending_disconnect: Ref<Number | null> = ref(null);
 const show_supported_protocols = ref(false);
+const is_disconnected = ref(false);
 const peer_info: Ref<types.PeerInfo | null> = ref(null);
 const connection_type = ["IPv4", "TCP", "Mocked"];
 function toggleExpand() {
@@ -24,7 +26,11 @@ function toggleExpand() {
       }
     )
       .then((v) => {
-        peer_info.value = new types.PeerInfo(v[0].supported_protocols, v[0].protocol_version, v[1]);
+        if (v) {
+          peer_info.value = new types.PeerInfo(v[0].supported_protocols, v[0].protocol_version, v[1]); is_disconnected.value = false
+        } else {
+          is_disconnected.value = true;
+        }
         show_supported_protocols.value = true;
       })
       .catch(isBodylessHandler);
@@ -59,7 +65,7 @@ function on_disconnect() {
 // }
 </script>
 <template>
-  <div class="border rounded-sm shadow-md mx-4 px-4 select-none">
+  <div class="p-2 border rounded-sm shadow-md select-none">
     <section @click.prevent.self="toggleExpand" class="flex flex-nowrap flex-row justify-between cursor-pointer">
       <section>
         <span class="material-icons text-[3rem] w-full text-center">computer</span>
@@ -84,17 +90,23 @@ function on_disconnect() {
         <section>RTT: {{ "MOCKED" }} ms</section>
       </section>
     </section>
-    <hr v-if="show_supported_protocols" />
-    <section v-if="show_supported_protocols && peer_info">
-      <p class="sm:hidden">Peer ID: {{ props.peerId }}</p>
-      <p>Protocol stack: {{ peer_info.protocol_version }}</p>
-      <p>Suported protocols({{ peer_info.supported_protocols.length }}):</p>
-      <ul class="flex flex-wrap">
-        <li v-for="item in peer_info.supported_protocols" class="m-1 border px-1">
-          {{ item }}
-        </li>
-      </ul>
-    </section>
-    <section v-if="!peer_info && show_supported_protocols">Fetching peer info from backend...</section>
+    <template v-if="show_supported_protocols">
+      <hr />
+      <section v-if="peer_info">
+        <p class="sm:hidden">Peer ID: {{ props.peerId }}</p>
+        <p>Protocol stack: {{ peer_info.protocol_version }}</p>
+        <p>Suported protocols({{ peer_info.supported_protocols.length }}):</p>
+        <ul>
+          <Protocol :protocols="peer_info.supported_protocols.map((v) => [v.name, v])" :group-name="peer_info.protocol_version?peer_info.protocol_version:'Unknown'" is-root/>
+          <!-- <li v-for="item in peer_info.supported_protocols" class="m-1 border px-1">
+            {{ item }}
+          </li> -->
+        </ul>
+      </section>
+      <section v-if="!peer_info && show_supported_protocols">Fetching peer info from backend...</section>
+      <section v-if="is_disconnected">
+        <p>Unable to fetch information because the peer has disconnected</p>
+      </section>
+    </template>
   </div>
 </template>

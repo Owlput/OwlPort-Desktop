@@ -20,10 +20,13 @@ function filter(source: RelayStub, search_text: String): boolean {
 }
 </script>
 <template>
-  <main  class="p-4">
-  <SearchDisplay :criteria="filter" :get-or-refresh="update_relay_list" v-slot="slotProps"
-    place-holder="Type Peer ID and press Enter to search" :min-item-size="36"
-    scroller-height-expr="100vh - 9.5rem" @load-result="(result) => { status = result }">
-    <div class="px-4 select-none"><RelayEntry :relay_stub="slotProps.item"></RelayEntry></div>
-  </SearchDisplay></main>
+  <main class="p-4">
+    <SearchDisplay :criteria="filter" :get-or-refresh="update_relay_list" v-slot="slotProps"
+      place-holder="Type Peer ID and press Enter to search" :min-item-size="36" scroller-height-expr="100vh - 9.5rem"
+      @load-result="(result) => { status = result }">
+      <div class="px-4 py-2 select-none">
+        <RelayEntry :relay_stub="slotProps.item"></RelayEntry>
+      </div>
+    </SearchDisplay>
+  </main>
 </template>

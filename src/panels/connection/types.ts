@@ -20,7 +20,6 @@ export class PeerInfo {
     this.connections = connections.map(
       (v) => new ConnectionInfo(v.connection_id, v.remote_address)
     );
-    console.log(supported_protocols);
     let supported_protocols_parsed: Array<Protocol> = [];
     for (const proto of supported_protocols) {
       let parsed_proto = new Protocol(proto);
@@ -29,7 +28,6 @@ export class PeerInfo {
       );
       if (same_proto[0]) {
         if (!parsed_proto.sub_protocols) continue;
-        console.log(parsed_proto.sub_protocols);
         if (!same_proto[0].sub_protocols) same_proto[0].sub_protocols = [];
         same_proto[0].sub_protocols = same_proto[0].sub_protocols.concat(
           parsed_proto.sub_protocols
@@ -44,9 +42,9 @@ export class PeerInfo {
 
 export class Protocol {
   name: string;
-  major_version: number;
-  minor_version: number;
-  patch_version: number;
+  major_version: number = 0;
+  minor_version: number = 0;
+  patch_version: number = 0;
   sub_protocols: Array<string> | null = null;
   description: {
     alias: string | null;
@@ -58,7 +56,10 @@ export class Protocol {
 
   constructor(proto: string) {
     let semver = Protocol.SEMVER_REGEX.exec(proto);
-    if (!semver) throw new Error(`Invalid protocol string "${proto}"`);
+    if (!semver) {
+      this.name = proto;
+      return;
+    }
     let components = proto.split(semver[0]);
     let name = components[0];
     this.name = name.slice(0, name.length - 1);
