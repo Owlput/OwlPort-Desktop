@@ -19,18 +19,28 @@ You will need Rust toolchain installed on your machine to compile the code. Use 
 
 #### Prerequisite: vcpkg for linking openssl
 
-Note: You can also use `vendored` feature to compile OpenSSL library from source, without external copy of OpenSSL. This will increase time taken on first-time build and build after cleaning build artifacts. You will also need a Perl installation to compile OpenSSL from source.
-
  - Clone `https://github.com/Microsoft/vcpkg` and execute `bootstrap-vcpkg.bat` inside the cloned repository. 
- - Execute `./vcpkg.exe integrate install` to integrate this copy of vcpkg with your shell.
- - Execute `./vcpkg.exe install openssl:x64-windows-static-md` to install openssl library that can be statically linked.
+ - Set environment variable `VCPKG_ROOT` to the cloned repository.
+   - Optional: Append the path to the repository to your `PATH` environment variable so that you can use it directly in your terminal.
+   - Don't use the vcpkg that is bundled with Visual Studio, it's only intended for use with existing vcpkg projects. This repository does not contain a vcpkg project.
+   - Your IDE might need a restart to access the newly-set environment variable.
+   - You can use `echo $Env:VCPKG_ROOT` to see whether the variable is properly set(only works with PowerShell).
+ - Execute `./vcpkg.exe install openssl:x64-windows-static-md` to install openssl library that can be statically-linked.
 
 Note: You can also use dynamically linked openssl. Please refer to crate `openssl` [documentation](https://docs.rs/openssl/0.10.66/openssl/) for more info.
+Note: You can also use `vendored` feature to compile OpenSSL library from source, without external copy of OpenSSL. This will increase time taken on first-time build and build after cleaning build artifacts. You will also need a Perl installation to compile OpenSSL from source.
+
+#### Prerequisite: `protoc`
+
+We use Protocol Buffers for efficient encoding of binary data and thus require `protoc` to be installed.
+
+- Using downloaded binary: see Protocol Buffers [official website](https://protobuf.dev/installation/).
+- Using Chocolatey: `choco install protoc`.
 
 #### Prerequetie: NodeJS for frontend build
 
  - Get the latest LTS version of NodeJS from its [official website](https://nodejs.org). Non-LTS or older version may work, but there is no guarantee.
- - Alternatively, install `nvm` for managing all NodeJS installations on your machine using [Chocolatey](https://community.chocolatey.org/) using `choco install nvm`. Note that normal NodeJS will ask if you want to use Chocolately as your package manager for installing node modules with native code(C/C++).
+ - Alternatively, install `nvm` for managing all NodeJS installations on your machine using [Chocolatey](https://community.chocolatey.org/) with `choco install nvm`. Note that normal NodeJS installation will ask if you want to use Chocolately as your package manager for installing node modules with native code(C/C++).
 
 #### Prerequestie: WebView2  
 
