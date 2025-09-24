@@ -1,9 +1,9 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-#![feature(hash_extract_if)]
 
 use tauri::generate_context;
 
+mod error;
 mod event;
 mod macros;
 mod plugins;
@@ -16,8 +16,8 @@ fn main() -> anyhow::Result<()> {
         Err(e) => {
             tracing::error!("{:?}", e);
             tracing::error!("Failed to start OwlPort: Cannot read config file.");
-            tracing::error!("An example config file is generated in the same directory, remove the trailing `.example` to use the default values!");
-            return Err(e);
+            spawn_no_config_window()?;
+            return Ok(());
         }
         Ok(v) => v,
     };
@@ -35,6 +35,7 @@ fn main() -> anyhow::Result<()> {
         .plugin(plugins::owlnest::advertise::init())
         .plugin(plugins::owlnest::gossipsub::init(peer_manager.clone()))
         .plugin(plugins::owlnest::developer_options::init())
+        .plugin(plugins::config_writer::init())
         .plugin(plugins::popup_test::init())
         .run(generate_context!())
         .expect("error while running tauri application");
@@ -66,4 +67,31 @@ fn setup_logging() {
         .with_filter(filter);
     let reg = tracing_subscriber::registry().with(layer);
     tracing::subscriber::set_global_default(reg).expect("you can only set global default once");
+}
+
+fn spawn_no_config_window() -> anyhow::Result<()> {
+    use tauri::Manager;
+    tauri::Builder::default()
+        .plugin(plugins::config_writer::init())
+        .setup(|app| {
+            let main_window = app
+                .get_webview_window("main")
+                .expect("window main to be present");
+            let _ = tauri::WebviewWindowBuilder::new(
+                app,
+                "no-config",
+                tauri::WebviewUrl::App("#/noconfig".into()),
+            )
+            .focused(true)
+            .inner_size(400f64, 300f64)
+            .title("No valid config detected")
+            .build()
+            .expect("window to be created");
+            main_window
+                .close()
+                .expect("window to be closed successfully");
+            Ok(())
+        })
+        .run(generate_context!())?;
+    Ok(())
 }

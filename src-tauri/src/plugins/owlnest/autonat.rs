@@ -11,10 +11,12 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
             async_runtime::spawn(async move {
                 let mut listener = peer_manager.event_subscriber().subscribe();
                 while let Ok(ev) = listener.recv().await {
-                    if let swarm::SwarmEvent::Behaviour(BehaviourEvent::AutoNat(ev)) = ev.as_ref() {
-                        if let Ok(ev) = ev.try_into() {
-                            let _ = app_handle.emit::<AutoNatEmit>("owlnest-autonat-emit", ev);
-                        }
+                    if let swarm::SwarmEvent::Behaviour(BehaviourEvent::AutoNat(ev)) = ev.as_ref()
+                        && let Ok(ev) = ev.try_into()
+                    {
+                        app_handle
+                            .emit::<AutoNatEmit>("owlnest-autonat-emit", ev)
+                            .expect("emit to succeed");
                     }
                 }
             });

@@ -28,9 +28,7 @@ if (!isBodyless()) { console.log("backend connected"); appWindowLabel = getCurre
       </section>
       <div>
         <RouterView v-slot="{ Component }">
-          <KeepAlive exclude="Overview">
             <component :is="Component" />
-          </KeepAlive>
         </RouterView>
       </div>
     </div>

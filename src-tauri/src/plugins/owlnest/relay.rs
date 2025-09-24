@@ -1,4 +1,6 @@
-use std::{cmp::Ordering, time::Duration};
+use std::{cmp::Ordering, ops::Deref, time::Duration};
+
+use crate::error::error_string::SWARM_TIMEDOUT;
 
 use super::*;
 use dashmap::DashMap;
@@ -8,6 +10,7 @@ use owlnest::net::p2p::protocols::{
     relay_server::{HOP_PROTOCOL_NAME, STOP_PROTOCOL_NAME},
 };
 use swarm::SwarmEvent;
+use tracing::warn;
 
 const ADVERTISE_PROTOCOL: StreamProtocol =
     StreamProtocol::new(owlnest::net::p2p::protocols::advertise::PROTOCOL_NAME);
@@ -15,7 +18,6 @@ const ADVERTISE_PROTOCOL: StreamProtocol =
 #[derive(Clone)]
 struct State {
     connected: Arc<DashMap<PeerId, RelayInfo>>,
-    manager: swarm::Manager,
 }
 impl State {
     /// Remove closed listeners from listened address on relays
@@ -49,6 +51,7 @@ impl State {
                     listened_address: HashSet::new(),
                     supports_ext: info.protocols.contains(&ADVERTISE_PROTOCOL),
                     latency: -1,
+                    recent_ping_respond: false,
                 },
             );
             return;
@@ -78,31 +81,23 @@ impl State {
             return;
         }
         let mut entry = maybe_entry.unwrap();
-        if ev.result.is_err() {
-            entry.value_mut().latency = -1;
-            return;
+        match &ev.result {
+            Ok(latency) => {
+                entry.value_mut().recent_ping_respond = true;
+                entry.value_mut().latency = latency.as_millis().try_into().unwrap_or(isize::MAX);
+            }
+            Err(_f) => entry.value_mut().recent_ping_respond = false,
         }
-        entry.value_mut().latency = ev
-            .result
-            .as_ref()
-            .unwrap()
-            .as_millis()
-            .try_into()
-            .unwrap_or(isize::MAX);
     }
     pub(crate) fn on_new_listener(&self, address: &Multiaddr) {
         let address_string = address.to_string();
-        if let Some(mut entry) = self
-            .connected
-            .iter_mut()
-            .find(|entry| {
-                let (k, v) = entry.pair();
-                // get the one that has the address that is part of the newly listened address
-                v.listenable_address
-                    .iter()
-                    .any(|_| address_string.contains(&format!("{}/p2p-circuit", k)))
-            })
-        {
+        if let Some(mut entry) = self.connected.iter_mut().find(|entry| {
+            let (k, v) = entry.pair();
+            // get the one that has the address that is part of the newly listened address
+            v.listenable_address
+                .iter()
+                .any(|_| address_string.contains(&format!("{}/p2p-circuit", k)))
+        }) {
             let v = entry.value_mut();
             v.listenable_address
                 .retain(|v| !address_string.contains(&v.to_string()));
@@ -116,7 +111,6 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
         .setup(|app, _api| {
             let state = State {
                 connected: Default::default(),
-                manager: peer_manager.clone(),
             };
             app.manage(state.clone());
             let _app_handle = app.clone();
@@ -125,36 +119,34 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
                 while let Ok(ev) = listener.recv().await {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Identify(ev)) = ev.as_ref()
                     {
+                        use identify::OutEvent::*;
                         match ev {
-                            identify::OutEvent::Received { peer_id, info, .. } => {
-                                state.on_identified(peer_id, info)
-                            }
+                            Received { peer_id, info, .. } => state.on_identified(peer_id, info),
                             _ => {}
                         }
                         continue;
                     }
-                    match ev.as_ref() {
-                        libp2p::swarm::SwarmEvent::NewListenAddr { address, .. } => {
-                            state.on_new_listener(address)
-                        }
-                        libp2p::swarm::SwarmEvent::ListenerClosed { addresses, .. } => {
-                            state.on_self_listener_closed(addresses)
-                        }
-                        _ => {}
-                    }
-                    if let swarm::SwarmEvent::ConnectionClosed {
-                        peer_id,
-                        num_established,
-                        ..
-                    } = ev.as_ref()
-                    {
-                        if *num_established < 1 {
-                            state.connected.remove(peer_id);
-                        }
+                    if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Ping(ev)) = ev.as_ref() {
+                        state.on_ping_update(ev);
                         continue;
                     }
-                    if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Ping(ev)) = ev.as_ref() {
-                        state.on_ping_update(ev)
+                    use libp2p::swarm::SwarmEvent::*;
+                    match ev.as_ref() {
+                        NewListenAddr { address, .. } => state.on_new_listener(address),
+                        ListenerClosed { addresses, .. } => {
+                            state.on_self_listener_closed(addresses)
+                        }
+                        ConnectionClosed {
+                            peer_id,
+                            num_established,
+                            ..
+                        } => {
+                            if *num_established < 1 {
+                                state.connected.remove(peer_id);
+                            }
+                            continue;
+                        }
+                        _ => {}
                     }
                 }
             });
@@ -235,28 +227,29 @@ async fn set_local_provider_state(
 
 #[tauri::command]
 async fn listen_relay(
-    state: tauri::State<'_, State>,
+    manager: tauri::State<'_, swarm::Manager>,
     relay_address: Multiaddr,
 ) -> Result<(), String> {
-    let manager = state.manager.clone();
+    let manager = manager.deref().clone();
     let handle = async move {
         let mut listener = manager.event_subscriber().subscribe();
         manager.swarm().listen(&relay_address).await?;
         while let Ok(ev) = listener.recv().await {
-            if let SwarmEvent::NewListenAddr { address, .. } = ev.as_ref() {
-                if address.to_string().contains(&relay_address.to_string()) {
-                    return Ok(());
-                }
+            if let SwarmEvent::NewListenAddr { address, .. } = ev.as_ref()
+                && address.to_string().contains(&relay_address.to_string())
+            {
+                return Ok(());
             }
         }
         unreachable!()
     };
     let result = tokio::time::timeout(Duration::from_secs(10), handle).await;
     if result.is_err() {
-        return Err("Timeout waiting for future to complete".into());
+        warn!(SWARM_TIMEDOUT);
+        return Err(SWARM_TIMEDOUT.into());
     }
     let result = result.unwrap();
-    result.map_err(|e:libp2p::TransportError<std::io::Error>| format!("{:?}", e))
+    result.map_err(|e: libp2p::TransportError<std::io::Error>| format!("{:?}", e))
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -265,6 +258,7 @@ struct RelayInfo {
     pub listened_address: HashSet<Multiaddr>,
     pub supports_ext: bool,
     pub latency: isize,
+    pub recent_ping_respond: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]

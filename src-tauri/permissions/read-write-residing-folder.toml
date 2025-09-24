@@ -1,0 +1,7 @@
+[[permission]]
+identifier = "read-write-residing-folder"
+description = """
+Allow access to read and write file to the residing folder(same folder as the binary).
+"""
+[[scope.allow]]
+path = "*"

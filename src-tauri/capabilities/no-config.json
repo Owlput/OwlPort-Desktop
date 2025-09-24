@@ -1,0 +1,7 @@
+{
+  "identifier": "no-conifg",
+  "description": "permissions for no-config window",
+  "local": true,
+  "windows": ["no-config"],
+  "permissions": ["core:default", "read-write-residing-folder","owlport-config-writer"]
+}

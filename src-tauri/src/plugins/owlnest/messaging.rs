@@ -4,6 +4,9 @@ use std::num::NonZeroU32;
 use tauri::{Emitter, EventTarget};
 use tracing::{info, warn};
 
+const WINDOW_LABEL: &str = "owlnest-messaging";
+const EVENT_LABEL: &str = "owlnest-messaging-emit";
+
 pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-messaging")
         .setup(move |app, _api| {
@@ -16,8 +19,8 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                         match ev {
                             OutEvent::IncomingMessage { .. } => {
                                 if let Err(e) = app_handle.emit_to::<EventTarget, MessagingEmit>(
-                                    EventTarget::labeled("owlnest-messaging"),
-                                    "owlnest-messaging-emit",
+                                    EventTarget::labeled(WINDOW_LABEL),
+                                    EVENT_LABEL,
                                     ev.try_into().unwrap(),
                                 ) {
                                     warn!("{:?}", e)
@@ -37,8 +40,8 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                                 continue;
                             }
                             if let Err(e) = app_handle.emit_to(
-                                "owlnest-messaging",
-                                "owlnest-messaging-emit",
+                                WINDOW_LABEL,
+                                EVENT_LABEL,
                                 MessagingEmit::Connected { peer: *peer_id },
                             ) {
                                 warn!("{:?}", e)
@@ -47,8 +50,8 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                         }
                         swarm::SwarmEvent::ConnectionClosed { peer_id, .. } => {
                             if let Err(e) = app_handle.emit_to(
-                                "owlnest-messaging",
-                                "owlnest-messaging-emit",
+                                WINDOW_LABEL,
+                                EVENT_LABEL,
                                 MessagingEmit::Disconnected { peer: *peer_id },
                             ) {
                                 warn!("{:?}", e)
@@ -146,7 +149,7 @@ async fn spawn_window<R: Runtime>(
             store.insert_empty_record(&peer);
         }
     }
-    if let Some(window) = app.get_webview_window("owlnest-messaging") {
+    if let Some(window) = app.get_webview_window(WINDOW_LABEL) {
         let _ = window.emit("focusChat", peer);
         let _ = window.set_focus();
         return Ok(());
@@ -156,15 +159,11 @@ async fn spawn_window<R: Runtime>(
     } else {
         "#/app/messaging".into()
     };
-    tauri::WebviewWindowBuilder::new(
-        &app,
-        "owlnest-messaging",
-        tauri::WebviewUrl::App(url.into()),
-    )
-    .focused(true)
-    .title("Owlnest - Messaging")
-    .build()
-    .expect("New window to be created successfully");
+    tauri::WebviewWindowBuilder::new(&app, WINDOW_LABEL, tauri::WebviewUrl::App(url.into()))
+        .focused(true)
+        .title("Owlnest - Messaging")
+        .build()
+        .expect("New window to be created successfully");
 
     Ok(())
 }

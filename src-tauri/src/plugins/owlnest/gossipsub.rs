@@ -4,6 +4,9 @@ use store::{MessageRecord, TopicStore};
 use tauri::{Emitter, EventTarget};
 use tracing::warn;
 
+const WINDOW_LABEL: &str = "owlnest-gossipsub";
+const EMIT_LABEL: &str = "owlnest-gossipsub-emit";
+
 pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
     Builder::new("owlnest-gossipsub")
         .setup(move |app, _api| {
@@ -18,14 +21,13 @@ pub fn init<R: Runtime>(manager: swarm::manager::Manager) -> TauriPlugin<R> {
                             Message { message, .. } => {
                                 if let Err(e) = app_handle
                                     .emit_to::<EventTarget, serde_types::GossipsubEmit>(
-                                        EventTarget::labeled("owlnest-gossipsub"),
-                                        "owlnest-gossipsub-emit",
+                                        EventTarget::labeled(WINDOW_LABEL),
+                                        EMIT_LABEL,
                                         ev.try_into().unwrap(),
                                     )
                                 {
                                     warn!("{:?}", e)
                                 };
-                                println!("new message {:?}", message);
                                 let _ = &manager.gossipsub().message_store().insert_message(
                                     &message.topic,
                                     MessageRecord::Remote(message.clone()),
@@ -138,7 +140,7 @@ async fn list_participants(
         .topic_store()
         .participants(&topic.get_hash().into())
     {
-        Some(list) => Ok(Some(list.iter().copied().map(|msg| msg).collect())),
+        Some(list) => Ok(Some(list)),
         None => Ok(None),
     }
 }
@@ -191,7 +193,7 @@ async fn subscribed_topics(
         .subscribed_topics()
         .to_vec()
         .into_iter()
-        .map(|hash| TopicRecord::from_mapped(hash, state.gossipsub().topic_store()))
+        .map(|hash| TopicRecord::from_mapped(hash, state.gossipsub().topic_store().as_ref()))
         .collect())
 }
 
@@ -259,13 +261,13 @@ async fn spawn_window<R: Runtime>(
     state: tauri::State<'_, swarm::Manager>,
     peer: Option<PeerId>,
 ) -> Result<(), String> {
-    if let Some(window) = app.get_webview_window("owlnest-gossipsub") {
+    if let Some(window) = app.get_webview_window(WINDOW_LABEL) {
         let _ = window.set_focus();
         return Ok(());
     }
     tauri::WebviewWindowBuilder::new(
         &app,
-        "owlnest-gossipsub",
+        WINDOW_LABEL,
         tauri::WebviewUrl::App("#/app/gossipsub".into()),
     )
     .focused(true)
@@ -279,7 +281,7 @@ async fn spawn_window<R: Runtime>(
 mod serde_types {
     use derive_more::From;
     pub use gossipsub::serde_types::TopicHash;
-    use libp2p::{gossipsub::MessageId, PeerId};
+    use libp2p::{PeerId, gossipsub::MessageId};
     use owlnest::net::p2p::protocols::gossipsub;
     use serde::{Deserialize, Serialize};
     use std::convert::Infallible;
@@ -482,8 +484,8 @@ pub enum TopicRecord {
     },
 }
 impl TopicRecord {
-    pub fn from_mapped<S: TopicStore + ?Sized>(hash: TopicHash, store: &Box<S>) -> Self {
-        if let Some(string) = store.as_ref().try_map(&hash) {
+    pub fn from_mapped(hash: TopicHash, store: &(dyn TopicStore + Send + Sync)) -> Self {
+        if let Some(string) = store.try_map(&hash) {
             return TopicRecord::WithString {
                 topic_hash: hash.into(),
                 topic_string: string,

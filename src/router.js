@@ -50,6 +50,10 @@ const routes = [
     ],
   },
   {
+    path: "/noconfig",
+    component: () => import("./NoConfig.vue"),
+  },
+  {
     path: "/",
     redirect: "/main/home",
   },
