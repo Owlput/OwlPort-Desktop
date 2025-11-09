@@ -66,34 +66,22 @@ pub fn init<R: Runtime>(peer_manager: swarm::Manager) -> TauriPlugin<R> {
 
 #[tauri::command]
 async fn insert_default(state: tauri::State<'_, swarm::Manager>) -> Result<(), String> {
-    state
-        .kad()
-        .insert_node(
-            &PeerId::from_str("QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN").unwrap(),
-            &"/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
-        )
-        .await;
-    state
-        .kad()
-        .insert_node(
-            &PeerId::from_str("QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa").unwrap(),
-            &"/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
-        )
-        .await;
-    state
-        .kad()
-        .insert_node(
-            &PeerId::from_str("QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb").unwrap(),
-            &"/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
-        )
-        .await;
-    state
-        .kad()
-        .insert_node(
-            &PeerId::from_str("QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt").unwrap(),
-            &"/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
-        )
-        .await;
+    const LIBP2P_DEFAULT_BOOTSTRAP_PEERS: [&str; 4] = [
+        "QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+        "QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa",
+        "QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
+        "QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
+    ];
+    for peer in LIBP2P_DEFAULT_BOOTSTRAP_PEERS {
+        state
+            .kad()
+            .insert_node(
+                &PeerId::from_str(peer).unwrap(),
+                &"/dnsaddr/bootstrap.libp2p.io".parse::<Multiaddr>().unwrap(),
+            )
+            .await;
+    }
+    // This one is also from libp2p, when DNS is unavailable
     state
         .kad()
         .insert_node(

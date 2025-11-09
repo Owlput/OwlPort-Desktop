@@ -1,0 +1,8 @@
+[[permission]]
+identifier = "owlport-config-writer"
+description = """
+Access to config writer calls.
+"""
+commands.allow = [
+    "plugin:owlport-config-writer|write_default_config",
+]

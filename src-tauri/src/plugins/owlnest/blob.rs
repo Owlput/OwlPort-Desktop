@@ -1,8 +1,11 @@
 use super::*;
-use crate::event::popup_manager::{get_timestamp, DefaultPopupProps, Popup};
+use crate::event::popup_manager::{DefaultPopupProps, Popup, get_timestamp};
 use owlnest::net::p2p::protocols::blob::{OutEvent, RecvInfo, SendInfo};
 use std::{fs, str::FromStr};
 use tauri::{Emitter, EventTarget};
+
+const WINDOW_LABEL: &str = "owlnest-blob-transfer";
+const EMIT_LABEL: &str = "owlnest-blob-transfer-emit";
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("owlnest-blob-transfer")
@@ -16,15 +19,14 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                 while let Ok(ev) = listener.recv().await {
                     if let swarm::SwarmEvent::Behaviour(BehaviourEvent::Blob(ev)) = ev.as_ref() {
                         if let Ok(ev) = ev.try_into() {
-                            let _ = app_handle
-                                .emit::<BlobTransferEmit>("owlnest-blob-transfer-emit", ev);
+                            let _ = app_handle.emit::<BlobTransferEmit>(EMIT_LABEL, ev);
                         }
                         match ev {
                             OutEvent::IncomingFile {
                                 from, file_name, ..
                             } => {
                                 let _ = app_handle.emit_to(
-                                    "owlnest-blob-transfer",
+                                    WINDOW_LABEL,
                                     "newPopup",
                                     Popup {
                                         timeout: 5000,
@@ -49,7 +51,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                             } => {
                                 if *bytes_received == *bytes_total {
                                     let _ = app_handle.emit_to::<EventTarget, Popup>(
-                                        EventTarget::labeled("owlnest-blob-transfer"),
+                                        EventTarget::labeled(WINDOW_LABEL),
                                         "newPopup",
                                         Popup {
                                             timeout: 5000,
@@ -78,7 +80,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                             } => {
                                 if *bytes_sent == *bytes_total {
                                     let _ = app_handle.emit_to(
-                                        "owlnest-blob-transfer",
+                                        WINDOW_LABEL,
                                         "newPopup",
                                         Popup {
                                             timeout: 5000,
@@ -101,7 +103,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                             }
                             OutEvent::CancelledSend(local_send_id) => {
                                 let _ = app_handle.emit_to(
-                                    "owlnest-blob-transfer",
+                                    WINDOW_LABEL,
                                     "newPopup",
                                     Popup {
                                         timeout: 5000,
@@ -120,7 +122,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                             }
                             OutEvent::CancelledRecv(local_recv_id) => {
                                 let _ = app_handle.emit_to(
-                                    "owlnest-blob-transfer",
+                                    WINDOW_LABEL,
                                     "newPopup",
                                     Popup {
                                         timeout: 5000,
@@ -229,7 +231,7 @@ async fn spawn_window<R: Runtime>(
     app: tauri::AppHandle<R>,
     peer: Option<PeerId>,
 ) -> Result<(), String> {
-    if let Some(window) = app.get_webview_window("owlnest-blob-transfer") {
+    if let Some(window) = app.get_webview_window(WINDOW_LABEL) {
         let _ = window.set_focus();
         return Ok(());
     }
@@ -238,15 +240,11 @@ async fn spawn_window<R: Runtime>(
     } else {
         "#/app/blob-transfer".into()
     };
-    tauri::WebviewWindowBuilder::new(
-        &app,
-        "owlnest-blob-transfer",
-        tauri::WebviewUrl::App(url.into()),
-    )
-    .focused(true)
-    .title("Owlnest - File Transfer")
-    .build()
-    .expect("New window to be created successfully");
+    tauri::WebviewWindowBuilder::new(&app, WINDOW_LABEL, tauri::WebviewUrl::App(url.into()))
+        .focused(true)
+        .title("Owlnest - File Transfer")
+        .build()
+        .expect("New window to be created successfully");
 
     Ok(())
 }

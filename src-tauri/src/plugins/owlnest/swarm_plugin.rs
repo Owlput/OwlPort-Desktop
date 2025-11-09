@@ -1,7 +1,7 @@
 use super::*;
 use dashmap::DashMap;
 use libp2p::{core::transport::ListenerId, identify::Info};
-use owlnest::net::p2p::swarm::{self, behaviour::BehaviourEvent, Manager as SwarmManager};
+use owlnest::net::p2p::swarm::{self, Manager as SwarmManager, behaviour::BehaviourEvent};
 use std::num::NonZeroU32;
 use tauri::{Emitter, Manager};
 use tracing::{error, warn};
@@ -350,8 +350,8 @@ impl TryFrom<&swarm::SwarmEvent> for SwarmEmit {
 mod serde_types {
     use std::f32::consts::E;
 
-    use libp2p::{core::Endpoint, PeerId, TransportError};
-    use owlnest::net::p2p::{swarm, Multiaddr};
+    use libp2p::{PeerId, TransportError, core::Endpoint};
+    use owlnest::net::p2p::{Multiaddr, swarm};
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Clone, Serialize)]
@@ -373,11 +373,7 @@ mod serde_types {
                     role_override,
                     ..
                 } => {
-                    let is_override = if let Endpoint::Dialer = role_override {
-                        false
-                    } else {
-                        true
-                    };
+                    let is_override = matches!(role_override, Endpoint::Dialer);
                     Self::Dialer {
                         address: address.clone(),
                         role_override: is_override,
@@ -399,7 +395,7 @@ mod serde_types {
     pub enum DialError {
         /// The peer identity obtained on the connection matches the local peer.
         LocalPeerId {
-            endpoint: ConnectedPoint,
+            address: Multiaddr,
         },
         /// No addresses have been provided by [`NetworkBehaviour::handle_pending_outbound_connection`] and [`DialOpts`].
         /// Which basically never happens.
@@ -412,7 +408,7 @@ mod serde_types {
         /// The peer identity obtained on the connection did not match the one that was expected.
         WrongPeerId {
             obtained: PeerId,
-            endpoint: ConnectedPoint,
+            address: Multiaddr,
         },
         Denied(String),
         /// An error occurred while negotiating the transport protocol(s) on a connection.
@@ -422,15 +418,15 @@ mod serde_types {
     impl From<&libp2p::swarm::DialError> for DialError {
         fn from(value: &libp2p::swarm::DialError) -> Self {
             match value {
-                libp2p::swarm::DialError::LocalPeerId { endpoint } => Self::LocalPeerId {
-                    endpoint: endpoint.into(),
+                libp2p::swarm::DialError::LocalPeerId { address } => Self::LocalPeerId {
+                    address: address.clone(),
                 },
                 libp2p::swarm::DialError::NoAddresses => Self::NoAddresses,
                 libp2p::swarm::DialError::DialPeerConditionFalse(_) => Self::DialPeerConditionFalse,
                 libp2p::swarm::DialError::Aborted => Self::Aborted,
-                libp2p::swarm::DialError::WrongPeerId { obtained, endpoint } => Self::WrongPeerId {
+                libp2p::swarm::DialError::WrongPeerId { obtained, address } => Self::WrongPeerId {
                     obtained: *obtained,
-                    endpoint: endpoint.into(),
+                    address: address.clone(),
                 },
                 libp2p::swarm::DialError::Denied { cause } => Self::Denied(cause.to_string()),
                 libp2p::swarm::DialError::Transport(e) => {
